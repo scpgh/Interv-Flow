@@ -9,6 +9,8 @@ import Onboarding from './pages/Onboarding';
 import PracticeSession from './pages/PracticeSession';
 import PracticeFeedback from './pages/PracticeFeedback';
 import ProtectedRoute from './components/ProtectedRoute';
+import Community from './pages/Community';
+import Billing from './pages/Billing';
 
 export default function App() {
   return (
@@ -48,6 +50,16 @@ export default function App() {
         <Route path="/practice/feedback/:sessionId" element={
           <ProtectedRoute>
             <PracticeFeedback />
+          </ProtectedRoute>
+        } />
+        <Route path="/community" element={
+          <ProtectedRoute>
+            <Community />
+          </ProtectedRoute>
+        } />
+        <Route path="/billing" element={
+          <ProtectedRoute>
+            <Billing />
           </ProtectedRoute>
         } />
       </Routes>

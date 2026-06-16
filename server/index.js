@@ -1777,6 +1777,167 @@ Evaluate this interview transcript and respond with the exact JSON formatting st
   }
 });
 
+// Route: Get community posts
+app.get('/api/community/posts', async (req, res) => {
+  try {
+    const dbPath = './db_community_posts_fallback.json';
+    let posts = [];
+    if (fs.existsSync(dbPath)) {
+      try {
+        posts = JSON.parse(fs.readFileSync(dbPath, 'utf8') || '[]');
+      } catch (e) {
+        console.error("Error reading community posts fallback:", e);
+      }
+    }
+    // Sort by createdAt descending (most recent first)
+    posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.json({ success: true, posts });
+  } catch (err) {
+    console.error("GET community posts error:", err);
+    res.status(500).json({ error: err.message || "Server error fetching community posts." });
+  }
+});
+
+// Route: Add a new community post
+app.post('/api/community/posts', async (req, res) => {
+  try {
+    const { title, category, description, author, authorMeta, codeSnippet, gridData, anonymous } = req.body;
+    if (!title || !category || !description) {
+      return res.status(400).json({ error: "Title, category, and description are required." });
+    }
+
+    const dbPath = './db_community_posts_fallback.json';
+    let posts = [];
+    if (fs.existsSync(dbPath)) {
+      try {
+        posts = JSON.parse(fs.readFileSync(dbPath, 'utf8') || '[]');
+      } catch (e) {
+        console.error("Error reading community posts fallback:", e);
+      }
+    }
+
+    const newPost = {
+      id: `post_${Date.now()}`,
+      title,
+      category,
+      description,
+      author: author || "Alex Chen (You)",
+      authorMeta: authorMeta || "Just now • Candidate Partner",
+      codeSnippet: codeSnippet || null,
+      gridData: gridData || null,
+      upvotes: 0,
+      comments: 0,
+      createdAt: new Date().toISOString(),
+      votedEmails: [],
+      commentsList: [],
+      anonymous: !!anonymous
+    };
+
+    posts.push(newPost);
+    fs.writeFileSync(dbPath, JSON.stringify(posts, null, 2), 'utf8');
+
+    res.json({ success: true, post: newPost });
+  } catch (err) {
+    console.error("POST community post error:", err);
+    res.status(500).json({ error: err.message || "Server error creating community post." });
+  }
+});
+
+// Route: Upvote a community post (with single-vote toggle constraint)
+app.post('/api/community/posts/:postId/upvote', async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: "User email is required for upvote context." });
+    }
+
+    const dbPath = './db_community_posts_fallback.json';
+    let posts = [];
+    if (fs.existsSync(dbPath)) {
+      try {
+        posts = JSON.parse(fs.readFileSync(dbPath, 'utf8') || '[]');
+      } catch (e) {
+        console.error("Error reading community posts fallback:", e);
+      }
+    }
+
+    const postIndex = posts.findIndex(p => p.id === postId);
+    if (postIndex === -1) {
+      return res.status(404).json({ error: "Post not found." });
+    }
+
+    const post = posts[postIndex];
+    if (!post.votedEmails) {
+      post.votedEmails = [];
+    }
+
+    const emailIndex = post.votedEmails.indexOf(email);
+    if (emailIndex > -1) {
+      // User has already upvoted, retract the vote
+      post.votedEmails.splice(emailIndex, 1);
+      post.upvotes = Math.max(0, (post.upvotes || 1) - 1);
+    } else {
+      // User has not upvoted, register the vote
+      post.votedEmails.push(email);
+      post.upvotes = (post.upvotes || 0) + 1;
+    }
+
+    fs.writeFileSync(dbPath, JSON.stringify(posts, null, 2), 'utf8');
+    res.json({ success: true, post });
+  } catch (err) {
+    console.error("POST upvote post error:", err);
+    res.status(500).json({ error: err.message || "Server error upvoting community post." });
+  }
+});
+
+// Route: Add a comment to a community post
+app.post('/api/community/posts/:postId/comments', async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { author, text } = req.body;
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: "Comment text is required." });
+    }
+
+    const dbPath = './db_community_posts_fallback.json';
+    let posts = [];
+    if (fs.existsSync(dbPath)) {
+      try {
+        posts = JSON.parse(fs.readFileSync(dbPath, 'utf8') || '[]');
+      } catch (e) {
+        console.error("Error reading community posts fallback:", e);
+      }
+    }
+
+    const postIndex = posts.findIndex(p => p.id === postId);
+    if (postIndex === -1) {
+      return res.status(404).json({ error: "Post not found." });
+    }
+
+    const post = posts[postIndex];
+    if (!post.commentsList) {
+      post.commentsList = [];
+    }
+
+    const newComment = {
+      id: `c_${Date.now()}`,
+      author: author || "Alex Chen (You)",
+      text: text.trim(),
+      createdAt: new Date().toISOString()
+    };
+
+    post.commentsList.push(newComment);
+    post.comments = post.commentsList.length;
+
+    fs.writeFileSync(dbPath, JSON.stringify(posts, null, 2), 'utf8');
+    res.json({ success: true, post });
+  } catch (err) {
+    console.error("POST comment error:", err);
+    res.status(500).json({ error: err.message || "Server error posting comment." });
+  }
+});
+
 // Global error handling middleware
 app.use((err, req, res, next) => {
   console.error("Global error handler caught an error:", err);

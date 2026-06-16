@@ -63,8 +63,11 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
     setIsMobileMenuOpen(false);
     if (tab === 'resume') navigate('/resume-analyzer');
     else if (tab === 'practice') navigate('/practice');
+    else if (tab === 'community') navigate('/community');
+    else if (tab === 'booking') navigate('/billing#bookings');
     else { navigate('/dashboard'); if (setActiveTab) setActiveTab(tab); }
   };
+
 
   const tabCls = (tab) =>
     `relative z-10 text-sm px-4 py-1.5 rounded-full transition-colors duration-200 cursor-pointer border-none bg-transparent ${
@@ -231,7 +234,7 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
                   <button onClick={() => { navigate('/dashboard'); setIsDropdownOpen(false); }} className="flex items-center gap-3 w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-on-surface-variant hover:bg-white/5 hover:text-white transition-all cursor-pointer border-none bg-transparent">
                     <span className="material-symbols-outlined text-[18px]">person</span>Profile Settings
                   </button>
-                  <button onClick={() => { navigate('/dashboard'); setIsDropdownOpen(false); }} className="flex items-center gap-3 w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-on-surface-variant hover:bg-white/5 hover:text-white transition-all cursor-pointer border-none bg-transparent">
+                  <button onClick={() => { navigate('/billing'); setIsDropdownOpen(false); }} className="flex items-center gap-3 w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-on-surface-variant hover:bg-white/5 hover:text-white transition-all cursor-pointer border-none bg-transparent">
                     <span className="material-symbols-outlined text-[18px]">credit_card</span>Billing &amp; Subscriptions
                   </button>
                   <button onClick={() => { handleSignOut(); }} className="flex items-center gap-3 w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-red-400 hover:bg-red-500/10 transition-all cursor-pointer border-none bg-transparent">

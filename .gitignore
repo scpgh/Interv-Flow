@@ -17,6 +17,7 @@ server/.env
 pdf_debug.log
 server/db_fallback.json
 server/db_sessions_fallback.json
+server/db_community_posts_fallback.json
 server/pdf_debug.log
 
 # Service Accounts and Secret Keys
