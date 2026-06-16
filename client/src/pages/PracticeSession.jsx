@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import DashboardNavbar from '../components/DashboardNavbar';
 import Footer from '../components/Footer';
 import AudioWaveform from '../components/AudioWaveform';
@@ -33,6 +33,7 @@ const formatVoiceName = (voice) => {
 
 export default function PracticeSession() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeNavTab, setActiveNavTab] = useState("practice");
 
   // 1. Wizard Setup State
@@ -65,6 +66,26 @@ export default function PracticeSession() {
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [useManualRecorder, setUseManualRecorder] = useState(false);
   const [isRecordingAudio, setIsRecordingAudio] = useState(false);
+
+  // Load passed challenge state if redirected from Community / Try Challenge
+  useEffect(() => {
+    if (location.state) {
+      if (location.state.mode) {
+        setMode(location.state.mode);
+      }
+      if (location.state.jobTitle) {
+        setJobTitle(location.state.jobTitle);
+      }
+      if (location.state.jdText) {
+        setJdText(location.state.jdText);
+      }
+      if (location.state.company) {
+        setCompany(location.state.company);
+      }
+      // Clean up location state in history to avoid re-triggering on fresh reloads
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   // 3. Audio & WebSocket Refs
   const audioContextRef = useRef(null);

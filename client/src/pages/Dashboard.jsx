@@ -267,7 +267,7 @@ export default function Dashboard() {
         
         {/* Left Sidebar (Desktop only) */}
         <aside className="hidden lg:flex w-64 flex-col gap-2 shrink-0">
-          <div className="glass-card rounded-xl p-4 sticky top-20">
+          <div className="glass-card rounded-xl p-4 sticky top-16">
             <nav className="flex flex-col gap-2">
               <button 
                 onClick={() => setActiveSidebarTab("dashboard")}
