@@ -304,33 +304,35 @@ export default function PracticeFeedback() {
             <h2 className="font-headline-md text-headline-md text-white font-bold">Full Interview Transcript</h2>
           </div>
 
-          <div className="glass-card rounded-2xl p-6 bg-[#18181b]/35 border border-white/10 max-h-[500px] overflow-y-auto space-y-4 custom-scrollbar text-xs leading-relaxed">
-            {session.transcript && session.transcript.length > 0 ? (
-              session.transcript.map((item, index) => (
-                <div 
-                  key={index}
-                  className={`p-4 rounded-2xl border ${
-                    item.sender === 'candidate' 
-                      ? 'bg-[#1E1B4B]/30 border-[#818CF8]/25 ml-8 md:ml-16' 
-                      : 'bg-white/[0.02] border-white/5 mr-8 md:mr-16'
-                  }`}
-                >
-                  <span className={`block text-[9px] font-mono font-bold uppercase mb-1.5 ${
-                    item.sender === 'candidate' ? 'text-[#818CF8]' : 'text-primary'
-                  }`}>
-                    {item.sender === 'candidate' ? 'Candidate (You)' : 'Interviewer (Stitch AI)'}
-                  </span>
-                  <p className="text-white/95">{item.text}</p>
-                  <span className="block text-[8px] text-on-surface-variant font-mono mt-2 text-right">
-                    {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                  </span>
+          <div className="glass-card rounded-2xl bg-[#18181b]/35 border border-white/10">
+            <div className="p-6 max-h-[500px] overflow-y-auto space-y-4 custom-scrollbar text-xs leading-relaxed pr-2">
+              {session.transcript && session.transcript.length > 0 ? (
+                session.transcript.map((item, index) => (
+                  <div 
+                    key={index}
+                    className={`p-4 rounded-2xl border ${
+                      item.sender === 'candidate' 
+                        ? 'bg-[#1E1B4B]/30 border-[#818CF8]/25 ml-8 md:ml-16' 
+                        : 'bg-white/[0.02] border-white/5 mr-8 md:mr-16'
+                    }`}
+                  >
+                    <span className={`block text-[9px] font-mono font-bold uppercase mb-1.5 ${
+                      item.sender === 'candidate' ? 'text-[#818CF8]' : 'text-primary'
+                    }`}>
+                      {item.sender === 'candidate' ? 'Candidate (You)' : 'Interviewer (Stitch AI)'}
+                    </span>
+                    <p className="text-white/95">{item.text}</p>
+                    <span className="block text-[8px] text-on-surface-variant font-mono mt-2 text-right">
+                      {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center text-on-surface-variant py-8">
+                  No transcript turns captured for this interview session.
                 </div>
-              ))
-            ) : (
-              <div className="text-center text-on-surface-variant py-8">
-                No transcript turns captured for this interview session.
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </section>
 
