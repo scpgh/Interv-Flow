@@ -465,43 +465,8 @@ export default function Dashboard() {
       <DashboardNavbar activeTab={activeNavTab} setActiveTab={setActiveNavTab} />
 
       {/* ── Main Dashboard Layout Container ── */}
-      <div className="flex flex-1 pt-2 max-w-[1400px] mx-auto w-full px-6 gap-gutter z-10 relative">
+      <div className="flex flex-1 pt-2 max-w-[1400px] mx-auto w-full px-6 z-10 relative">
         
-        {/* Left Sidebar (Desktop only) */}
-        <aside className="hidden lg:flex w-64 flex-col gap-2 shrink-0 sticky top-20 h-fit">
-          <div className="glass-card rounded-xl p-4">
-            <nav className="flex flex-col gap-2">
-              <button 
-                onClick={() => setActiveSidebarTab("dashboard")}
-                className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-lg font-body-md text-body-md transition-all cursor-pointer ${activeSidebarTab === "dashboard" ? 'text-primary bg-white/5 border-r-2 border-primary' : 'text-on-surface-variant hover:text-white hover:bg-white/5'}`}
-              >
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>dashboard</span>
-                Dashboard
-              </button>
-              <button 
-                onClick={() => setActiveSidebarTab("sessions")}
-                className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-lg font-body-md text-body-md transition-all cursor-pointer ${activeSidebarTab === "sessions" ? 'text-primary bg-white/5 border-r-2 border-primary' : 'text-on-surface-variant hover:text-white hover:bg-white/5'}`}
-              >
-                <span className="material-symbols-outlined">history</span>
-                Recent Sessions
-              </button>
-              <button 
-                onClick={() => navigate('/analytics')}
-                className="flex items-center gap-3 w-full text-left px-4 py-3 rounded-lg font-body-md text-body-md transition-all cursor-pointer text-on-surface-variant hover:text-white hover:bg-white/5"
-              >
-                <span className="material-symbols-outlined">analytics</span>
-                Performance
-              </button>
-              <button 
-                onClick={() => setActiveSidebarTab("settings")}
-                className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-lg font-body-md text-body-md transition-all cursor-pointer ${activeSidebarTab === "settings" ? 'text-primary bg-white/5 border-r-2 border-primary' : 'text-on-surface-variant hover:text-white hover:bg-white/5'}`}
-              >
-                <span className="material-symbols-outlined">settings</span>
-                Settings
-              </button>
-            </nav>
-          </div>
-        </aside>
 
         {/* Main Dashboard Canvas */}
         <main className="flex-1 flex flex-col gap-8 pb-24 text-left">

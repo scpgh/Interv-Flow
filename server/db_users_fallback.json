@@ -40,5 +40,14 @@
     "dreamCompany": "google",
     "linkedinUrl": "",
     "githubUrl": ""
+  },
+  {
+    "createdAt": "2026-06-16T16:03:33.738Z",
+    "name": "Test User",
+    "email": "testuser@example.com",
+    "password": "password123",
+    "domain": "swe",
+    "onboardingCompleted": false,
+    "updatedAt": "2026-06-16T16:03:33.557Z"
   }
 ]
