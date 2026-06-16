@@ -1553,6 +1553,8 @@ app.get('/api/interview/sessions', async (req, res) => {
 });
 
 // POST: Generate Post-Interview Feedback Report
+const activeReportPromises = new Map();
+
 app.post('/api/interview/report', async (req, res) => {
   try {
     const { sessionId, customTranscript } = req.body;
@@ -1560,49 +1562,78 @@ app.post('/api/interview/report', async (req, res) => {
       return res.status(400).json({ error: "Session ID is required." });
     }
 
-    // Load the session from db_sessions_fallback.json
-    const dbPath = './db_sessions_fallback.json';
-    let sessions = [];
-    if (fs.existsSync(dbPath)) {
+    // Single-Flight: Coalesce concurrent requests for the same session ID
+    if (activeReportPromises.has(sessionId)) {
+      console.log(`[Single-Flight] Report generation already in progress for session ${sessionId}. Coalescing request...`);
       try {
-        sessions = JSON.parse(fs.readFileSync(dbPath, 'utf8') || '[]');
-      } catch (e) {
-        console.error("Error reading database sessions fallback:", e);
+        const reportResult = await activeReportPromises.get(sessionId);
+        return res.json(reportResult);
+      } catch (err) {
+        return res.status(500).json({ error: err.message || "Failed to generate interview report in parallel worker." });
       }
     }
-    if (!Array.isArray(sessions)) {
-      sessions = [];
-    }
 
-    let session = sessions.find(s => s.id === sessionId);
-    
-    // If session is not found but customTranscript is provided, we can simulate or create one
-    if (!session && customTranscript) {
-      session = {
-        id: sessionId,
-        mode: 'jd',
-        title: 'Interview Session',
-        company: 'Target Company',
-        transcript: customTranscript
-      };
-    }
+    // Define the async generator task
+    const generateTask = (async () => {
+      // Load the session from db_sessions_fallback.json
+      const dbPath = './db_sessions_fallback.json';
+      let sessions = [];
+      if (fs.existsSync(dbPath)) {
+        try {
+          sessions = JSON.parse(fs.readFileSync(dbPath, 'utf8') || '[]');
+        } catch (e) {
+          console.error("Error reading database sessions fallback:", e);
+        }
+      }
+      if (!Array.isArray(sessions)) {
+        sessions = [];
+      }
 
-    if (!session) {
-      return res.status(404).json({ error: "Interview session not found." });
-    }
+      let session = sessions.find(s => s.id === sessionId);
+      
+      // If session is not found but customTranscript is provided, we can simulate or create one
+      if (!session && customTranscript) {
+        session = {
+          id: sessionId,
+          mode: 'jd',
+          title: 'Interview Session',
+          company: 'Target Company',
+          transcript: customTranscript
+        };
+      }
 
-    const transcriptText = session.transcript
-      .map(item => `${item.sender === 'candidate' ? 'Candidate' : 'Interviewer'}: ${item.text}`)
-      .join('\n');
+      if (!session) {
+        throw new Error("Interview session not found.");
+      }
 
-    if (!transcriptText || session.transcript.length === 0) {
-      return res.status(400).json({ error: "Cannot analyze an empty interview transcript." });
-    }
+      // If a report is already saved in the database during our wait or check, return it immediately
+      if (session.report) {
+        console.log(`[Single-Flight] Cached report found in database during task initialization for session ${sessionId}.`);
+        return {
+          success: true,
+          report: session.report,
+          sessionDetails: {
+            id: session.id,
+            mode: session.mode,
+            title: session.title,
+            company: session.company,
+            transcript: session.transcript
+          }
+        };
+      }
 
-    console.log(`Generating feedback report for session ${sessionId} with ${session.transcript.length} turns...`);
+      const transcriptText = session.transcript
+        .map(item => `${item.sender === 'candidate' ? 'Candidate' : 'Interviewer'}: ${item.text}`)
+        .join('\n');
 
-    // Prepare system instructions for Groq analysis
-    const systemPrompt = `You are a senior technical interviewer and communication coach auditing a completed interview transcript.
+      if (!transcriptText || session.transcript.length === 0) {
+        throw new Error("Cannot analyze an empty interview transcript.");
+      }
+
+      console.log(`Generating feedback report for session ${sessionId} with ${session.transcript.length} turns...`);
+
+      // Prepare system instructions for Groq analysis
+      const systemPrompt = `You are a senior technical interviewer and communication coach auditing a completed interview transcript.
 Analyze the conversation transcript between the candidate and the interviewer. 
 Calculate metrics and evaluate performance strictly.
 
@@ -1624,7 +1655,7 @@ You must output a valid JSON object matching the exact structure below. Do not w
   ]
 }`;
 
-    const userPrompt = `Interview Mode: ${session.mode || 'jd'}
+      const userPrompt = `Interview Mode: ${session.mode || 'jd'}
 Job Title: ${session.title || 'Technical Role'}
 Company Target: ${session.company || 'Target Company'}
 
@@ -1635,81 +1666,109 @@ ${transcriptText}
 
 Evaluate this interview transcript and respond with the exact JSON formatting structure requested.`;
 
-    let reportText = "";
-    try {
-      if (!process.env.GROQ_API_KEY || process.env.GROQ_API_KEY.trim() === "") {
-        throw new Error("GROQ_API_KEY is not configured on the server.");
+      let reportText = "";
+      try {
+        if (!process.env.GROQ_API_KEY || process.env.GROQ_API_KEY.trim() === "") {
+          throw new Error("GROQ_API_KEY is not configured on the server.");
+        }
+
+        reportText = await callWithRetry(() => callGroqChat(
+          systemPrompt,
+          userPrompt,
+          "llama-3.3-70b-versatile",
+          true // JSON Mode
+        ));
+      } catch (err) {
+        console.error("Groq API failed for interview audit:", err.message);
+        // Fallback local report responder
+        reportText = JSON.stringify({
+          score: 70,
+          wpm: 115,
+          fillerWords: 8,
+          hesitationDuration: "12 seconds",
+          correctnessFeedback: "API rate limit or connection issue. Local analysis suggests the candidate demonstrated baseline familiarity with requirements, but lacked detail. Check transcript details.",
+          clarityFeedback: "Response structures were acceptable but could be formulated with stronger metrics.",
+          qaAudit: session.transcript
+            .filter(t => t.sender === 'interviewer')
+            .map((q, idx) => {
+              const userAns = session.transcript.find((u, uidx) => uidx > idx && u.sender === 'candidate');
+              return {
+                question: q.text,
+                userResponse: userAns ? userAns.text : "No response recorded.",
+                critique: "The candidate answered but did not provide specific KPIs or architectural parameters.",
+                idealAnswer: "Incorporate system scale specs, specific technologies used, and state performance improvements."
+              };
+            })
+        });
       }
 
-      reportText = await callWithRetry(() => callGroqChat(
-        systemPrompt,
-        userPrompt,
-        "llama-3.3-70b-versatile",
-        true // JSON Mode
-      ));
-    } catch (err) {
-      console.error("Groq API failed for interview audit:", err.message);
-      // Fallback local report responder
-      reportText = JSON.stringify({
-        score: 70,
-        wpm: 115,
-        fillerWords: 8,
-        hesitationDuration: "12 seconds",
-        correctnessFeedback: "API rate limit or connection issue. Local analysis suggests the candidate demonstrated baseline familiarity with requirements, but lacked detail. Check transcript details.",
-        clarityFeedback: "Response structures were acceptable but could be formulated with stronger metrics.",
-        qaAudit: session.transcript
-          .filter(t => t.sender === 'interviewer')
-          .map((q, idx) => {
-            const userAns = session.transcript.find((u, uidx) => uidx > idx && u.sender === 'candidate');
-            return {
-              question: q.text,
-              userResponse: userAns ? userAns.text : "No response recorded.",
-              critique: "The candidate answered but did not provide specific KPIs or architectural parameters.",
-              idealAnswer: "Incorporate system scale specs, specific technologies used, and state performance improvements."
-            };
-          })
-      });
-    }
+      let reportJson = {};
+      try {
+        let cleanedText = reportText.trim();
+        cleanedText = cleanedText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+        reportJson = JSON.parse(cleanedText);
+      } catch (e) {
+        console.error("Failed to parse report JSON, serving fallback:", e);
+        reportJson = {
+          score: 65,
+          wpm: 100,
+          fillerWords: 10,
+          hesitationDuration: "10 seconds",
+          correctnessFeedback: "Failed to parse API output format. Please review transcript logs.",
+          clarityFeedback: "Review speech pacing manually.",
+          qaAudit: []
+        };
+      }
 
-    let reportJson = {};
-    try {
-      let cleanedText = reportText.trim();
-      cleanedText = cleanedText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
-      reportJson = JSON.parse(cleanedText);
-    } catch (e) {
-      console.error("Failed to parse report JSON, serving fallback:", e);
-      reportJson = {
-        score: 65,
-        wpm: 100,
-        fillerWords: 10,
-        hesitationDuration: "10 seconds",
-        correctnessFeedback: "Failed to parse API output format. Please review transcript logs.",
-        clarityFeedback: "Review speech pacing manually.",
-        qaAudit: []
+      // Re-read sessions from file before writing to prevent race-condition overwrite of other sessions
+      let freshSessions = [];
+      if (fs.existsSync(dbPath)) {
+        try {
+          freshSessions = JSON.parse(fs.readFileSync(dbPath, 'utf8') || '[]');
+        } catch (e) {
+          console.error("Error re-reading database sessions fallback:", e);
+        }
+      }
+      if (!Array.isArray(freshSessions)) {
+        freshSessions = [];
+      }
+
+      const freshSession = freshSessions.find(s => s.id === sessionId) || session;
+      freshSession.report = reportJson;
+
+      const sidx = freshSessions.findIndex(s => s.id === sessionId);
+      if (sidx >= 0) {
+        freshSessions[sidx] = freshSession;
+      } else {
+        freshSessions.push(freshSession);
+      }
+      fs.writeFileSync(dbPath, JSON.stringify(freshSessions, null, 2), 'utf8');
+
+      return {
+        success: true,
+        report: reportJson,
+        sessionDetails: {
+          id: freshSession.id,
+          mode: freshSession.mode,
+          title: freshSession.title,
+          company: freshSession.company,
+          transcript: freshSession.transcript
+        }
       };
-    }
+    })();
 
-    // Save the report back to session record in db_sessions_fallback.json
-    session.report = reportJson;
-    const sidx = sessions.findIndex(s => s.id === sessionId);
-    if (sidx >= 0) {
-      sessions[sidx] = session;
-    } else {
-      sessions.push(session);
-    }
-    fs.writeFileSync(dbPath, JSON.stringify(sessions, null, 2), 'utf8');
+    // Store the generation promise
+    activeReportPromises.set(sessionId, generateTask);
 
-    res.json({
-      success: true,
-      report: reportJson,
-      sessionDetails: {
-        id: session.id,
-        mode: session.mode,
-        title: session.title,
-        company: session.company,
-        transcript: session.transcript
-      }
-    });
+    try {
+      const result = await generateTask;
+      res.json(result);
+    } catch (err) {
+      console.error(`Report generation failed for session ${sessionId}:`, err);
+      res.status(500).json({ error: err.message || "Failed to generate report." });
+    } finally {
+      activeReportPromises.delete(sessionId);
+    }
 
   } catch (error) {
     console.error("Interview report generator endpoint error:", error);

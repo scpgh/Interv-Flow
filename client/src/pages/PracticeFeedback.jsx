@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import DashboardNavbar from '../components/DashboardNavbar';
 import Footer from '../components/Footer';
@@ -16,7 +16,15 @@ export default function PracticeFeedback() {
   const [session, setSession] = useState(null);
   const [report, setReport] = useState(null);
 
+  // Prevent duplicate fetching in React StrictMode double-mount
+  const fetchedSessionIdRef = useRef(null);
+
   useEffect(() => {
+    if (!sessionId || fetchedSessionIdRef.current === sessionId) {
+      return;
+    }
+    fetchedSessionIdRef.current = sessionId;
+
     const fetchReport = async () => {
       setLoading(true);
       setErrorMsg('');
@@ -60,6 +68,8 @@ export default function PracticeFeedback() {
       } catch (err) {
         console.error("Report loader error:", err);
         setErrorMsg(err.message || "Failed to retrieve interview metrics.");
+        // Clear ref on failure to allow retry
+        fetchedSessionIdRef.current = null;
       } finally {
         setLoading(false);
       }
