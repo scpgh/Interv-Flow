@@ -255,7 +255,7 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="bg-[#09090b] text-[#e5e1e4] min-h-screen flex flex-col relative overflow-x-hidden pt-16 font-body-md">
+    <div className="bg-[#09090b] text-[#e5e1e4] min-h-screen flex flex-col relative pt-16 font-body-md">
       {/* Background radial atmosphere glow */}
       <div className="fixed inset-0 pointer-events-none z-0 bg-radial-gradient"></div>
 
@@ -266,8 +266,8 @@ export default function Dashboard() {
       <div className="flex flex-1 pt-2 max-w-[1400px] mx-auto w-full px-6 gap-gutter z-10 relative">
         
         {/* Left Sidebar (Desktop only) */}
-        <aside className="hidden lg:flex w-64 flex-col gap-2 shrink-0">
-          <div className="glass-card rounded-xl p-4 sticky top-16">
+        <aside className="hidden lg:flex w-64 flex-col gap-2 shrink-0 sticky top-20 h-fit">
+          <div className="glass-card rounded-xl p-4">
             <nav className="flex flex-col gap-2">
               <button 
                 onClick={() => setActiveSidebarTab("dashboard")}

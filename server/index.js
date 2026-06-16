@@ -1630,13 +1630,17 @@ app.post('/api/interview/report', async (req, res) => {
       if (!transcriptText || session.transcript.length === 0) {
         throw new Error("Cannot analyze an empty interview transcript.");
       }
-
       console.log(`Generating feedback report for session ${sessionId} with ${session.transcript.length} turns...`);
 
       // Prepare system instructions for Groq analysis
-      const systemPrompt = `You are a senior technical interviewer and communication coach auditing a completed interview transcript.
-Analyze the conversation transcript between the candidate and the interviewer. 
-Calculate metrics and evaluate performance strictly.
+      const systemPrompt = `You are an elite, highly critical senior technical interviewer and principal engineer auditing a completed interview transcript.
+Analyze the conversation transcript between the candidate and the interviewer.
+Calculate metrics and evaluate performance strictly:
+1. You must grade VERY CRITICALLY and STRICTLY. Do not hand out high scores easily. Average answers should get around 40-60. Excellent answers should get 75-85. Outstanding answers 85+.
+2. If the candidate gives unnecessary, irrelevant, vague, off-topic, or filler-filled answers, penalize them heavily.
+3. CRITICAL PENALTY FOR UNNECESSARY OR MEDIOCRE ANSWERS: If a candidate response is irrelevant, empty, off-topic, waffling, or repeating the question without real technical depth, you MUST grade that turn extremely low (score of 0-30 for that turn) and pull down the overall score significantly. Even if the text seems long, if it doesn't answer the question correctly or says unnecessary things, mark it as poor.
+4. Evaluate correctness against real software engineering principles, system architecture designs, and technical accuracy. If they waffle or ramble without concrete facts, grade it as poor.
+5. The overall "score" (0-100) must reflect the exact average quality of their answers. If their response is irrelevant or empty, give a score of 0-30 for that turn.
 
 You must output a valid JSON object matching the exact structure below. Do not wrap in markdown or prefix/suffix the response. Renders MUST be pure, valid JSON:
 {
@@ -1699,14 +1703,13 @@ Evaluate this interview transcript and respond with the exact JSON formatting st
           reportText = result.response.text();
         } catch (geminiErr) {
           console.error("Gemini fallback also failed for interview audit:", geminiErr.message);
-          // Fallback local report responder as absolute last resort
           reportText = JSON.stringify({
-            score: 70,
-            wpm: 115,
-            fillerWords: 8,
-            hesitationDuration: "12 seconds",
-            correctnessFeedback: "API rate limit or connection issue. Local analysis suggests the candidate demonstrated baseline familiarity with requirements, but lacked detail. Check transcript details.",
-            clarityFeedback: "Response structures were acceptable but could be formulated with stronger metrics.",
+            score: 50,
+            wpm: 100,
+            fillerWords: 12,
+            hesitationDuration: "15 seconds",
+            correctnessFeedback: "API rate limit or connection issue. Local analysis fallback activated. Baseline grading applied. Detailed AI evaluation could not be run.",
+            clarityFeedback: "Response structures could not be analyzed dynamically.",
             qaAudit: session.transcript
               .filter(t => t.sender === 'interviewer')
               .map((q, idx) => {
@@ -1730,10 +1733,10 @@ Evaluate this interview transcript and respond with the exact JSON formatting st
       } catch (e) {
         console.error("Failed to parse report JSON, serving fallback:", e);
         reportJson = {
-          score: 65,
+          score: 45,
           wpm: 100,
-          fillerWords: 10,
-          hesitationDuration: "10 seconds",
+          fillerWords: 12,
+          hesitationDuration: "15 seconds",
           correctnessFeedback: "Failed to parse API output format. Please review transcript logs.",
           clarityFeedback: "Review speech pacing manually.",
           qaAudit: []
