@@ -461,7 +461,7 @@ export default function ResumeAnalyzer() {
       <DashboardNavbar activeTab="resume" />
 
       {/* Main Content container */}
-      <main className="flex-grow flex flex-col items-center justify-start w-full max-w-[1400px] mx-auto px-6 py-12 md:py-20 z-10 relative">
+      <main className="flex-grow flex flex-col items-center justify-start w-full max-w-[1400px] mx-auto px-6 pt-2 pb-12 md:pt-4 md:pb-20 z-10 relative">
         
         {/* Hero Banner Section */}
         <section className="max-w-4xl w-full text-center mb-16 flex flex-col items-center">

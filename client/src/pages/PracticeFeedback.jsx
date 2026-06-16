@@ -131,7 +131,7 @@ export default function PracticeFeedback() {
       <DashboardNavbar activeTab={activeNavTab} setActiveTab={setActiveNavTab} />
 
       {/* Main Container */}
-      <main className="flex-grow max-w-[1400px] mx-auto w-full px-6 py-8 z-10 relative flex flex-col gap-8">
+      <main className="flex-grow max-w-[1400px] mx-auto w-full px-6 pt-2 pb-8 z-10 relative flex flex-col gap-8">
         
         {/* Header Title Section */}
         <section className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-6">

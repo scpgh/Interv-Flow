@@ -263,11 +263,11 @@ export default function Dashboard() {
       <DashboardNavbar activeTab={activeNavTab} setActiveTab={setActiveNavTab} />
 
       {/* ── Main Dashboard Layout Container ── */}
-      <div className="flex flex-1 pt-8 max-w-[1400px] mx-auto w-full px-6 gap-gutter z-10 relative">
+      <div className="flex flex-1 pt-2 max-w-[1400px] mx-auto w-full px-6 gap-gutter z-10 relative">
         
         {/* Left Sidebar (Desktop only) */}
         <aside className="hidden lg:flex w-64 flex-col gap-2 shrink-0">
-          <div className="glass-card rounded-xl p-4 sticky top-24">
+          <div className="glass-card rounded-xl p-4 sticky top-20">
             <nav className="flex flex-col gap-2">
               <button 
                 onClick={() => setActiveSidebarTab("dashboard")}
