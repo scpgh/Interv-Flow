@@ -1431,6 +1431,7 @@ app.post('/api/interview/transcribe', upload.single('audio'), async (req, res) =
         const blob = new Blob([audioBuffer], { type: mimeType });
         formData.append('file', blob, filename);
         formData.append('model', 'whisper-large-v3');
+        formData.append('language', 'en');
 
         console.log("Calling Groq Whisper transcription API...");
         const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
@@ -1471,7 +1472,7 @@ app.post('/api/interview/transcribe', upload.single('audio'), async (req, res) =
                 data: base64Audio
               }
             },
-            "Transcribe this spoken response exactly as heard. If there is no speech or it is silent, respond with an empty string. Do not include any explanations, headers, formatting, or prefixes."
+            "Transcribe this spoken response exactly as heard in English. If there is no speech or it is silent, respond with an empty string. Do not include any explanations, headers, formatting, or prefixes."
           ]);
         });
 
