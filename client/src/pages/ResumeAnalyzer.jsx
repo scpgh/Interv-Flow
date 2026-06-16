@@ -340,6 +340,7 @@ export default function ResumeAnalyzer() {
       setProgress(100);
       setStatusLabel('Analysis complete!');
       setApiData(data);
+      sessionStorage.setItem('resumeAnalysisResult', JSON.stringify(data));
 
       if (data.generalQuestions && data.technicalQuestions) {
         sessionStorage.setItem('generatedQuestions', JSON.stringify({

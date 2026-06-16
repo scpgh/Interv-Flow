@@ -11,6 +11,7 @@ import PracticeFeedback from './pages/PracticeFeedback';
 import ProtectedRoute from './components/ProtectedRoute';
 import Community from './pages/Community';
 import Billing from './pages/Billing';
+import Analytics from './pages/Analytics';
 
 export default function App() {
   return (
@@ -50,6 +51,11 @@ export default function App() {
         <Route path="/practice/feedback/:sessionId" element={
           <ProtectedRoute>
             <PracticeFeedback />
+          </ProtectedRoute>
+        } />
+        <Route path="/analytics" element={
+          <ProtectedRoute>
+            <Analytics />
           </ProtectedRoute>
         } />
         <Route path="/community" element={

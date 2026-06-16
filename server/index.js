@@ -73,11 +73,20 @@ async function callWithRetry(fn, maxRetries = 5, baseDelay = 1000) {
   }
 }
 
-// Helper for calling Groq completions API
+// Helper for calling Groq completions API with multi-key fallback
+// Reads GROQ_API_KEY, GROQ_API_KEY_2, GROQ_API_KEY_3 … from .env
 async function callGroqChat(systemPrompt, userPrompt, modelName = "llama-3.3-70b-versatile", jsonMode = false) {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    throw new Error("GROQ_API_KEY is missing in server/.env");
+  // Collect all configured API keys in order
+  const apiKeys = [
+    process.env.GROQ_API_KEY,
+    process.env.GROQ_API_KEY_2,
+    process.env.GROQ_API_KEY_3,
+    process.env.GROQ_API_KEY_4,
+    process.env.GROQ_API_KEY_5,
+  ].filter(k => k && k.trim() !== "");
+
+  if (apiKeys.length === 0) {
+    throw new Error("No Groq API keys are configured. Please add GROQ_API_KEY (and optionally GROQ_API_KEY_2, GROQ_API_KEY_3) to server/.env");
   }
 
   const requestBody = {
@@ -93,27 +102,75 @@ async function callGroqChat(systemPrompt, userPrompt, modelName = "llama-3.3-70b
     requestBody.response_format = { type: "json_object" };
   }
 
-  console.log(`Calling Groq API (model: ${modelName}, jsonMode: ${jsonMode})...`);
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey.trim()}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(requestBody)
-  });
+  let lastError = null;
+  // Try each key; on rate-limit (429) or quota error, rotate to the next key
+  for (let keyIdx = 0; keyIdx < apiKeys.length; keyIdx++) {
+    const apiKey = apiKeys[keyIdx];
+    const keyLabel = keyIdx === 0 ? "GROQ_API_KEY" : `GROQ_API_KEY_${keyIdx + 1}`;
+    console.log(`Calling Groq API with ${keyLabel} (model: ${modelName}, jsonMode: ${jsonMode})...`);
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Groq API error (status ${response.status}): ${errorText}`);
+    // Allow up to 2 retries per key before rotating
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiKey.trim()}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          const isRateLimit = response.status === 429 ||
+            errorText.includes("Rate limit") ||
+            errorText.includes("quota") ||
+            errorText.includes("exhausted");
+
+          if (isRateLimit) {
+            console.warn(`${keyLabel} hit rate limit (attempt ${attempt + 1}/2). ${keyIdx + 1 < apiKeys.length ? 'Rotating to next key...' : 'No more keys.'}`);
+            lastError = new Error(`Groq rate limit on ${keyLabel}: ${errorText}`);
+            // Break retry loop to try next key
+            break;
+          }
+          throw new Error(`Groq API error with ${keyLabel} (status ${response.status}): ${errorText}`);
+        }
+
+        const data = await response.json();
+        if (!data.choices || data.choices.length === 0) {
+          throw new Error(`Groq API returned an empty completion response with ${keyLabel}.`);
+        }
+
+        if (keyIdx > 0) {
+          console.log(`Succeeded using fallback ${keyLabel}.`);
+        }
+        return data.choices[0].message.content;
+
+      } catch (err) {
+        const isRateLimit = err.message && (
+          err.message.includes("429") ||
+          err.message.includes("Rate limit") ||
+          err.message.includes("quota") ||
+          err.message.includes("exhausted")
+        );
+        if (isRateLimit) {
+          lastError = err;
+          break; // rotate key
+        }
+        // Non-rate-limit error — retry once then propagate
+        if (attempt === 0) {
+          console.warn(`${keyLabel} transient error, retrying... (${err.message})`);
+          await new Promise(r => setTimeout(r, 500));
+        } else {
+          throw err;
+        }
+      }
+    }
   }
 
-  const data = await response.json();
-  if (!data.choices || data.choices.length === 0) {
-    throw new Error("Groq API returned an empty completion response.");
-  }
-
-  return data.choices[0].message.content;
+  // All keys exhausted
+  throw lastError || new Error("All Groq API keys are exhausted or rate-limited. Please add more keys or wait.");
 }
 
 // Configure Multer for in-memory file uploads
@@ -386,21 +443,25 @@ function fallbackResumeAnalysis(resumeText, domain) {
 
   const keywordRatio = targetKeywords.length > 0 ? foundKeywords.length / targetKeywords.length : 0.2;
   
-  // Calculate base score on keywords
-  let baseATS = Math.round(30 + keywordRatio * 50); // range 30 to 80
-  let baseMatch = Math.round(30 + keywordRatio * 60); // range 30 to 90
+  // Calculate base score on keywords — deliberately conservative so scores feel realistic
+  let baseATS = Math.round(20 + keywordRatio * 42); // range 20 to 62
+  let baseMatch = Math.round(20 + keywordRatio * 50); // range 20 to 70
   
-  // Adjust based on experience
+  // Adjust based on experience — freshers and juniors score markedly lower
   if (experienceYears === "0 Yrs") {
-    baseATS = Math.max(30, baseATS - 10);
-    baseMatch = Math.max(30, baseMatch - 15);
-  } else if (experienceYears.includes("0.5") || experienceYears.includes("1 ")) {
-    baseATS = Math.max(30, baseATS - 5);
-    baseMatch = Math.max(30, baseMatch - 10);
+    baseATS = Math.max(20, baseATS - 12);
+    baseMatch = Math.max(20, baseMatch - 18);
+  } else if (experienceYears.includes("0.5") || experienceYears.startsWith("1 ")) {
+    baseATS = Math.max(25, baseATS - 8);
+    baseMatch = Math.max(25, baseMatch - 12);
+  } else if (experienceYears.startsWith("2 ") || experienceYears.startsWith("2.")) {
+    baseATS = Math.max(30, baseATS - 4);
+    baseMatch = Math.max(30, baseMatch - 6);
   }
   
-  const atsScore = Math.min(95, Math.max(30, baseATS));
-  const roleMatch = Math.min(98, Math.max(30, baseMatch));
+  // Hard cap at 72 for local fallback (real AI can score higher if truly warranted)
+  const atsScore = Math.min(72, Math.max(20, baseATS));
+  const roleMatch = Math.min(78, Math.max(20, baseMatch));
 
   const fallbackCritiqueData = {
     backend: {
@@ -1040,11 +1101,19 @@ You must perform a deep, individualized, and highly context-specific comparison 
 
 ${domainExpectationsPrompt}
 
-Evaluate the resume and calculate a realistic, critical ATS score between 30 and 95. Be highly critical and objective:
-- Freshers/students or weak resumes with no professional experience should score between 30 and 55.
-- An average resume should score between 40 and 70.
-- Do NOT output high scores (e.g. 80-90+) unless the resume is exceptionally well-tailored, quantified with Google XYZ formula metrics, and free of typos/layout issues.
-- Calculate the score realistically: deduct points for each typo, layout risk, unquantified metric, or missing core domain technology.
+Evaluate the resume and calculate a STRICTLY REALISTIC, critical ATS score between 20 and 92. Calibration rules:
+- Student/fresher resumes (0-1 year experience, projects only): 20–45.
+- Junior professional (1-2 years, lacks quantified metrics): 35–55.
+- Average candidate (2-4 years, some quantification, minor formatting issues): 45–65.
+- Good candidate (4+ years, several quantified bullets, clean formatting): 60–75.
+- Excellent/FAANG-ready (well-quantified, XYZ formula, no typos, clean single-column): 76–92.
+- NEVER score above 92 under any circumstance.
+- DEDUCT 5 points for every typo in a key technology name (e.g. "Kubernetes" spelled wrong).
+- DEDUCT 5-10 points for each unquantified accomplishment bullet ("improved performance" without %).
+- DEDUCT 10 points if multi-column or table-based layout is detected.
+- DEDUCT 5 points if no GitHub/LinkedIn/portfolio link is present.
+- DEDUCT 10–20 points if the candidate's domain background heavily mismatches the target role.
+- Do NOT inflate scores — when in doubt, score lower rather than higher.
 
 Return your analysis strictly as a JSON object matching this schema:
 {
@@ -1088,9 +1157,10 @@ ${resumeText}
 
 IMPORTANT: Return ONLY the raw valid JSON string. Do not wrap the JSON object in markdown blocks (like \`\`\`json ... \`\`\`) or include any introductory/concluding explanations. The response must be directly parsable by JSON.parse() in Javascript.`;
 
-    // Call Groq directly — no fallbacks
-    if (!process.env.GROQ_API_KEY || process.env.GROQ_API_KEY.trim() === "") {
-      return res.status(503).json({ error: "GROQ_API_KEY is not configured on the server. Please add it to server/.env and restart." });
+    // Verify at least one Groq key is available before calling
+    const hasAnyGroqKey = [process.env.GROQ_API_KEY, process.env.GROQ_API_KEY_2, process.env.GROQ_API_KEY_3, process.env.GROQ_API_KEY_4, process.env.GROQ_API_KEY_5].some(k => k && k.trim());
+    if (!hasAnyGroqKey) {
+      return res.status(503).json({ error: "No Groq API keys configured on the server. Please add GROQ_API_KEY (and optionally GROQ_API_KEY_2, GROQ_API_KEY_3) to server/.env and restart." });
     }
 
     try {

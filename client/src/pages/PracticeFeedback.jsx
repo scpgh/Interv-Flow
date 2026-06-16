@@ -304,8 +304,8 @@ export default function PracticeFeedback() {
             <h2 className="font-headline-md text-headline-md text-white font-bold">Full Interview Transcript</h2>
           </div>
 
-          <div className="glass-card rounded-2xl bg-[#18181b]/35 border border-white/10">
-            <div className="p-6 max-h-[500px] overflow-y-auto space-y-4 custom-scrollbar text-xs leading-relaxed pr-2">
+          <div className="glass-card rounded-2xl bg-[#18181b]/35 border border-white/10 py-6 pl-6 pr-4">
+            <div className="max-h-[500px] overflow-y-auto space-y-4 custom-scrollbar text-xs leading-relaxed pr-2">
               {session.transcript && session.transcript.length > 0 ? (
                 session.transcript.map((item, index) => (
                   <div 

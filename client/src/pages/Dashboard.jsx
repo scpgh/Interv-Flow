@@ -4,6 +4,120 @@ import DashboardNavbar from '../components/DashboardNavbar';
 import Footer from '../components/Footer';
 import Chatbot from '../components/Chatbot';
 
+const critiqueData = {
+  backend: {
+    grammar: [
+      { id: "g1", type: "error", title: "Casing & Typos", text: 'Inconsistent spelling of frameworks: "Nodejs" instead of "Node.js" and "postgres" instead of "PostgreSQL".' },
+      { id: "g2", type: "error", title: "Missing Orchestration Typo", text: 'Misspelled orchestration tool: "Kubernets" detected in Project 2 experience list.' }
+    ],
+    technical: [
+      { id: "t1", type: "error", title: "Missing Scale Patterns", text: 'Lacks mentions of horizontal scaling patterns: sharding, consistent hashing, caching (Redis), or message queues (Kafka).' },
+      { id: "t2", type: "warning", title: "API Standards Vague", text: 'Uses generic "created API endpoints" instead of specifying standards like REST, GraphQL, or gRPC.' }
+    ],
+    impact: [
+      { id: "i1", type: "error", title: "Non-Quantified Outcomes", text: 'Under "Optimized SQL queries," fails Google XYZ formula. Quantify query latency reduction (e.g., "Reduced database latency by 42%").' }
+    ],
+    formatting: [
+      { id: "f1", type: "error", title: "Multi-Column Layout Risk", text: 'Dual-column layout detected. Standard ATS parsers read horizontally, causing text merging.' }
+    ],
+    gapAdvice: "Your resume is missing distributed scale patterns (caching/queues) and database optimization metrics.",
+    atsKeywords: ["Distributed Systems", "Redis Cache", "gRPC / REST", "Kafka Streams", "CI/CD Setup"]
+  },
+  frontend: {
+    grammar: [
+      { id: "g1", type: "error", title: "Casing & Typos", text: 'Inconsistent branding: "Reactjs" instead of "React", and "typescript" instead of "TypeScript".' }
+    ],
+    technical: [
+      { id: "t1", type: "error", title: "Vague State Management", text: 'React profile lacks details on state management tools (Zustand, Redux Toolkit, Context API) used for complex states.' },
+      { id: "t2", type: "error", title: "No Performance Metrics", text: 'Lacks references to frontend performance tuning: Core Web Vitals, code-splitting, or lazy-loading.' }
+    ],
+    impact: [
+      { id: "i1", type: "error", title: "Unquantified Page Speed", text: 'Bullet point says "Improved website speed." Convert to: "Decreased initial bundle size by 35%, leading to a 1.2s improvement in TTI".' }
+    ],
+    formatting: [
+      { id: "f1", type: "error", title: "Skill Rating Progress Bars", text: 'Using progress bars to rate skills is unparseable by ATS and wastes space.' }
+    ],
+    gapAdvice: "Frontend speed metrics and global state management specifications are missing from the resume profile.",
+    atsKeywords: ["Core Web Vitals", "Zustand / Redux", "Code Splitting", "Webpack / Vite", "Responsive UI"]
+  },
+  fullstack: {
+    grammar: [
+      { id: "g1", type: "error", title: "Casing & Typos", text: 'Casing errors: "javascript" instead of "JavaScript", and "mongodb" instead of "MongoDB".' }
+    ],
+    technical: [
+      { id: "t1", type: "error", title: "Rendering Paradigm Vague", text: 'Lacks description of SSR/SSG/ISR rendering paradigms when detailing Next.js implementations.' },
+      { id: "t2", type: "warning", title: "No Database Schema Context", text: 'Mentions databases but doesn\'t specify modeling choices (e.g. relational normalization).' }
+    ],
+    impact: [
+      { id: "i1", type: "error", title: "Weak Collaboration Verb", text: 'Passive verb "Assisted in code reviews" found. Replace with: "Orchestrated pull-request quality gates".' }
+    ],
+    formatting: [
+      { id: "f1", type: "error", title: "OCR Blocking Dividers", text: 'Horizontal divider lines and colored header banners block OCR scans.' }
+    ],
+    gapAdvice: "Include full-stack volume metrics and specify rendering paths (SSR/ISR) used in Next.js projects.",
+    atsKeywords: ["Next.js SSR/ISR", "Database Modeling", "CI/CD Actions", "AWS Pipelines", "Tailwind CSS"]
+  },
+  se: {
+    grammar: [
+      { id: "g1", type: "error", title: "Casing Consistency", text: 'Review casing of technologies like "SQL" and "Git".' }
+    ],
+    technical: [
+      { id: "t1", type: "error", title: "Design Patterns Missing", text: 'Needs description of backend design patterns (e.g. MVC, repository pattern) used in projects.' },
+      { id: "t2", type: "warning", title: "Testing Methodologies Absent", text: 'Lacks mention of testing frameworks (Jest, PyTest, JUnit) and code coverage.' }
+    ],
+    impact: [
+      { id: "i1", type: "error", title: "Unquantified Project Impact", text: 'Use Google XYZ formula: instead of "built dashboard", use "built dashboard, reducing data fetch latency by 20%".' }
+    ],
+    formatting: [
+      { id: "f1", type: "error", title: "Unparseable Graphic Elements", text: 'Remove styling elements like stars or progress bars that break parser logic.' }
+    ],
+    gapAdvice: "Incorporate software testing practices (unit/integration tests) and show quantitative impact (XYZ formula).",
+    atsKeywords: ["Algorithms & DS", "Design Patterns", "Unit & Integration Test", "SQL Optimizations", "Git Flow"]
+  },
+  ml: {
+    grammar: [
+      { id: "g1", type: "warning", title: "AI Framework Casing", text: 'Make sure terms like "PyTorch" and "TensorFlow" are capitalized correctly.' }
+    ],
+    technical: [
+      { id: "t1", type: "error", title: "Model Serving Details Missing", text: 'Lacks reference to serving tools used in production (e.g. FastAPI, ONNX, Triton, or Docker).' }
+    ],
+    impact: [
+      { id: "i1", type: "error", title: "Unquantified Model Performance", text: 'Fails XYZ formula: "Built prediction systems" should show model performance (e.g. F1-score uplift by 12%).' }
+    ],
+    formatting: [
+      { id: "f1", type: "error", title: "Math Symbols Rendering Issues", text: 'Complex LaTeX symbols (like ∑ or β) in body text fail ATS translation.' }
+    ],
+    gapAdvice: "Add model deployment details (MLOps) and model evaluation metrics (accuracy, F1-score) to your experience.",
+    atsKeywords: ["MLOps (Triton/FastAPI)", "Hyperparameter Tuning", "Deep Learning", "PyTorch / TensorFlow", "F1 / ROC-AUC Metrics"]
+  },
+  pm: {
+    grammar: [
+      { id: "g1", type: "warning", title: "Terminology Casing", text: 'Ensure terms like "Scrum" and "Agile" are capitalized.' }
+    ],
+    technical: [
+      { id: "t1", type: "error", title: "Metric Tracking Details", text: 'Lacks references to specific metric tracking structures: burndown charts or OKR mapping.' },
+      { id: "t2", type: "warning", title: "Analytics Stack Missing", text: 'PMs need data. Mention analytics tools like SQL, Amplitude, or Mixpanel.' }
+    ],
+    impact: [
+      { id: "i1", type: "error", title: "Weak Action Verbs", text: 'Passive verb "Led meetings" found. Replace with: "Orchestrated cross-functional roadmaps".' }
+    ],
+    formatting: [
+      { id: "f1", type: "error", title: "Floating Text Frames", text: 'Floating text boxes/frames are skipped entirely by standard ATS engines.' }
+    ],
+    gapAdvice: "Highlight product metrics (conversions, retention, user growth) and data analysis skills (SQL/Mixpanel).",
+    atsKeywords: ["Product Strategy", "Agile / Scrum", "SQL / Amplitude", "User Research & PRD", "A/B Test Funnels"]
+  }
+};
+
+const roleMapping = {
+  backend: { title: "Senior Backend Engineer", match: "94%" },
+  frontend: { title: "Senior Frontend Engineer", match: "89%" },
+  fullstack: { title: "Senior Full-Stack Engineer", match: "95%" },
+  se: { title: "Senior Software Engineer (General)", match: "92%" },
+  ml: { title: "Machine Learning / AI Engineer", match: "65%" },
+  pm: { title: "Technical Product Manager", match: "70%" }
+};
+
 export default function Dashboard() {
   const navigate = useNavigate();
   
@@ -11,6 +125,9 @@ export default function Dashboard() {
   const [userName, setUserName] = useState("Chaitanya");
   const [userDomain, setUserDomain] = useState("se");
   const [atsScore, setAtsScore] = useState("84");
+  const [userExperience, setUserExperience] = useState("0 Yrs");
+  const [userEducation, setUserEducation] = useState("B.S. Computer Science");
+  const [userDreamCompany, setUserDreamCompany] = useState("Google");
   const [activeSidebarTab, setActiveSidebarTab] = useState("dashboard");
   
   // Navbar active tab state (for active class matching)
@@ -26,13 +143,37 @@ export default function Dashboard() {
   const [averageMockScore, setAverageMockScore] = useState(null);
   const [totalSpeechHours, setTotalSpeechHours] = useState("0");
 
-  const handleSaveSettings = (newName, newDomain, newATS) => {
+  const handleSaveSettings = (newName, newDomain, newATS, newExperience, newEducation, newDreamCompany) => {
     setUserName(newName);
     setUserDomain(newDomain);
     setAtsScore(newATS);
+    setUserExperience(newExperience);
+    setUserEducation(newEducation);
+    setUserDreamCompany(newDreamCompany);
+    
     sessionStorage.setItem('userName', newName);
     sessionStorage.setItem('userDomain', newDomain);
     sessionStorage.setItem('userATS', newATS);
+    sessionStorage.setItem('userExperience', newExperience);
+    sessionStorage.setItem('userEducation', newEducation);
+    sessionStorage.setItem('userTargetCompany', newDreamCompany);
+
+    const rMap = roleMapping[newDomain] || roleMapping.fullstack;
+    sessionStorage.setItem('userMatch', rMap.match);
+
+    const cachedAnalysis = sessionStorage.getItem('resumeAnalysisResult');
+    if (cachedAnalysis) {
+      try {
+        const parsed = JSON.parse(cachedAnalysis);
+        parsed.candidateName = newName;
+        parsed.atsScore = parseInt(newATS);
+        parsed.experienceYears = newExperience;
+        parsed.highestEducation = newEducation;
+        parsed.roleMatch = parseInt(rMap.match.replace('%', ''));
+        sessionStorage.setItem('resumeAnalysisResult', JSON.stringify(parsed));
+      } catch (e) {}
+    }
+
     alert("Settings saved successfully!");
   };
 
@@ -80,9 +221,16 @@ export default function Dashboard() {
     const name = sessionStorage.getItem('userName');
     const domain = sessionStorage.getItem('userDomain') || 'fullstack';
     const cachedATS = sessionStorage.getItem('userATS');
+    const exp = sessionStorage.getItem('userExperience') || '0 Yrs';
+    const edu = sessionStorage.getItem('userEducation') || 'B.S. Computer Science';
+    const company = sessionStorage.getItem('userTargetCompany') || 'Google';
+
     if (name) setUserName(name);
     if (domain) setUserDomain(domain);
     if (cachedATS) setAtsScore(cachedATS);
+    if (exp) setUserExperience(exp);
+    if (edu) setUserEducation(edu);
+    if (company) setUserDreamCompany(company);
 
     const cachedQuestions = sessionStorage.getItem('generatedQuestions');
     if (cachedQuestions) {
@@ -252,7 +400,61 @@ export default function Dashboard() {
     setGeneralQuestions(defaultQuestions.general);
     setTechnicalQuestions(defaultQuestions.technical);
     setHasScanQuestions(false);
-  }, []);
+  }, [userDomain, atsScore, userName, userExperience, userEducation, userDreamCompany]);
+
+  // Get combined resume and interview analysis data
+  const getResumeAnalysis = () => {
+    const cachedAnalysis = sessionStorage.getItem('resumeAnalysisResult');
+    if (cachedAnalysis) {
+      try {
+        return JSON.parse(cachedAnalysis);
+      } catch (e) {}
+    }
+    
+    // Fallback based on domain
+    const dKey = (userDomain || 'fullstack').toLowerCase();
+    const expectations = critiqueData[dKey] || critiqueData.fullstack;
+    const ats = atsScore || (dKey === 'backend' ? '88' : dKey === 'frontend' ? '84' : dKey === 'pm' ? '68' : '90');
+    const rMap = roleMapping[dKey] || roleMapping.fullstack;
+    const name = userName || 'Chaitanya';
+    const edu = userEducation || 'B.S. Computer Science';
+    const exp = userExperience || '0 Yrs';
+    
+    return {
+      atsScore: parseInt(ats),
+      roleMatch: parseInt(rMap.match.replace('%', '')),
+      candidateName: name,
+      highestEducation: edu,
+      experienceYears: exp,
+      critique: {
+        grammar: expectations.grammar || [],
+        technical: expectations.technical || [],
+        impact: expectations.impact || [],
+        formatting: expectations.formatting || []
+      },
+      gapAdvice: expectations.gapAdvice || "",
+      atsKeywords: expectations.atsKeywords || []
+    };
+  };
+
+  // Sync navbar tabs with sidebar tabs
+  useEffect(() => {
+    if (activeNavTab === 'analytics') {
+      setActiveSidebarTab('performance');
+    } else if (activeNavTab === 'dashboard') {
+      setActiveSidebarTab('dashboard');
+    }
+  }, [activeNavTab]);
+
+  useEffect(() => {
+    if (activeSidebarTab === 'performance') {
+      setActiveNavTab('analytics');
+    } else if (activeSidebarTab === 'dashboard') {
+      setActiveNavTab('dashboard');
+    } else {
+      setActiveNavTab('dashboard');
+    }
+  }, [activeSidebarTab]);
 
   return (
     <div className="bg-[#09090b] text-[#e5e1e4] min-h-screen flex flex-col relative pt-16 font-body-md">
@@ -284,8 +486,8 @@ export default function Dashboard() {
                 Recent Sessions
               </button>
               <button 
-                onClick={() => setActiveSidebarTab("performance")}
-                className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-lg font-body-md text-body-md transition-all cursor-pointer ${activeSidebarTab === "performance" ? 'text-primary bg-white/5 border-r-2 border-primary' : 'text-on-surface-variant hover:text-white hover:bg-white/5'}`}
+                onClick={() => navigate('/analytics')}
+                className="flex items-center gap-3 w-full text-left px-4 py-3 rounded-lg font-body-md text-body-md transition-all cursor-pointer text-on-surface-variant hover:text-white hover:bg-white/5"
               >
                 <span className="material-symbols-outlined">analytics</span>
                 Performance
