@@ -1680,27 +1680,46 @@ Evaluate this interview transcript and respond with the exact JSON formatting st
           true // JSON Mode
         ));
       } catch (err) {
-        console.error("Groq API failed for interview audit:", err.message);
-        // Fallback local report responder
-        reportText = JSON.stringify({
-          score: 70,
-          wpm: 115,
-          fillerWords: 8,
-          hesitationDuration: "12 seconds",
-          correctnessFeedback: "API rate limit or connection issue. Local analysis suggests the candidate demonstrated baseline familiarity with requirements, but lacked detail. Check transcript details.",
-          clarityFeedback: "Response structures were acceptable but could be formulated with stronger metrics.",
-          qaAudit: session.transcript
-            .filter(t => t.sender === 'interviewer')
-            .map((q, idx) => {
-              const userAns = session.transcript.find((u, uidx) => uidx > idx && u.sender === 'candidate');
-              return {
-                question: q.text,
-                userResponse: userAns ? userAns.text : "No response recorded.",
-                critique: "The candidate answered but did not provide specific KPIs or architectural parameters.",
-                idealAnswer: "Incorporate system scale specs, specific technologies used, and state performance improvements."
-              };
-            })
-        });
+        console.error("Groq API failed for interview audit, attempting Gemini fallback:", err.message);
+        try {
+          if (!ai) {
+            throw new Error("Gemini AI client instance is not initialized.");
+          }
+          console.log("Calling Gemini 2.0 Flash fallback for interview report generation...");
+          const model = ai.getGenerativeModel({ 
+            model: "gemini-2.0-flash",
+            generationConfig: { responseMimeType: "application/json" }
+          });
+          const result = await callWithRetry(async () => {
+            return await model.generateContent([
+              systemPrompt,
+              userPrompt
+            ]);
+          });
+          reportText = result.response.text();
+        } catch (geminiErr) {
+          console.error("Gemini fallback also failed for interview audit:", geminiErr.message);
+          // Fallback local report responder as absolute last resort
+          reportText = JSON.stringify({
+            score: 70,
+            wpm: 115,
+            fillerWords: 8,
+            hesitationDuration: "12 seconds",
+            correctnessFeedback: "API rate limit or connection issue. Local analysis suggests the candidate demonstrated baseline familiarity with requirements, but lacked detail. Check transcript details.",
+            clarityFeedback: "Response structures were acceptable but could be formulated with stronger metrics.",
+            qaAudit: session.transcript
+              .filter(t => t.sender === 'interviewer')
+              .map((q, idx) => {
+                const userAns = session.transcript.find((u, uidx) => uidx > idx && u.sender === 'candidate');
+                return {
+                  question: q.text,
+                  userResponse: userAns ? userAns.text : "No response recorded.",
+                  critique: "The candidate answered but did not provide specific KPIs or architectural parameters.",
+                  idealAnswer: "Incorporate system scale specs, specific technologies used, and state performance improvements."
+                };
+              })
+          });
+        }
       }
 
       let reportJson = {};

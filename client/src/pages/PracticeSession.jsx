@@ -930,7 +930,6 @@ export default function PracticeSession() {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(timer);
-          handleCompleteSession();
           return 0;
         }
         return prev - 1;
@@ -939,6 +938,13 @@ export default function PracticeSession() {
 
     return () => clearInterval(timer);
   }, [step, isPaused]);
+
+  // Handle completion when countdown timer runs out
+  useEffect(() => {
+    if (step === 'active' && timeLeft === 0) {
+      handleCompleteSession();
+    }
+  }, [timeLeft, step]);
 
   // ── Session Teardown & Redirect to Feedback Report ──
   const handleCompleteSession = async () => {
@@ -971,8 +977,12 @@ export default function PracticeSession() {
     if (sourceNodeRef.current) {
       try { sourceNodeRef.current.stop(); } catch (e) {}
     }
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      try {
+        audioContextRef.current.close().catch(e => console.error("Error closing AudioContext:", e));
+      } catch (e) {
+        console.error("AudioContext close exception:", e);
+      }
     }
 
     // 3. Clear timers
