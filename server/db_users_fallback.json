@@ -1,0 +1,44 @@
+[
+  {
+    "createdAt": "2026-06-09T18:10:33.082Z",
+    "name": "Test User",
+    "email": "test@example.com",
+    "password": "testpassword",
+    "domain": "swe",
+    "onboardingCompleted": true,
+    "updatedAt": "2026-06-09T18:10:48.398Z",
+    "experienceYears": "5.5 Yrs",
+    "highestEducation": "M.S. Computer Science",
+    "dreamCompany": "Google",
+    "linkedinUrl": "https://linkedin.com",
+    "githubUrl": "https://github.com"
+  },
+  {
+    "createdAt": "2026-06-09T18:17:03.114Z",
+    "name": "Alex Rivera",
+    "email": "google.user@example.com",
+    "password": "google_sso_mock_password",
+    "domain": "swe",
+    "onboardingCompleted": true,
+    "updatedAt": "2026-06-09T18:24:35.927Z",
+    "experienceYears": "2.5 Yrs",
+    "highestEducation": "B.S. Computer Science",
+    "dreamCompany": "",
+    "linkedinUrl": "",
+    "githubUrl": ""
+  },
+  {
+    "createdAt": "2026-06-09T18:19:24.508Z",
+    "name": "jane",
+    "email": "jane@gmail.com",
+    "password": "hello",
+    "domain": "frontend",
+    "onboardingCompleted": true,
+    "updatedAt": "2026-06-09T18:19:53.375Z",
+    "experienceYears": "0.5 Yrs",
+    "highestEducation": "B.S. Computer Science",
+    "dreamCompany": "google",
+    "linkedinUrl": "",
+    "githubUrl": ""
+  }
+]

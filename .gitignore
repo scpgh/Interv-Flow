@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+client/.env
+server/.env
+
+# Local Databases and Logs
+*.log
+pdf_debug.log
+server/db_fallback.json
+server/db_sessions_fallback.json
+server/pdf_debug.log
+
+# Service Accounts and Secret Keys
+serviceAccountKey.json
+server/serviceAccountKey.json
+
+# Build outputs
+dist/
+build/
+client/dist/
+client/build/
+
+# Editor / OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Archive / Template files
+stitch_ai_interview_prep_pro/
+stitch_ai_interview_prep_pro.zip
