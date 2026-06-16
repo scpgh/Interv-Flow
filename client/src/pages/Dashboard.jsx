@@ -263,7 +263,7 @@ export default function Dashboard() {
       <DashboardNavbar activeTab={activeNavTab} setActiveTab={setActiveNavTab} />
 
       {/* ── Main Dashboard Layout Container ── */}
-      <div className="flex flex-1 pt-8 max-w-container-max-width mx-auto w-full px-margin-mobile md:px-margin-desktop gap-gutter z-10 relative">
+      <div className="flex flex-1 pt-8 max-w-[1400px] mx-auto w-full px-6 gap-gutter z-10 relative">
         
         {/* Left Sidebar (Desktop only) */}
         <aside className="hidden lg:flex w-64 flex-col gap-2 shrink-0">
