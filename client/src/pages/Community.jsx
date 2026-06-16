@@ -879,7 +879,7 @@ export default function Community() {
               <div>
                 <label className="block text-[10px] font-bold text-on-surface-variant uppercase mb-1 font-mono">XP Points Awarded</label>
                 <input 
-                  readonly 
+                  readOnly 
                   value="+50 XP for sharing" 
                   className="w-full bg-white/5 border border-white/5 text-[#ddb7ff] font-bold rounded-xl px-4 py-2.5 text-xs font-mono text-center select-none focus:outline-none"
                 />
