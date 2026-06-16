@@ -389,10 +389,8 @@ export default function PracticeSession() {
             };
             ws.send(JSON.stringify(clientAudioPayload));
 
-            // Monitor WPM & Hesitation via active speaking
-            userSpeakingSecondsRef.current += (128 / 16000); // 128 samples per chunk @ 16kHz
-            
             // Volume level calculations to track silence / hesitations
+
             if (micAnalyserRef.current) {
               const freqData = new Uint8Array(micAnalyserRef.current.frequencyBinCount);
               micAnalyserRef.current.getByteFrequencyData(freqData);
@@ -563,12 +561,6 @@ export default function PracticeSession() {
     recognition.interimResults = true;
     recognition.lang = 'en-US';
 
-    let secondsTimer = setInterval(() => {
-      if (activeSessionRef.current && !isMuted && !isPaused) {
-        userSpeakingSecondsRef.current += 1;
-      }
-    }, 1000);
-
     recognition.onstart = () => {
       if (lastError !== 'no-speech') {
         console.log("Speech recognition session started.");
@@ -679,7 +671,6 @@ export default function PracticeSession() {
       if (lastError !== 'no-speech') {
         console.log("Speech recognition session ended. Last error:", lastError);
       }
-      clearInterval(secondsTimer);
 
       // Save the final transcript of this session into the accumulator
       currentTurnTextAccumulated.current = (currentTurnTextAccumulated.current + " " + sessionFinalTranscript).trim();
@@ -904,6 +895,32 @@ export default function PracticeSession() {
 
     return () => clearInterval(wpmInterval);
   }, [step]);
+
+  // Recalculate candidate words count and filler count dynamically whenever transcript updates
+  useEffect(() => {
+    const candidateTurnsText = transcript
+      .filter(item => item.sender === 'candidate')
+      .map(item => item.text)
+      .join(' ');
+
+    const words = candidateTurnsText.split(/\s+/).filter(Boolean);
+    userWordsCountRef.current = words.length;
+
+    // Match filler words: um, uh, like, you know, so, actually, basically
+    const fillerMatches = candidateTurnsText.toLowerCase().match(/\b(um|uh|like|you\s+know|so|actually|basically)\b/g) || [];
+    setFillerCount(fillerMatches.length);
+  }, [transcript]);
+
+  // Dynamic Speaking Seconds Timer (active during candidate's turn)
+  useEffect(() => {
+    if (step !== 'active' || isPaused || isMuted || interviewerState !== 'listening') return;
+
+    const timer = setInterval(() => {
+      userSpeakingSecondsRef.current += 1;
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [step, isPaused, isMuted, interviewerState]);
 
   // Duration Timer Countdown
   useEffect(() => {

@@ -1432,6 +1432,7 @@ app.post('/api/interview/transcribe', upload.single('audio'), async (req, res) =
         formData.append('file', blob, filename);
         formData.append('model', 'whisper-large-v3');
         formData.append('language', 'en');
+        formData.append('prompt', "Transcribe the speech exactly as spoken, retaining verbal stutters, repetitions, and filler words like 'um', 'uh', 'like', 'so', 'you know', 'actually', 'basically'. Recognize tech and software engineer acronyms correctly like SDE, SDE1, SDE2, JavaScript, React, Kubernetes.");
 
         console.log("Calling Groq Whisper transcription API...");
         const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
@@ -1472,7 +1473,7 @@ app.post('/api/interview/transcribe', upload.single('audio'), async (req, res) =
                 data: base64Audio
               }
             },
-            "Transcribe this spoken response exactly as heard in English. If there is no speech or it is silent, respond with an empty string. Do not include any explanations, headers, formatting, or prefixes."
+            "Transcribe this spoken response exactly as heard in English. Be accurate with technical and software development terms like SDE, SDE1, SDE2, etc. Keep all verbal stutters and filler words like 'um', 'uh', 'like', 'so', 'you know', 'actually', 'basically'. If there is no speech or it is silent, respond with an empty string. Do not include any explanations, headers, formatting, or prefixes."
           ]);
         });
 
