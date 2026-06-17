@@ -20,6 +20,11 @@ export default function PracticeFeedback() {
   const fetchedSessionIdRef = useRef(null);
 
   useEffect(() => {
+    // Invalidate streak cache to ensure a fresh value is fetched on navigation
+    sessionStorage.removeItem('user_streak_count');
+    sessionStorage.removeItem('user_streak_last_fetched');
+    sessionStorage.removeItem('user_streak_email');
+
     if (!sessionId || fetchedSessionIdRef.current === sessionId) {
       return;
     }

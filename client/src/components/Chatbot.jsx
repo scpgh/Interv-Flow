@@ -68,7 +68,8 @@ export default function Chatbot() {
           history: historyItems,
           domain: userDomain,
           resumeText: userResume,
-          userProfile
+          userProfile,
+          email: sessionStorage.getItem('userEmail')
         })
       });
 
@@ -105,7 +106,7 @@ export default function Chatbot() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 font-body-md">
+    <div className="fixed bottom-6 right-3 z-50 font-body-md">
       {/* Floating Trigger Button */}
       <button 
         onClick={() => setIsChatOpen(!isChatOpen)}

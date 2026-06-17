@@ -44,6 +44,93 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
     if (name) setUserName(name);
   }, [navigate]);
 
+  const [streakCount, setStreakCount] = useState(0);
+
+  // ── Load streak dynamically based on user usage ───────────────────
+  useEffect(() => {
+    const fetchStreak = async () => {
+      const email = sessionStorage.getItem('userEmail');
+      if (!email) return;
+
+      // Helper to get date string relative to today
+      const getDateOffsetStr = (offset) => {
+        const d = new Date();
+        d.setDate(d.getDate() - offset);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      };
+
+      const todayStr = getDateOffsetStr(0);
+
+      // Check cache first to avoid fetching on tab changes
+      const cachedCount = sessionStorage.getItem('user_streak_count');
+      const cachedDate = sessionStorage.getItem('user_streak_last_fetched');
+      const cachedEmail = sessionStorage.getItem('user_streak_email');
+
+      if (cachedCount !== null && cachedDate === todayStr && cachedEmail === email) {
+        setStreakCount(parseInt(cachedCount, 10));
+        return;
+      }
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/interview/sessions?email=${encodeURIComponent(email)}`);
+        const data = await res.json();
+        if (data.success && Array.isArray(data.sessions)) {
+          const uniqueDates = new Set();
+          data.sessions.forEach(s => {
+            const dateVal = s.completedAt || s.startTime;
+            if (dateVal) {
+              const d = new Date(dateVal);
+              const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+              uniqueDates.add(dateStr);
+            }
+          });
+
+          const yesterdayStr = getDateOffsetStr(1);
+
+          let currentStreak = 0;
+          let referenceDateStr = "";
+
+          if (uniqueDates.has(todayStr)) {
+            currentStreak = 1;
+            referenceDateStr = todayStr;
+          } else if (uniqueDates.has(yesterdayStr)) {
+            currentStreak = 1;
+            referenceDateStr = yesterdayStr;
+          }
+
+          if (currentStreak > 0) {
+            let offset = 1;
+            if (referenceDateStr === yesterdayStr) {
+              offset = 2;
+            }
+            while (true) {
+              const prevDateStr = getDateOffsetStr(offset);
+              if (uniqueDates.has(prevDateStr)) {
+                currentStreak++;
+                offset++;
+              } else {
+                break;
+              }
+            }
+          }
+
+          setStreakCount(currentStreak);
+
+          // Save to cache
+          sessionStorage.setItem('user_streak_count', String(currentStreak));
+          sessionStorage.setItem('user_streak_last_fetched', todayStr);
+          sessionStorage.setItem('user_streak_email', email);
+        }
+      } catch (err) {
+        console.error("Failed to fetch streak:", err);
+      }
+    };
+
+    if (sessionStorage.getItem('isAuthenticated') === 'true') {
+      fetchStreak();
+    }
+  }, []);
+
   // ── Close on outside click ────────────────────────────────────────
   useEffect(() => {
     const onDown = (e) => {
@@ -140,7 +227,7 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
               className="px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-primary/20 bg-primary/5 cursor-pointer hover:bg-primary/10 transition-all select-none"
             >
               <span className="text-sm">🔥</span>
-              <span className="text-xs text-primary font-bold">15 Days</span>
+              <span className="text-xs text-primary font-bold">{streakCount} {streakCount === 1 ? 'Day' : 'Days'}</span>
             </div>
 
             {isStreakOpen && (
@@ -151,12 +238,18 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
                 style={{ zIndex: 9999 }}
               >
                 <div className="flex justify-between items-center border-b border-white/10 pb-1.5">
-                  <span className="text-xs font-bold text-white">⚡ Streak Active!</span>
-                  <span className="text-[10px] text-primary">Day 15/30</span>
+                  <span className="text-xs font-bold text-white">
+                    {streakCount > 0 ? '⚡ Streak Active!' : '🔥 Start Practicing!'}
+                  </span>
+                  <span className="text-[10px] text-primary">Day {streakCount}/30</span>
                 </div>
-                <p className="text-[11px] text-on-surface-variant">You are in the top 5% of candidate performers this month. Keep it going!</p>
+                <p className="text-[11px] text-on-surface-variant">
+                  {streakCount > 0 
+                    ? `You are on a ${streakCount}-day practice streak! Keep preparing daily to stay sharp.` 
+                    : "Complete a mock interview session today to start your consistency streak!"}
+                </p>
                 <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-                  <div className="bg-primary h-full w-[50%]" />
+                  <div className="bg-primary h-full transition-all duration-300" style={{ width: `${Math.min((streakCount / 30) * 100, 100)}%` }} />
                 </div>
               </div>
             )}

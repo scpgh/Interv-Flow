@@ -308,10 +308,14 @@ export default function ResumeAnalyzer() {
 
     try {
       let response;
+      const userEmail = sessionStorage.getItem('userEmail');
       if (inputMethod === 'file') {
         const formData = new FormData();
         formData.append('resume', file);
         formData.append('domain', selectedDomain);
+        if (userEmail) {
+          formData.append('email', userEmail);
+        }
 
         response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analyze-resume`, {
           method: 'POST',
@@ -325,7 +329,8 @@ export default function ResumeAnalyzer() {
           },
           body: JSON.stringify({
             domain: selectedDomain,
-            resumeText: pastedText
+            resumeText: pastedText,
+            email: userEmail
           })
         });
       }

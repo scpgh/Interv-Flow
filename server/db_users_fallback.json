@@ -47,7 +47,52 @@
     "email": "testuser@example.com",
     "password": "password123",
     "domain": "swe",
-    "onboardingCompleted": false,
-    "updatedAt": "2026-06-16T16:03:33.557Z"
+    "onboardingCompleted": true,
+    "updatedAt": "2026-06-17T00:04:26.344Z",
+    "experienceYears": "0 Yrs",
+    "highestEducation": "B.Tech. Computer Science",
+    "dreamCompany": "Microsoft",
+    "linkedinUrl": "",
+    "githubUrl": ""
+  },
+  {
+    "createdAt": "2026-06-17T00:05:55.309Z",
+    "name": "John Doe",
+    "email": "johndoe@fakeuser.com",
+    "password": "password",
+    "domain": "swe",
+    "onboardingCompleted": true,
+    "updatedAt": "2026-06-17T00:06:13.843Z",
+    "experienceYears": "0 Yrs",
+    "highestEducation": "B.Tech. Computer Science",
+    "dreamCompany": "",
+    "linkedinUrl": "",
+    "githubUrl": ""
+  },
+  {
+    "createdAt": "2026-06-17T00:22:47.324Z",
+    "name": "saping",
+    "email": "spacing45@gmail.com",
+    "domain": "swe",
+    "onboardingCompleted": true,
+    "updatedAt": "2026-06-17T00:23:06.669Z",
+    "experienceYears": "0 Yrs",
+    "highestEducation": "B.Tech. Computer Science",
+    "dreamCompany": "Microsoft",
+    "linkedinUrl": "",
+    "githubUrl": ""
+  },
+  {
+    "createdAt": "2026-06-17T00:55:56.190Z",
+    "name": "arun",
+    "email": "arun@mala.com",
+    "domain": "consulting",
+    "onboardingCompleted": true,
+    "updatedAt": "2026-06-17T00:56:46.459Z",
+    "experienceYears": "0 Yrs",
+    "highestEducation": "B.S. Computer Science",
+    "dreamCompany": "",
+    "linkedinUrl": "",
+    "githubUrl": ""
   }
 ]

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import DashboardNavbar from '../components/DashboardNavbar';
 import Footer from '../components/Footer';
+import Chatbot from '../components/Chatbot';
 
 export default function Billing() {
   const navigate = useNavigate();
@@ -669,6 +670,7 @@ export default function Billing() {
         </div>
       )}
 
+      <Chatbot />
       <Footer />
     </div>
   );

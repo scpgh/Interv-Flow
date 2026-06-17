@@ -111,6 +111,9 @@ async function callGroqChat(systemPrompt, userPrompt, modelName = "llama-3.3-70b
 
     // Allow up to 2 retries per key before rotating
     for (let attempt = 0; attempt < 2; attempt++) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds fetch timeout
+
       try {
         const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
           method: "POST",
@@ -118,8 +121,10 @@ async function callGroqChat(systemPrompt, userPrompt, modelName = "llama-3.3-70b
             "Authorization": `Bearer ${apiKey.trim()}`,
             "Content-Type": "application/json"
           },
-          body: JSON.stringify(requestBody)
+          body: JSON.stringify(requestBody),
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -148,14 +153,16 @@ async function callGroqChat(systemPrompt, userPrompt, modelName = "llama-3.3-70b
         return data.choices[0].message.content;
 
       } catch (err) {
-        const isRateLimit = err.message && (
+        clearTimeout(timeoutId);
+        const isTimeout = err.name === 'AbortError' || (err.message && err.message.includes('aborted'));
+        const isRateLimit = isTimeout || (err.message && (
           err.message.includes("429") ||
           err.message.includes("Rate limit") ||
           err.message.includes("quota") ||
           err.message.includes("exhausted")
-        );
+        ));
         if (isRateLimit) {
-          lastError = err;
+          lastError = isTimeout ? new Error(`Groq API request timed out on ${keyLabel}`) : err;
           break; // rotate key
         }
         // Non-rate-limit error — retry once then propagate
@@ -268,6 +275,45 @@ const saveAnalysis = async (data) => {
     console.error("Local save fallback failed:", err);
   }
   return null;
+};
+
+// Chatbot usage save helper
+const saveChatUsage = async (email) => {
+  if (!email) return;
+  const record = {
+    userEmail: email.toLowerCase().trim(),
+    createdAt: new Date().toISOString()
+  };
+
+  if (db) {
+    try {
+      await db.collection('chatbot_usage').add(record);
+      console.log(`Saved chatbot usage to Firestore for ${email}`);
+      return;
+    } catch (err) {
+      console.error("Firestore chatbot usage write failed:", err);
+    }
+  }
+
+  try {
+    const dbPath = './db_chatbot_usage_fallback.json';
+    let records = [];
+    if (fs.existsSync(dbPath)) {
+      try {
+        records = JSON.parse(fs.readFileSync(dbPath, 'utf8') || '[]');
+      } catch (e) {
+        records = [];
+      }
+    }
+    if (!Array.isArray(records)) {
+      records = [];
+    }
+    records.push(record);
+    fs.writeFileSync(dbPath, JSON.stringify(records, null, 2), 'utf8');
+    console.log(`Saved chatbot usage locally for ${email}`);
+  } catch (e) {
+    console.error("Local chatbot usage save failed:", e);
+  }
 };
   
 // User data helper functions
@@ -997,7 +1043,7 @@ If you have specific questions about a particular role or project, feel free to 
 // Route: Parse and Analyze Resume
 app.post('/api/analyze-resume', upload.single('resume'), async (req, res) => {
   try {
-    const { domain, resumeText: rawResumeText } = req.body;
+    const { domain, resumeText: rawResumeText, email } = req.body;
     const file = req.file;
 
     if (!file && !rawResumeText) {
@@ -1189,6 +1235,7 @@ IMPORTANT: Return ONLY the raw valid JSON string. Do not wrap the JSON object in
 
     // Save to Database
     const savedId = await saveAnalysis({
+      userEmail: email || null,
       domain,
       fileName: file ? file.originalname : "Plain_Text_Paste",
       fileSize: file ? file.size : Buffer.byteLength(resumeText, 'utf8'),
@@ -1283,11 +1330,68 @@ Provide a highly relevant, encouraging, and actionable answer.`;
 });
 
 // Auth Routes
+app.post('/api/auth/google', async (req, res) => {
+  try {
+    const { idToken, domain } = req.body;
+    if (!idToken) {
+      return res.status(400).json({ error: "ID token is required." });
+    }
+
+    let email, name;
+    if (admin.apps.length > 0) {
+      const decodedToken = await admin.auth().verifyIdToken(idToken);
+      email = decodedToken.email;
+      name = decodedToken.name || decodedToken.email.split('@')[0];
+    } else {
+      // Fallback for offline/local development without Firebase Admin SDK config
+      email = "google.user@example.com";
+      name = "Alex Rivera";
+    }
+
+    let user = await findUserByEmail(email);
+    if (!user) {
+      user = {
+        name,
+        email,
+        domain: domain || 'swe',
+        onboardingCompleted: false
+      };
+      await saveUser(user);
+    }
+
+    res.json({
+      success: true,
+      user: {
+        name: user.name,
+        email: user.email,
+        domain: user.domain,
+        onboardingCompleted: user.onboardingCompleted || false,
+        experienceYears: user.experienceYears || '',
+        highestEducation: user.highestEducation || '',
+        dreamCompany: user.dreamCompany || '',
+        linkedinUrl: user.linkedinUrl || '',
+        githubUrl: user.githubUrl || ''
+      }
+    });
+  } catch (err) {
+    console.error("Google authentication route error:", err);
+    res.status(401).json({ error: "Invalid ID token." });
+  }
+});
+
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { name, email, password, domain } = req.body;
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: "Name, email, and password are required." });
+    const { idToken, name, domain } = req.body;
+    if (!idToken || !name) {
+      return res.status(400).json({ error: "ID token and name are required." });
+    }
+
+    let email;
+    if (admin.apps.length > 0) {
+      const decodedToken = await admin.auth().verifyIdToken(idToken);
+      email = decodedToken.email;
+    } else {
+      email = "local.user@example.com";
     }
 
     const existingUser = await findUserByEmail(email);
@@ -1298,7 +1402,6 @@ app.post('/api/auth/signup', async (req, res) => {
     const newUser = {
       name,
       email,
-      password,
       domain: domain || 'swe',
       onboardingCompleted: false
     };
@@ -1322,14 +1425,22 @@ app.post('/api/auth/signup', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required." });
+    const { idToken } = req.body;
+    if (!idToken) {
+      return res.status(400).json({ error: "ID token is required." });
+    }
+
+    let email;
+    if (admin.apps.length > 0) {
+      const decodedToken = await admin.auth().verifyIdToken(idToken);
+      email = decodedToken.email;
+    } else {
+      email = "local.user@example.com";
     }
 
     const user = await findUserByEmail(email);
-    if (!user || user.password !== password) {
-      return res.status(400).json({ error: "Invalid email or password." });
+    if (!user) {
+      return res.status(404).json({ error: "User account not found." });
     }
 
     res.json({
@@ -1348,9 +1459,10 @@ app.post('/api/auth/login', async (req, res) => {
     });
   } catch (err) {
     console.error("Login endpoint error:", err);
-    res.status(500).json({ error: "Server error during login." });
+    res.status(401).json({ error: "Invalid ID token." });
   }
 });
+
 
 app.post('/api/auth/onboarding', async (req, res) => {
   try {
@@ -1399,9 +1511,13 @@ app.post('/api/auth/onboarding', async (req, res) => {
 // Route: General Doubt Chatbot
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, history, domain, resumeText, userProfile } = req.body;
+    const { message, history, domain, resumeText, userProfile, email } = req.body;
     if (!message) {
       return res.status(400).json({ error: "Message is required." });
+    }
+
+    if (email) {
+      saveChatUsage(email).catch(e => console.error("Error logging chat usage:", e));
     }
 
     let answer = "";
@@ -1596,9 +1712,132 @@ app.get('/api/interview/session/:sessionId', async (req, res) => {
   }
 });
 
+// GET: Fetch all user activity dates (mock interviews, resume analyses, chatbot doubts)
+app.get('/api/user/activity', async (req, res) => {
+  try {
+    const { email } = req.query;
+    if (!email) {
+      return res.status(400).json({ error: "Email is required." });
+    }
+    const sanitizedEmail = email.toLowerCase().trim();
+    const uniqueDates = new Set();
+
+    // 1. Fetch from completed sessions (local database fallback)
+    const sessionsPath = './db_sessions_fallback.json';
+    if (fs.existsSync(sessionsPath)) {
+      try {
+        const sessions = JSON.parse(fs.readFileSync(sessionsPath, 'utf8') || '[]');
+        if (Array.isArray(sessions)) {
+          sessions.forEach(s => {
+            if (s.userEmail && s.userEmail.toLowerCase().trim() === sanitizedEmail) {
+              const dateVal = s.completedAt || s.startTime;
+              if (dateVal) {
+                const d = new Date(dateVal);
+                const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                uniqueDates.add(dateStr);
+              }
+            }
+          });
+        }
+      } catch (e) {
+        console.error("Error reading sessions for activity:", e);
+      }
+    }
+
+    // 2. Fetch from resume analyses (Firestore + local fallback)
+    if (db) {
+      try {
+        const analysesSnapshot = await db.collection('resume_analyses')
+          .where('userEmail', '==', sanitizedEmail)
+          .get();
+        analysesSnapshot.forEach(doc => {
+          const data = doc.data();
+          const dateVal = data.createdAt;
+          if (dateVal) {
+            const d = new Date(dateVal);
+            const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            uniqueDates.add(dateStr);
+          }
+        });
+      } catch (e) {
+        console.error("Firestore read error for resume analyses activity:", e);
+      }
+    }
+    const analysesPath = './db_fallback.json';
+    if (fs.existsSync(analysesPath)) {
+      try {
+        const analyses = JSON.parse(fs.readFileSync(analysesPath, 'utf8') || '[]');
+        if (Array.isArray(analyses)) {
+          analyses.forEach(a => {
+            if (a.userEmail && a.userEmail.toLowerCase().trim() === sanitizedEmail) {
+              const dateVal = a.createdAt;
+              if (dateVal) {
+                const d = new Date(dateVal);
+                const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                uniqueDates.add(dateStr);
+              }
+            }
+          });
+        }
+      } catch (e) {
+        console.error("Error reading analyses for activity:", e);
+      }
+    }
+
+    // 3. Fetch from chatbot usage (Firestore + local fallback)
+    if (db) {
+      try {
+        const chatSnapshot = await db.collection('chatbot_usage')
+          .where('userEmail', '==', sanitizedEmail)
+          .get();
+        chatSnapshot.forEach(doc => {
+          const data = doc.data();
+          const dateVal = data.createdAt;
+          if (dateVal) {
+            const d = new Date(dateVal);
+            const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            uniqueDates.add(dateStr);
+          }
+        });
+      } catch (e) {
+        console.error("Firestore read error for chatbot usage activity:", e);
+      }
+    }
+    const chatPath = './db_chatbot_usage_fallback.json';
+    if (fs.existsSync(chatPath)) {
+      try {
+        const chats = JSON.parse(fs.readFileSync(chatPath, 'utf8') || '[]');
+        if (Array.isArray(chats)) {
+          chats.forEach(c => {
+            if (c.userEmail && c.userEmail.toLowerCase().trim() === sanitizedEmail) {
+              const dateVal = c.createdAt;
+              if (dateVal) {
+                const d = new Date(dateVal);
+                const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                uniqueDates.add(dateStr);
+              }
+            }
+          });
+        }
+      } catch (e) {
+        console.error("Error reading chats for activity:", e);
+      }
+    }
+
+    res.json({
+      success: true,
+      uniqueDates: Array.from(uniqueDates)
+    });
+  } catch (err) {
+    console.error("GET user activity error:", err);
+    res.status(500).json({ error: err.message || "Server error fetching activity." });
+  }
+});
+
 // GET: Fetch all completed interview sessions
 app.get('/api/interview/sessions', async (req, res) => {
   try {
+    const { email } = req.query;
     const dbPath = './db_sessions_fallback.json';
     let sessions = [];
     if (fs.existsSync(dbPath)) {
@@ -1611,6 +1850,12 @@ app.get('/api/interview/sessions', async (req, res) => {
     if (!Array.isArray(sessions)) {
       sessions = [];
     }
+
+    // Filter by user email if provided
+    if (email) {
+      sessions = sessions.filter(s => s.userEmail === email);
+    }
+
     // Sort by completion time or start time descending
     sessions.sort((a, b) => (b.completedAt || b.startTime || 0) - (a.completedAt || a.startTime || 0));
     res.json({
@@ -2084,11 +2329,12 @@ function initializeWebSocketServer(server) {
 
         // Handle initial configuration
         if (payload.type === 'setup') {
-          const { mode, jdText, resumeText, jobTitle, company, duration } = payload;
+          const { mode, jdText, resumeText, jobTitle, company, duration, userEmail } = payload;
           sessionState.mode = mode || 'jd';
           sessionState.title = jobTitle || 'Technical Interview';
           sessionState.company = company || 'Target Company';
           sessionState.durationMinutes = duration || 15;
+          sessionState.userEmail = userEmail || null;
 
           console.log(`Setting up ${mode} interview for ${jobTitle} at ${company} (Duration: ${duration}m)`);
 
@@ -2457,7 +2703,12 @@ Ask exactly ONE question and nothing else. Do not output any markdown formatting
         try {
           const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
           const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
-          const result = await model.generateContent(fullPrompt);
+          const result = await callWithRetry(async () => {
+            return await Promise.race([
+              model.generateContent(fullPrompt),
+              new Promise((_, reject) => setTimeout(() => reject(new Error("Gemini API call timed out after 20 seconds")), 20000))
+            ]);
+          });
           return result.response.text().trim().replace(/^Interviewer:\s*/i, '');
         } catch (geminiErr) {
           console.error("Gemini fallback also failed:", geminiErr);
@@ -2487,6 +2738,7 @@ Ask exactly ONE question and nothing else. Do not output any markdown formatting
       const idx = sessions.findIndex(s => s.id === session.id);
       const sessionRecord = {
         id: session.id,
+        userEmail: session.userEmail || null,
         mode: session.mode,
         title: session.title,
         company: session.company,

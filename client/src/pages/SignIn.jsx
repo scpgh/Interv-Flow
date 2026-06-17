@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { auth, googleProvider } from '../firebase';
+import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 
 export default function SignIn() {
   const navigate = useNavigate();
@@ -16,22 +18,29 @@ export default function SignIn() {
     e.preventDefault();
     setErrorMsg("");
     try {
+      // 1. Sign in with Firebase client SDK
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const idToken = await userCredential.user.getIdToken();
+
+      // 2. Verify with backend API
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ idToken })
       });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "Invalid email or password.");
       }
+      
       sessionStorage.setItem('isAuthenticated', 'true');
       sessionStorage.setItem('userEmail', data.user.email);
       sessionStorage.setItem('userName', data.user.name);
       sessionStorage.setItem('userDomain', data.user.domain);
       sessionStorage.setItem('onboardingCompleted', String(data.user.onboardingCompleted));
+      
       if (data.user.onboardingCompleted) {
         sessionStorage.setItem('userExperience', data.user.experienceYears || '');
         sessionStorage.setItem('userEducation', data.user.highestEducation || '');
@@ -40,7 +49,15 @@ export default function SignIn() {
         navigate('/onboarding');
       }
     } catch (err) {
-      setErrorMsg(err.message || "Failed to sign in. Please verify your credentials.");
+      let friendlyMessage = err.message || "Failed to sign in. Please verify your credentials.";
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        friendlyMessage = "Invalid email or password.";
+      } else if (err.code === 'auth/invalid-email') {
+        friendlyMessage = "Please enter a valid email address.";
+      } else if (err.code === 'auth/operation-not-allowed') {
+        friendlyMessage = "Email/Password sign-in is disabled in Firebase Console. Please enable 'Email/Password' under Build > Authentication > Sign-in method.";
+      }
+      setErrorMsg(friendlyMessage);
       console.error("Login error:", err);
     }
   };
@@ -48,51 +65,20 @@ export default function SignIn() {
   const handleGoogleLogin = async () => {
     setErrorMsg("");
     try {
-      // Direct SSO authentication simulation against backend database
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/signup`, {
+      // 1. Sign in with Google Pop-up via Firebase SDK
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken();
+
+      // 2. Send ID Token to backend verification endpoint
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/google`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          name: "Alex Rivera",
-          email: "google.user@example.com",
-          password: "google_sso_mock_password",
-          domain: "swe"
-        })
+        body: JSON.stringify({ idToken })
       });
       const data = await response.json();
-      
-      // If already registered, fetch profile details
-      if (!response.ok && data.error === "An account with this email already exists.") {
-        const loginResp = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            email: "google.user@example.com",
-            password: "google_sso_mock_password"
-          })
-        });
-        const loginData = await loginResp.json();
-        if (!loginResp.ok) {
-          throw new Error(loginData.error || "Failed to log in with Google SSO.");
-        }
-        sessionStorage.setItem('isAuthenticated', 'true');
-        sessionStorage.setItem('userEmail', loginData.user.email);
-        sessionStorage.setItem('userName', loginData.user.name);
-        sessionStorage.setItem('userDomain', loginData.user.domain);
-        sessionStorage.setItem('onboardingCompleted', String(loginData.user.onboardingCompleted));
-        if (loginData.user.onboardingCompleted) {
-          sessionStorage.setItem('userExperience', loginData.user.experienceYears || '');
-          sessionStorage.setItem('userEducation', loginData.user.highestEducation || '');
-          navigate('/resume-analyzer');
-        } else {
-          navigate('/onboarding');
-        }
-        return;
-      } else if (!response.ok) {
+      if (!response.ok) {
         throw new Error(data.error || "Google Sign In failed.");
       }
 
@@ -100,8 +86,15 @@ export default function SignIn() {
       sessionStorage.setItem('userEmail', data.user.email);
       sessionStorage.setItem('userName', data.user.name);
       sessionStorage.setItem('userDomain', data.user.domain);
-      sessionStorage.setItem('onboardingCompleted', 'false');
-      navigate('/onboarding');
+      sessionStorage.setItem('onboardingCompleted', String(data.user.onboardingCompleted));
+      
+      if (data.user.onboardingCompleted) {
+        sessionStorage.setItem('userExperience', data.user.experienceYears || '');
+        sessionStorage.setItem('userEducation', data.user.highestEducation || '');
+        navigate('/resume-analyzer');
+      } else {
+        navigate('/onboarding');
+      }
     } catch (err) {
       setErrorMsg(err.message || "Failed Google login.");
       console.error("Google authentication failed:", err);

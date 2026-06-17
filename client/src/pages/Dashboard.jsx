@@ -181,7 +181,8 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchSessions = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/interview/sessions");
+        const userEmail = sessionStorage.getItem('userEmail') || '';
+        const res = await fetch(`http://localhost:5000/api/interview/sessions?email=${encodeURIComponent(userEmail)}`);
         const data = await res.json();
         if (data.success && Array.isArray(data.sessions)) {
           setSessions(data.sessions);
@@ -473,7 +474,7 @@ export default function Dashboard() {
              {activeSidebarTab === "dashboard" && (
             <>
               {/* Welcome Banner Card */}
-              <section className="glass-card p-8 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-6 relative overflow-hidden border border-primary/20 bg-primary/5">
+              <section className="glass-card p-8 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-6 relative overflow-hidden border border-primary/20 bg-primary/5 mt-4">
                 <div className="absolute -right-20 -top-20 w-48 h-48 bg-primary/10 rounded-full blur-3xl text-left"></div>
                 <div className="flex items-center gap-6 z-10 text-left">
                   <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0 shadow-[0_0_20px_rgba(37,99,235,0.15)]">

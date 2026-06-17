@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { auth, googleProvider } from '../firebase';
+import { createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -18,25 +20,40 @@ export default function SignUp() {
     e.preventDefault();
     setErrorMsg("");
     try {
+      // 1. Register user with Firebase client SDK
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const idToken = await userCredential.user.getIdToken();
+
+      // 2. Call backend signup to register name/domain and retrieve/create profile
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ name, email, password, domain })
+        body: JSON.stringify({ idToken, name, domain })
       });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "Failed to create account.");
       }
-      sessionStorage.setItem('isAuthenticated', 'true');
-      sessionStorage.setItem('userEmail', data.user.email);
-      sessionStorage.setItem('userName', data.user.name);
-      sessionStorage.setItem('userDomain', data.user.domain);
-      sessionStorage.setItem('onboardingCompleted', 'false');
-      navigate('/onboarding');
+      
+      // Sign out of client-side Firebase Auth so the session starts fresh on the login page
+      await auth.signOut();
+      
+      alert("Account created successfully! Please sign in with your credentials.");
+      navigate('/login');
     } catch (err) {
-      setErrorMsg(err.message || "Failed to register. Please check if the backend is running.");
+      let friendlyMessage = err.message || "Failed to register. Please check if the backend is running.";
+      if (err.code === 'auth/email-already-in-use') {
+        friendlyMessage = "An account with this email already exists.";
+      } else if (err.code === 'auth/weak-password') {
+        friendlyMessage = "Password is too weak. Must be at least 6 characters.";
+      } else if (err.code === 'auth/invalid-email') {
+        friendlyMessage = "Please enter a valid email address.";
+      } else if (err.code === 'auth/operation-not-allowed') {
+        friendlyMessage = "Email/Password registration is disabled in Firebase Console. Please enable 'Email/Password' under Build > Authentication > Sign-in method.";
+      }
+      setErrorMsg(friendlyMessage);
       console.error("Signup error:", err);
     }
   };
@@ -44,49 +61,20 @@ export default function SignUp() {
   const handleGoogleSignup = async () => {
     setErrorMsg("");
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/signup`, {
+      // 1. Sign in with Google Pop-up via Firebase SDK
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken();
+
+      // 2. Send ID Token to backend verification endpoint
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/google`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          name: "Alex Rivera",
-          email: "google.user@example.com",
-          password: "google_sso_mock_password",
-          domain: domain || "swe"
-        })
+        body: JSON.stringify({ idToken, domain: domain || "swe" })
       });
       const data = await response.json();
-      
-      if (!response.ok && data.error === "An account with this email already exists.") {
-        const loginResp = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            email: "google.user@example.com",
-            password: "google_sso_mock_password"
-          })
-        });
-        const loginData = await loginResp.json();
-        if (!loginResp.ok) {
-          throw new Error(loginData.error || "Failed to log in with Google SSO.");
-        }
-        sessionStorage.setItem('isAuthenticated', 'true');
-        sessionStorage.setItem('userEmail', loginData.user.email);
-        sessionStorage.setItem('userName', loginData.user.name);
-        sessionStorage.setItem('userDomain', loginData.user.domain);
-        sessionStorage.setItem('onboardingCompleted', String(loginData.user.onboardingCompleted));
-        if (loginData.user.onboardingCompleted) {
-          sessionStorage.setItem('userExperience', loginData.user.experienceYears || '');
-          sessionStorage.setItem('userEducation', loginData.user.highestEducation || '');
-          navigate('/resume-analyzer');
-        } else {
-          navigate('/onboarding');
-        }
-        return;
-      } else if (!response.ok) {
+      if (!response.ok) {
         throw new Error(data.error || "Google Signup failed.");
       }
 
@@ -94,8 +82,15 @@ export default function SignUp() {
       sessionStorage.setItem('userEmail', data.user.email);
       sessionStorage.setItem('userName', data.user.name);
       sessionStorage.setItem('userDomain', data.user.domain);
-      sessionStorage.setItem('onboardingCompleted', 'false');
-      navigate('/onboarding');
+      sessionStorage.setItem('onboardingCompleted', String(data.user.onboardingCompleted));
+      
+      if (data.user.onboardingCompleted) {
+        sessionStorage.setItem('userExperience', data.user.experienceYears || '');
+        sessionStorage.setItem('userEducation', data.user.highestEducation || '');
+        navigate('/resume-analyzer');
+      } else {
+        navigate('/onboarding');
+      }
     } catch (err) {
       setErrorMsg(err.message || "Failed Google login.");
       console.error("Google authentication failed:", err);

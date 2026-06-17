@@ -144,7 +144,8 @@ export default function Analytics() {
 
     const fetchSessions = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/interview/sessions");
+        const userEmail = sessionStorage.getItem('userEmail') || '';
+        const res = await fetch(`http://localhost:5000/api/interview/sessions?email=${encodeURIComponent(userEmail)}`);
         const data = await res.json();
         if (data.success && Array.isArray(data.sessions)) {
           setSessions(data.sessions);
@@ -202,8 +203,38 @@ export default function Analytics() {
     const cachedAnalysis = sessionStorage.getItem('resumeAnalysisResult');
     if (cachedAnalysis) {
       try {
-        return JSON.parse(cachedAnalysis);
-      } catch (e) {}
+        const parsed = JSON.parse(cachedAnalysis);
+        
+        // Ensure atsKeywords is always a valid array of strings
+        if (parsed.atsKeywords) {
+          if (typeof parsed.atsKeywords === 'string') {
+            parsed.atsKeywords = parsed.atsKeywords.split(',').map(s => s.trim()).filter(Boolean);
+          } else if (!Array.isArray(parsed.atsKeywords)) {
+            parsed.atsKeywords = [];
+          }
+        } else {
+          parsed.atsKeywords = [];
+        }
+
+        // Ensure critique structure is fully defined with arrays to prevent map crashes
+        if (!parsed.critique) parsed.critique = {};
+        ['grammar', 'technical', 'impact', 'formatting'].forEach(key => {
+          if (!Array.isArray(parsed.critique[key])) {
+            parsed.critique[key] = [];
+          }
+        });
+
+        // Ensure other basic fields are present/numeric
+        parsed.atsScore = parsed.atsScore ? parseInt(parsed.atsScore) : 0;
+        parsed.roleMatch = parsed.roleMatch ? parseInt(String(parsed.roleMatch).replace('%', '')) : 0;
+        parsed.candidateName = parsed.candidateName || userName || 'Chaitanya';
+        parsed.experienceYears = parsed.experienceYears || userExperience || '0 Yrs';
+        parsed.highestEducation = parsed.highestEducation || userEducation || 'B.S. Computer Science';
+
+        return parsed;
+      } catch (e) {
+        console.error("Error parsing cached resume analysis in analytics:", e);
+      }
     }
     
     // Fallback based on domain

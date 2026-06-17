@@ -6,7 +6,8 @@ import AudioWaveform from '../components/AudioWaveform';
 
 // Helper to format voice display names cleanly for dropdown selector
 const formatVoiceName = (voice) => {
-  let rawName = voice.name;
+  if (!voice) return 'Default Voice';
+  let rawName = voice.name || 'Web Voice';
   
   // Strip Microsoft prefix and common extra qualifiers
   let cleanName = rawName.replace(/^Microsoft\s+/i, '');
@@ -20,7 +21,7 @@ const formatVoiceName = (voice) => {
   
   // Determine locale tag
   let loc = 'English';
-  const langLower = voice.lang.toLowerCase();
+  const langLower = (voice.lang || 'en-US').toLowerCase();
   if (langLower.includes('us')) loc = 'US English';
   else if (langLower.includes('gb') || langLower.includes('uk')) loc = 'UK English';
   else if (langLower.includes('in')) loc = 'IN English';
@@ -274,6 +275,7 @@ export default function PracticeSession() {
         // Send initial session setup parameters to server
         const setupPayload = {
           type: 'setup',
+          userEmail: sessionStorage.getItem('userEmail') || '',
           mode: mode,
           jdText: mode === 'jd' ? jdText : '',
           resumeText: mode === 'resume' ? resumeText : '',
@@ -322,6 +324,12 @@ export default function PracticeSession() {
             handleCompleteSession();
           } 
           
+          else if (data.type === 'error') {
+            console.error("Received server error during interview session:", data.message);
+            setSpeechWarning(data.message || "Interviewer failed to process response. Please try again.");
+            setInterviewerState('listening');
+          }
+
           else if (data.serverContent) {
             // Check for model's audio speech outputs
             if (data.serverContent.modelTurn && data.serverContent.modelTurn.parts) {
@@ -507,6 +515,10 @@ export default function PracticeSession() {
 
     // Remove any markdown or special characters before speaking
     const cleanText = text.replace(/[*#`_\-]/g, '').trim();
+    if (!cleanText) {
+      setInterviewerState('listening');
+      return;
+    }
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     currentUtteranceRef.current = utterance;
@@ -525,16 +537,38 @@ export default function PracticeSession() {
       utterance.rate = 0.90;
     }
 
+    let ttsTimeoutId = null;
+
     utterance.onstart = () => {
       setInterviewerState('speaking');
+      // Set up a hang prevention timeout (approx 15 chars per second + 5s buffer, min 10 seconds)
+      const durationEstimate = (cleanText.length / 15) * 1000 + 5000;
+      ttsTimeoutId = setTimeout(() => {
+        if (currentUtteranceRef.current === utterance && window.speechSynthesis.speaking) {
+          console.warn("Speech synthesis seemed to hang. Force-canceling SpeechSynthesis...");
+          window.speechSynthesis.cancel();
+          currentUtteranceRef.current = null;
+          setInterviewerState('listening');
+        }
+      }, Math.max(durationEstimate, 10000));
     };
 
     utterance.onend = () => {
+      if (ttsTimeoutId) clearTimeout(ttsTimeoutId);
       currentUtteranceRef.current = null;
       setInterviewerState('listening');
     };
 
     utterance.onerror = (err) => {
+      if (ttsTimeoutId) clearTimeout(ttsTimeoutId);
+      if (err.error === 'interrupted') {
+        console.log("Speech synthesis utterance was interrupted by a new request or cancel event.");
+        if (currentUtteranceRef.current === utterance) {
+          currentUtteranceRef.current = null;
+          setInterviewerState('listening');
+        }
+        return;
+      }
       console.error("Speech synthesis utterance error:", err);
       currentUtteranceRef.current = null;
       setInterviewerState('listening');
@@ -550,6 +584,7 @@ export default function PracticeSession() {
       if (speechRecognitionRef.current) {
         try {
           speechRecognitionRef.current.onend = null;
+          speechRecognitionRef.current.onerror = null;
           speechRecognitionRef.current.abort();
         } catch (e) {}
         speechRecognitionRef.current = null;
@@ -586,6 +621,7 @@ export default function PracticeSession() {
       if (lastError !== 'no-speech') {
         console.log("Speech recognition session started.");
       }
+      setSpeechWarning("");
     };
 
     recognition.onresult = (event) => {
@@ -765,7 +801,6 @@ export default function PracticeSession() {
     }
 
     return () => {
-      clearInterval(secondsTimer);
       if (recognitionTimeoutRef.current) {
         clearTimeout(recognitionTimeoutRef.current);
       }
@@ -774,6 +809,7 @@ export default function PracticeSession() {
       }
       try {
         recognition.onend = null;
+        recognition.onerror = null;
         recognition.abort();
       } catch (e) {}
     };
@@ -972,6 +1008,11 @@ export default function PracticeSession() {
     activeSessionRef.current = false;
     setStep('finished');
 
+    // Invalidate streak cache so it gets recalculated on returning to dashboard
+    sessionStorage.removeItem('user_streak_count');
+    sessionStorage.removeItem('user_streak_last_fetched');
+    sessionStorage.removeItem('user_streak_email');
+
     // Stop Web Speech Synthesis & Recognition if active
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
@@ -979,6 +1020,7 @@ export default function PracticeSession() {
     if (speechRecognitionRef.current) {
       try {
         speechRecognitionRef.current.onend = null;
+        speechRecognitionRef.current.onerror = null;
         speechRecognitionRef.current.stop();
       } catch (e) {}
     }
