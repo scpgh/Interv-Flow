@@ -87,7 +87,7 @@ export default function SignUp() {
       if (data.user.onboardingCompleted) {
         sessionStorage.setItem('userExperience', data.user.experienceYears || '');
         sessionStorage.setItem('userEducation', data.user.highestEducation || '');
-        navigate('/resume-analyzer');
+        navigate('/dashboard');
       } else {
         navigate('/onboarding');
       }
