@@ -343,7 +343,7 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
                   <button onClick={() => { navigate('/dashboard'); setIsDropdownOpen(false); }} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold text-[#ddb7ff] bg-[#ddb7ff]/10 hover:bg-[#ddb7ff]/20 transition-all border border-[#ddb7ff]/20 cursor-pointer">
                     <span className="material-symbols-outlined text-[18px]">verified_user</span>Switch to Mentor Portal
                   </button>
-                  <button onClick={() => { navigate('/dashboard'); setIsDropdownOpen(false); }} className="flex items-center gap-3 w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-on-surface-variant hover:bg-white/5 hover:text-white transition-all cursor-pointer border-none bg-transparent">
+                  <button onClick={() => { navigate('/billing#profile'); setIsDropdownOpen(false); }} className="flex items-center gap-3 w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-on-surface-variant hover:bg-white/5 hover:text-white transition-all cursor-pointer border-none bg-transparent">
                     <span className="material-symbols-outlined text-[18px]">person</span>Profile Settings
                   </button>
                   <button onClick={() => { navigate('/billing'); setIsDropdownOpen(false); }} className="flex items-center gap-3 w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-on-surface-variant hover:bg-white/5 hover:text-white transition-all cursor-pointer border-none bg-transparent">

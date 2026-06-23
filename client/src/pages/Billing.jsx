@@ -7,12 +7,36 @@ import Chatbot from '../components/Chatbot';
 export default function Billing() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState('billing'); // 'billing' | 'bookings'
+  const [activeTab, setActiveTab] = useState('billing'); // 'billing' | 'bookings' | 'profile' | 'preferences'
   const [currentPlan, setCurrentPlan] = useState('Pro Plus'); // 'Basic' | 'Pro' | 'Pro Plus'
   const [selectedMentor, setSelectedMentor] = useState('clara'); // 'clara' | 'sarah' | 'devore'
   const [selectedSlot, setSelectedSlot] = useState('slot-1'); // 'slot-1' | 'slot-2' | 'slot-3'
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+
+  // Profile Form States
+  const [profileName, setProfileName] = useState(sessionStorage.getItem('userName') || '');
+  const [profileEmail, setProfileEmail] = useState(sessionStorage.getItem('userEmail') || '');
+  const [profileDomain, setProfileDomain] = useState(sessionStorage.getItem('userDomain') || 'swe');
+  const [profileExperience, setProfileExperience] = useState(sessionStorage.getItem('userExperience') || '0 Yrs');
+  const [profileEducation, setProfileEducation] = useState(sessionStorage.getItem('userEducation') || '');
+  const [profileDreamCompany, setProfileDreamCompany] = useState(sessionStorage.getItem('userTargetCompany') || '');
+  const [profileLinkedIn, setProfileLinkedIn] = useState(sessionStorage.getItem('userLinkedIn') || '');
+  const [profileGitHub, setProfileGitHub] = useState(sessionStorage.getItem('userGitHub') || '');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // Preference Form States
+  const [prefDifficulty, setPrefDifficulty] = useState(localStorage.getItem('intervflow_pref_difficulty') || 'adaptive');
+  const [prefStyle, setPrefStyle] = useState(localStorage.getItem('intervflow_pref_style') || 'standard');
+  const [prefTheme, setPrefTheme] = useState(localStorage.getItem('intervflow_pref_theme') || 'dark');
+  const [prefLanguage, setPrefLanguage] = useState(localStorage.getItem('intervflow_pref_language') || 'python');
+  const [prefEmailReminders, setPrefEmailReminders] = useState(localStorage.getItem('intervflow_pref_email_reminders') !== 'false');
+  const [prefWeeklyTips, setPrefWeeklyTips] = useState(localStorage.getItem('intervflow_pref_weekly_tips') !== 'false');
+
+  // Account Deletion States
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // Pre-loaded schedule records
   const [scheduledSessions, setScheduledSessions] = useState([
@@ -40,8 +64,13 @@ export default function Billing() {
 
   // Set active tab based on window hash or location state
   useEffect(() => {
-    if (window.location.hash === '#bookings' || location.state?.activeTab === 'bookings') {
+    const hash = window.location.hash;
+    if (hash === '#bookings' || location.state?.activeTab === 'bookings') {
       setActiveTab('bookings');
+    } else if (hash === '#profile' || location.state?.activeTab === 'profile') {
+      setActiveTab('profile');
+    } else if (hash === '#preferences' || location.state?.activeTab === 'preferences') {
+      setActiveTab('preferences');
     } else {
       setActiveTab('billing');
     }
@@ -50,6 +79,96 @@ export default function Billing() {
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 4000);
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    if (!profileName.trim()) {
+      alert("Name cannot be empty.");
+      return;
+    }
+    setIsSavingProfile(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/user/profile/update`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: profileEmail,
+          name: profileName,
+          domain: profileDomain,
+          experienceYears: profileExperience,
+          highestEducation: profileEducation,
+          dreamCompany: profileDreamCompany,
+          linkedinUrl: profileLinkedIn,
+          githubUrl: profileGitHub
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        sessionStorage.setItem('userName', data.user.name);
+        sessionStorage.setItem('userDomain', data.user.domain);
+        sessionStorage.setItem('userExperience', data.user.experienceYears || '');
+        sessionStorage.setItem('userEducation', data.user.highestEducation || '');
+        sessionStorage.setItem('userTargetCompany', data.user.dreamCompany || '');
+        sessionStorage.setItem('userLinkedIn', data.user.linkedinUrl || '');
+        sessionStorage.setItem('userGitHub', data.user.githubUrl || '');
+        
+        showToast("Profile settings updated successfully!");
+      } else {
+        alert(data.error || "Failed to update profile settings.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error occurred while saving profile settings.");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handleSavePreferences = () => {
+    localStorage.setItem('intervflow_pref_difficulty', prefDifficulty);
+    localStorage.setItem('intervflow_pref_style', prefStyle);
+    localStorage.setItem('intervflow_pref_theme', prefTheme);
+    localStorage.setItem('intervflow_pref_language', prefLanguage);
+    localStorage.setItem('intervflow_pref_email_reminders', String(prefEmailReminders));
+    localStorage.setItem('intervflow_pref_weekly_tips', String(prefWeeklyTips));
+    
+    showToast("Preferences saved successfully!");
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') return;
+    setIsDeletingAccount(true);
+    try {
+      const email = sessionStorage.getItem('userEmail');
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/user/account`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast("Account and data permanently deleted.");
+        sessionStorage.clear();
+        localStorage.clear();
+        setTimeout(() => {
+          navigate('/');
+        }, 1500);
+      } else {
+        alert(data.error || "Failed to delete account.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error occurred while deleting account.");
+    } finally {
+      setIsDeletingAccount(false);
+      setShowDeleteConfirm(false);
+      setDeleteConfirmText('');
+    }
   };
 
   const handleUpgrade = (planName) => {
@@ -151,15 +270,19 @@ export default function Billing() {
           </div>
           <nav className="flex flex-col gap-1">
             <button 
-              onClick={() => alert("Profile settings are managed inside your User Settings page (Coming Soon!).")}
-              className="flex items-center gap-3 w-full text-left px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/5 transition-all border-none bg-transparent cursor-pointer rounded-xl"
+              onClick={() => { setActiveTab('profile'); navigate('/billing#profile'); }}
+              className={`flex items-center gap-3 w-full text-left px-4 py-3 transition-all border-none cursor-pointer rounded-xl bg-transparent ${
+                activeTab === 'profile' ? 'text-primary font-bold bg-white/5 border-r-2 border-primary' : 'text-on-surface-variant hover:text-primary hover:bg-white/5'
+              }`}
             >
               <span className="material-symbols-outlined text-[20px]">person</span>
               <span className="text-sm font-medium">Profile</span>
             </button>
             <button 
-              onClick={() => alert("Preferences page is coming soon!")}
-              className="flex items-center gap-3 w-full text-left px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/5 transition-all border-none bg-transparent cursor-pointer rounded-xl"
+              onClick={() => { setActiveTab('preferences'); navigate('/billing#preferences'); }}
+              className={`flex items-center gap-3 w-full text-left px-4 py-3 transition-all border-none cursor-pointer rounded-xl bg-transparent ${
+                activeTab === 'preferences' ? 'text-primary font-bold bg-white/5 border-r-2 border-primary' : 'text-on-surface-variant hover:text-primary hover:bg-white/5'
+              }`}
             >
               <span className="material-symbols-outlined text-[20px]">settings</span>
               <span className="text-sm font-medium">Preferences</span>
@@ -648,6 +771,272 @@ export default function Billing() {
             </div>
           )}
 
+          {/* TAB 3: PROFILE PANEL */}
+          {activeTab === 'profile' && (
+            <div className="space-y-10 animate-fade-in text-left">
+              <section className="glass-panel p-6 md:p-8 rounded-2xl border border-white/5 bg-white/[0.01]">
+                <div className="border-b border-white/10 pb-4 mb-6">
+                  <h2 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-xl">person</span>
+                    Profile Settings
+                  </h2>
+                  <p className="text-xs text-on-surface-variant mt-1 font-body-md">
+                    Update your target interview roles, experience levels, and contact handles. These changes will reflect in your mock simulations and global leaderboard standings.
+                  </p>
+                </div>
+
+                <form onSubmit={handleSaveProfile} className="space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[10px] font-mono text-outline uppercase tracking-wider">Full Name</label>
+                      <input 
+                        type="text"
+                        value={profileName}
+                        onChange={(e) => setProfileName(e.target.value)}
+                        placeholder="Your Name"
+                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-primary font-body-md animate-fade-in"
+                        required
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[10px] font-mono text-outline uppercase tracking-wider flex items-center gap-1">
+                        Email Address <span className="material-symbols-outlined text-[10px] text-on-surface-variant">lock</span>
+                      </label>
+                      <input 
+                        type="text"
+                        value={profileEmail}
+                        disabled
+                        className="bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-on-surface-variant cursor-not-allowed font-body-md"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[10px] font-mono text-outline uppercase tracking-wider">Target Domain</label>
+                      <select 
+                        value={profileDomain}
+                        onChange={(e) => setProfileDomain(e.target.value)}
+                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-primary font-body-md cursor-pointer"
+                      >
+                        <option value="swe">Software Engineering</option>
+                        <option value="backend">Backend Engineering</option>
+                        <option value="frontend">Frontend Engineering</option>
+                        <option value="fullstack">Fullstack Engineering</option>
+                        <option value="pm">Product Management</option>
+                        <option value="devops">DevOps Engineering</option>
+                        <option value="ml">Machine Learning Engineering</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[10px] font-mono text-outline uppercase tracking-wider">Experience Level</label>
+                      <select 
+                        value={profileExperience}
+                        onChange={(e) => setProfileExperience(e.target.value)}
+                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-primary font-body-md cursor-pointer"
+                      >
+                        <option value="0 Yrs">Entry Level (0-1 yrs)</option>
+                        <option value="2.5 Yrs">Mid Level (2-4 yrs)</option>
+                        <option value="5.5 Yrs">Senior Level (5+ yrs)</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[10px] font-mono text-outline uppercase tracking-wider">Highest Education</label>
+                      <input 
+                        type="text"
+                        value={profileEducation}
+                        onChange={(e) => setProfileEducation(e.target.value)}
+                        placeholder="e.g. B.Tech. Computer Science"
+                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-primary font-body-md"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[10px] font-mono text-outline uppercase tracking-wider">Dream Company</label>
+                      <input 
+                        type="text"
+                        value={profileDreamCompany}
+                        onChange={(e) => setProfileDreamCompany(e.target.value)}
+                        placeholder="e.g. Google, Stripe"
+                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-primary font-body-md"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[10px] font-mono text-outline uppercase tracking-wider">LinkedIn Profile URL</label>
+                      <input 
+                        type="url"
+                        value={profileLinkedIn}
+                        onChange={(e) => setProfileLinkedIn(e.target.value)}
+                        placeholder="e.g. https://linkedin.com/in/username"
+                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-primary font-body-md"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[10px] font-mono text-outline uppercase tracking-wider">GitHub Profile URL</label>
+                      <input 
+                        type="url"
+                        value={profileGitHub}
+                        onChange={(e) => setProfileGitHub(e.target.value)}
+                        placeholder="e.g. https://github.com/username"
+                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-primary font-body-md"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-4">
+                    <button 
+                      type="submit"
+                      disabled={isSavingProfile}
+                      className="px-6 py-2.5 glow-button text-white font-bold text-xs border-none cursor-pointer flex items-center gap-2"
+                    >
+                      {isSavingProfile ? (
+                        <>
+                          <span className="material-symbols-outlined text-base animate-spin">sync</span>
+                          Saving Changes...
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined text-base">save</span>
+                          Save Changes
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </section>
+
+              {/* Danger Zone */}
+              <section className="glass-panel p-6 md:p-8 rounded-2xl border border-red-500/20 bg-red-500/[0.01]">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div className="text-left">
+                    <h3 className="text-sm font-bold text-red-400 flex items-center gap-1.5 font-headline-md">
+                      <span className="material-symbols-outlined text-base text-red-500">warning</span>
+                      Danger Zone
+                    </h3>
+                    <p className="text-[11px] text-on-surface-variant mt-1 leading-relaxed font-body-md">
+                      Permanently delete your IntervFlow account and all associated mock interview histories, stats, and files. This action is irreversible.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/25 hover:text-red-300 rounded-xl px-5 py-2.5 transition-all text-xs font-bold shrink-0 cursor-pointer"
+                  >
+                    Delete Account
+                  </button>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {/* TAB 4: PREFERENCES PANEL */}
+          {activeTab === 'preferences' && (
+            <div className="space-y-10 animate-fade-in text-left">
+              <section className="glass-panel p-6 md:p-8 rounded-2xl border border-white/5 bg-white/[0.01]">
+                <div className="border-b border-white/10 pb-4 mb-6">
+                  <h2 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-xl">settings</span>
+                    System Preferences
+                  </h2>
+                  <p className="text-xs text-on-surface-variant mt-1 font-body-md">
+                    Calibrate your AI interview difficulty levels, compiler themes, and notifications preferences.
+                  </p>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[10px] font-mono text-outline uppercase tracking-wider">Prep Challenge Difficulty</label>
+                      <select 
+                        value={prefDifficulty}
+                        onChange={(e) => setPrefDifficulty(e.target.value)}
+                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-primary font-body-md cursor-pointer"
+                      >
+                        <option value="easy">Easy (Fundamentals)</option>
+                        <option value="medium">Medium (Standard LeetCode / Behavioral)</option>
+                        <option value="hard">Hard (Advanced Staff / Systems Architect)</option>
+                        <option value="adaptive">Adaptive Calibration (Recommended)</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[10px] font-mono text-outline uppercase tracking-wider">AI Interviewer Tone Persona</label>
+                      <select 
+                        value={prefStyle}
+                        onChange={(e) => setPrefStyle(e.target.value)}
+                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-primary font-body-md cursor-pointer"
+                      >
+                        <option value="friendly">Friendly &amp; Encouraging</option>
+                        <option value="standard">Standard Technical Auditor (Objective)</option>
+                        <option value="stress">High-Pressure Stress Simulation (FAANG Bar-Raiser)</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[10px] font-mono text-outline uppercase tracking-wider">Workspace Code Editor Theme</label>
+                      <select 
+                        value={prefTheme}
+                        onChange={(e) => setPrefTheme(e.target.value)}
+                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-primary font-body-md cursor-pointer"
+                      >
+                        <option value="dark">Dark / VSCode Classic</option>
+                        <option value="monokai">Monokai Pro (High Contrast)</option>
+                        <option value="light">Light Classic</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[10px] font-mono text-outline uppercase tracking-wider">Default Programming Language</label>
+                      <select 
+                        value={prefLanguage}
+                        onChange={(e) => setPrefLanguage(e.target.value)}
+                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-primary font-body-md cursor-pointer"
+                      >
+                        <option value="python">Python</option>
+                        <option value="javascript">JavaScript (ES6)</option>
+                        <option value="cpp">C++ (GCC 11)</option>
+                        <option value="java">Java (JDK 17)</option>
+                        <option value="go">Go (1.20)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-white/5 pt-5 space-y-4">
+                    <span className="text-[10px] font-mono text-outline uppercase tracking-wider block">Notification Reminders</span>
+                    <div className="space-y-3">
+                      <label className="flex items-start gap-3 cursor-pointer select-none">
+                        <input 
+                          type="checkbox"
+                          checked={prefEmailReminders}
+                          onChange={(e) => setPrefEmailReminders(e.target.checked)}
+                          className="mt-1 accent-primary rounded cursor-pointer w-4 h-4 shrink-0"
+                        />
+                        <div className="text-left">
+                          <span className="text-xs text-white font-medium block">Session Indicators</span>
+                          <span className="text-[10px] text-on-surface-variant block mt-0.5 font-body-md">Receive session start indicators and calendar links via email.</span>
+                        </div>
+                      </label>
+                      <label className="flex items-start gap-3 cursor-pointer select-none">
+                        <input 
+                          type="checkbox"
+                          checked={prefWeeklyTips}
+                          onChange={(e) => setPrefWeeklyTips(e.target.checked)}
+                          className="mt-1 accent-primary rounded cursor-pointer w-4 h-4 shrink-0"
+                        />
+                        <div className="text-left">
+                          <span className="text-xs text-white font-medium block">Weekly Challenges Digest</span>
+                          <span className="text-[10px] text-on-surface-variant block mt-0.5 font-body-md">Subscribe to weekly coding practice challenges and mock feedback collections.</span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-4 border-t border-white/5">
+                    <button 
+                      onClick={handleSavePreferences}
+                      className="px-6 py-2.5 glow-button text-white font-bold text-xs border-none cursor-pointer flex items-center gap-1.5"
+                    >
+                      <span className="material-symbols-outlined text-base">save</span>
+                      Save Preferences
+                    </button>
+                  </div>
+                </div>
+              </section>
+            </div>
+          )}
+
         </main>
       </div>
 
@@ -666,6 +1055,55 @@ export default function Billing() {
             >
               Return to Bookings
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[120] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in text-left">
+          <div className="glass-card max-w-md w-full p-6 rounded-3xl border border-red-500/30 bg-[#09090b] shadow-[0_0_50px_rgba(239,68,68,0.15)]">
+            <div className="flex items-center gap-3 mb-3 text-red-500">
+              <span className="material-symbols-outlined text-4xl bg-red-500/10 p-2.5 rounded-full">warning</span>
+              <div>
+                <h3 className="text-white font-bold text-base">Delete Account Permanently?</h3>
+                <p className="text-[9px] font-mono text-red-400">IRREVERSIBLE DATA PURGING</p>
+              </div>
+            </div>
+            
+            <p className="text-[11px] text-on-surface-variant leading-relaxed mb-4 font-body-md">
+              Are you absolutely sure you want to delete your account? This will permanently erase your profile, XP status, mock interview session histories, and shared community posts. **This action is irreversible.**
+            </p>
+            
+            <div className="mb-4">
+              <label className="text-[10px] font-mono text-outline block mb-2">TYPE <strong className="text-white">DELETE</strong> TO CONFIRM:</label>
+              <input 
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="Type DELETE here..."
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-white/20 focus:outline-none focus:border-red-500 font-body-md"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }}
+                className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-xs cursor-pointer transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                disabled={deleteConfirmText !== 'DELETE' || isDeletingAccount}
+                onClick={handleDeleteAccount}
+                className={`flex-1 py-2.5 rounded-xl font-bold text-xs cursor-pointer border-none transition-colors ${
+                  deleteConfirmText === 'DELETE' 
+                    ? 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/20' 
+                    : 'bg-white/5 text-on-surface-variant/40 cursor-not-allowed'
+                }`}
+              >
+                {isDeletingAccount ? "Deleting..." : "Permanently Delete"}
+              </button>
+            </div>
           </div>
         </div>
       )}
