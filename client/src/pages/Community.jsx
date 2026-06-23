@@ -3,6 +3,48 @@ import { useNavigate } from 'react-router-dom';
 import DashboardNavbar from '../components/DashboardNavbar';
 import Footer from '../components/Footer';
 import Chatbot from '../components/Chatbot';
+function formatTimeAgo(dateStr) {
+  if (!dateStr) return 'Just now';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const seconds = Math.floor((now - date) / 1000);
+  if (isNaN(seconds)) return 'Just now';
+  if (seconds < 0) return 'Just now';
+
+  const intervals = {
+    year: 31536000,
+    month: 2592000,
+    week: 604800,
+    day: 86400,
+    hour: 3600,
+    minute: 60,
+  };
+
+  for (const [unit, value] of Object.entries(intervals)) {
+    const count = Math.floor(seconds / value);
+    if (count >= 1) {
+      return `${count} ${unit}${count > 1 ? 's' : ''} ago`;
+    }
+  }
+  return 'Just now';
+}
+
+function getAuthorMetaDisplay(post) {
+  const timeAgoStr = formatTimeAgo(post.createdAt);
+  let suffix = '';
+  if (post.authorMeta) {
+    const parts = post.authorMeta.split(/•| • /);
+    if (parts.length > 1) {
+      suffix = parts[parts.length - 1].trim();
+    } else {
+      const trimmed = post.authorMeta.trim();
+      if (trimmed.toLowerCase() !== 'just now') {
+        suffix = trimmed;
+      }
+    }
+  }
+  return suffix ? `${timeAgoStr} • ${suffix}` : timeAgoStr;
+}
 
 export default function Community() {
   const navigate = useNavigate();
@@ -496,7 +538,7 @@ export default function Community() {
                           </div>
                           <div>
                             <h4 className="text-sm font-semibold text-white">{post.author}</h4>
-                            <p className="text-[10px] text-on-surface-variant font-mono">{post.authorMeta}</p>
+                            <p className="text-[10px] text-on-surface-variant font-mono">{getAuthorMetaDisplay(post)}</p>
                           </div>
                         </div>
                         <span className="text-[9px] bg-primary/10 text-primary border border-primary/20 px-2.5 py-1 rounded-full uppercase font-bold tracking-wider font-mono">
@@ -798,7 +840,7 @@ export default function Community() {
             </section>
 
             {/* Premium Slots Card */}
-            <div className="glass-panel p-5 rounded-2xl border border-white/10 bg-gradient-to-br from-primary/10 via-transparent to-[#ddb7ff]/10 flex flex-col justify-between h-48 relative overflow-hidden text-left">
+            <div className="glass-panel p-6 rounded-2xl border border-white/10 bg-gradient-to-br from-primary/10 via-transparent to-[#ddb7ff]/10 flex flex-col gap-4 relative overflow-hidden text-left">
               <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
               <div>
                 <span className="text-[9px] bg-primary/20 text-primary border border-primary/20 px-2 py-0.5 rounded uppercase font-bold tracking-widest font-mono select-none">
