@@ -45,6 +45,14 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
   }, [navigate]);
 
   const [streakCount, setStreakCount] = useState(0);
+  const [userXP, setUserXP] = useState(750);
+
+  useEffect(() => {
+    const cachedXP = localStorage.getItem('intervflow_user_xp');
+    if (cachedXP) {
+      setUserXP(parseInt(cachedXP, 10));
+    }
+  }, [isStreakOpen]);
 
   // ── Load streak dynamically based on user usage ───────────────────
   useEffect(() => {
@@ -242,6 +250,21 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
                     {streakCount > 0 ? '⚡ Streak Active!' : '🔥 Start Practicing!'}
                   </span>
                   <span className="text-[10px] text-primary">Day {streakCount}/30</span>
+                </div>
+                
+                {/* Dynamic XP display and Level Progress Bar */}
+                <div className="flex flex-col gap-1 text-[10px] font-mono text-[#ddb7ff] bg-[#ddb7ff]/5 border border-[#ddb7ff]/10 rounded px-2.5 py-2 my-1.5">
+                  <div className="flex justify-between items-center">
+                    <span>Current Experience</span>
+                    <span className="font-bold">✨ {userXP} XP</span>
+                  </div>
+                  <div className="w-full bg-white/15 h-1.5 rounded-full overflow-hidden mt-1.5">
+                    <div className="bg-[#ddb7ff] h-full transition-all duration-300" style={{ width: `${((userXP % 1000) / 1000) * 100}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[8px] text-on-surface-variant/60 font-mono mt-0.5">
+                    <span>Level {Math.floor(userXP / 1000) + 1}</span>
+                    <span>{userXP % 1000} / 1000 XP for Lvl {Math.floor(userXP / 1000) + 2}</span>
+                  </div>
                 </div>
                 <p className="text-[11px] text-on-surface-variant">
                   {streakCount > 0 

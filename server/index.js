@@ -2135,6 +2135,262 @@ app.get('/api/community/posts', async (req, res) => {
   }
 });
 
+// Route: Get community leaderboard with real data
+app.get('/api/community/leaderboard', async (req, res) => {
+  try {
+    // 1. Fetch users
+    let users = [];
+    if (db) {
+      try {
+        const usersSnapshot = await db.collection('users').get();
+        usersSnapshot.forEach(doc => {
+          users.push({ email: doc.id, ...doc.data() });
+        });
+      } catch (e) {
+        console.error("Firestore user read error for leaderboard:", e);
+      }
+    }
+    if (users.length === 0) {
+      const fallbackPath = './db_users_fallback.json';
+      if (fs.existsSync(fallbackPath)) {
+        try {
+          users = JSON.parse(fs.readFileSync(fallbackPath, 'utf8') || '[]');
+        } catch (e) {
+          console.error("Error reading users fallback for leaderboard:", e);
+        }
+      }
+    }
+
+    // 2. Fetch completed sessions
+    let sessions = [];
+    const sessionsPath = './db_sessions_fallback.json';
+    if (fs.existsSync(sessionsPath)) {
+      try {
+        sessions = JSON.parse(fs.readFileSync(sessionsPath, 'utf8') || '[]');
+      } catch (e) {
+        console.error("Error reading sessions fallback for leaderboard:", e);
+      }
+    }
+
+    // 3. Fetch community posts
+    let posts = [];
+    const postsPath = './db_community_posts_fallback.json';
+    if (fs.existsSync(postsPath)) {
+      try {
+        posts = JSON.parse(fs.readFileSync(postsPath, 'utf8') || '[]');
+      } catch (e) {
+        console.error("Error reading posts fallback for leaderboard:", e);
+      }
+    }
+
+    // 4. Fetch resume analyses
+    let analyses = [];
+    if (db) {
+      try {
+        const analysesSnapshot = await db.collection('resume_analyses').get();
+        analysesSnapshot.forEach(doc => {
+          analyses.push(doc.data());
+        });
+      } catch (e) {
+        console.error("Firestore resume analyses read error for leaderboard:", e);
+      }
+    }
+    const analysesPath = './db_fallback.json';
+    if (fs.existsSync(analysesPath)) {
+      try {
+        const localAnalyses = JSON.parse(fs.readFileSync(analysesPath, 'utf8') || '[]');
+        if (Array.isArray(localAnalyses)) {
+          analyses = analyses.concat(localAnalyses);
+        }
+      } catch (e) {
+        console.error("Error reading analyses fallback for leaderboard:", e);
+      }
+    }
+
+    // 5. Calculate statistics & XP for each real user
+    const filteredUsers = users.filter(u => u.email && u.name);
+    const leaderboard = filteredUsers.map(user => {
+      const email = user.email.toLowerCase().trim();
+
+      // Filter user sessions
+      const userSessions = sessions.filter(s => s.userEmail && s.userEmail.toLowerCase().trim() === email);
+      const completedSessions = userSessions.filter(s => s.report && s.completedAt);
+      const completedSessionsCount = completedSessions.length;
+      let highestScore = 0;
+      completedSessions.forEach(s => {
+        if (s.report && typeof s.report.score === 'number' && s.report.score > highestScore) {
+          highestScore = s.report.score;
+        }
+      });
+
+      // Filter user posts
+      const userName = user.name || "";
+      const userPosts = posts.filter(p => {
+        if (p.userEmail && p.userEmail.toLowerCase().trim() === email) {
+          return true;
+        }
+        // Match mock posts or previous submissions where author is like "userName (You)" or "userName"
+        if (p.author && (p.author === `${userName} (You)` || p.author.toLowerCase() === userName.toLowerCase())) {
+          return true;
+        }
+        return false;
+      });
+      const postsCount = userPosts.length;
+
+      // Filter user resume reviews
+      const userAnalyses = analyses.filter(a => a.userEmail && a.userEmail.toLowerCase().trim() === email);
+      let highestResumeScore = 0;
+      userAnalyses.forEach(a => {
+        const score = a.atsScore || 0;
+        if (score > highestResumeScore) {
+          highestResumeScore = score;
+        }
+      });
+
+      // Streak calculation (exactly matches DashboardNavbar.jsx daily streak check logic)
+      const uniqueDates = new Set();
+      userSessions.forEach(s => {
+        const dateVal = s.completedAt || s.startTime;
+        if (dateVal) {
+          const d = new Date(dateVal);
+          const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          uniqueDates.add(dateStr);
+        }
+      });
+      userAnalyses.forEach(a => {
+        const dateVal = a.createdAt;
+        if (dateVal) {
+          const d = new Date(dateVal);
+          const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          uniqueDates.add(dateStr);
+        }
+      });
+
+      const getDateOffsetStr = (offset) => {
+        const d = new Date();
+        d.setDate(d.getDate() - offset);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      };
+
+      const todayStr = getDateOffsetStr(0);
+      const yesterdayStr = getDateOffsetStr(1);
+
+      let streak = 0;
+      let referenceDateStr = "";
+
+      if (uniqueDates.has(todayStr)) {
+        streak = 1;
+        referenceDateStr = todayStr;
+      } else if (uniqueDates.has(yesterdayStr)) {
+        streak = 1;
+        referenceDateStr = yesterdayStr;
+      }
+
+      if (streak > 0) {
+        let offset = 1;
+        if (referenceDateStr === yesterdayStr) {
+          offset = 2;
+        }
+        while (true) {
+          const prevDateStr = getDateOffsetStr(offset);
+          if (uniqueDates.has(prevDateStr)) {
+            streak++;
+            offset++;
+          } else {
+            break;
+          }
+        }
+      }
+
+      // XP: 750 Base XP + (Completed Sessions * 100) + (Posts * 5) + (Completed Sessions >= 3 ? 150 : 0) + (highestScore >= 80 ? 150 : 0) + (highestResumeScore >= 75 ? 150 : 0)
+      const hasMarathon = completedSessionsCount >= 3;
+      const hasHighScorer = highestScore >= 80;
+      const hasResumeCalibrator = highestResumeScore >= 75;
+
+      const challengeBonuses = (hasMarathon ? 150 : 0) + (hasHighScorer ? 150 : 0) + (hasResumeCalibrator ? 150 : 0);
+      const xp = 750 + (completedSessionsCount * 100) + (postsCount * 5) + challengeBonuses;
+
+      // Tech Stack
+      let techStack = ["Algorithms", "Data Structures", "System Design", "Git"];
+      if (user.domain === 'backend') {
+        techStack = ["Go", "Node.js", "MongoDB", "Docker", "Redis"];
+      } else if (user.domain === 'frontend') {
+        techStack = ["React", "JavaScript", "Tailwind CSS", "CSS", "Vite"];
+      } else if (user.domain === 'pm') {
+        techStack = ["Product Roadmap", "User Personas", "Agile", "KPI metrics"];
+      } else if (user.domain === 'fullstack') {
+        techStack = ["React", "Node.js", "Express", "TypeScript", "PostgreSQL", "Docker"];
+      }
+
+      // Badges list
+      const badges = [];
+      if (streak > 0) {
+        badges.push({ emoji: "🔥", name: "Streak Active", desc: `Maintained practice streak for ${streak} days.` });
+      }
+      if (highestScore >= 80) {
+        badges.push({ emoji: "💻", name: "Systems Design", desc: "Demonstrated baseline database architecture capability." });
+      }
+      if (highestResumeScore >= 75) {
+        badges.push({ emoji: "📝", name: "ATS 75+", desc: "Resume analyzer score exceeds 75%." });
+      }
+      if (completedSessionsCount >= 3) {
+        badges.push({ emoji: "🏆", name: "Marathoner", desc: "Completed 3 or more mock interviews." });
+      }
+      if (badges.length === 0) {
+        badges.push({ emoji: "🌟", name: "Active Member", desc: "Welcome to the IntervFlow community." });
+      }
+
+      // Summaries list (Shared experiences)
+      const domainLabel = user.domain === 'backend'
+        ? 'Backend Eng'
+        : user.domain === 'frontend'
+          ? 'Frontend Eng'
+          : user.domain === 'pm'
+            ? 'Product Manager'
+            : 'Candidate Partner';
+
+      let summaries = userPosts.map(p => ({
+        company: p.title.split(' - ')[0] || "Target Company",
+        role: p.title.split(' - ')[1] || domainLabel,
+        text: p.description
+      }));
+
+      if (summaries.length === 0) {
+        summaries = [{
+          company: user.dreamCompany || "IntervFlow",
+          role: "Active Candidate",
+          text: "Practicing behavioral STAR responses and resume keyword indexing logs."
+        }];
+      }
+
+      const initials = userName.split(/\s+/).map(n => n[0]).join("").slice(0, 2).toUpperCase() || "IF";
+
+      return {
+        name: userName,
+        email: email,
+        streak: `${streak} Day${streak !== 1 ? 's' : ''}`,
+        streakCount: streak,
+        xp: `${xp} XP`,
+        xpNumber: xp,
+        title: `${domainLabel} at ${user.dreamCompany || 'IntervFlow'}`,
+        initials,
+        techStack,
+        badges,
+        summaries,
+        mentorKey: null
+      };
+    });
+
+    // Sort users by XP descending
+    leaderboard.sort((a, b) => b.xpNumber - a.xpNumber);
+
+    res.json({ success: true, leaderboard });
+  } catch (err) {
+    console.error("GET community leaderboard error:", err);
+    res.status(500).json({ error: err.message || "Server error fetching leaderboard." });
+  }
+});
+
 // Route: Add a new community post
 app.post('/api/community/posts', async (req, res) => {
   try {

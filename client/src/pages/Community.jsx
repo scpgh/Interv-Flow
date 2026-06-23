@@ -61,6 +61,13 @@ export default function Community() {
   const [expandedComments, setExpandedComments] = useState(new Set());
   const [commentTextMap, setCommentTextMap] = useState({});
 
+  // Dynamic challenges & XP states
+  const [userXP, setUserXP] = useState(750);
+  const [claimedChallenges, setClaimedChallenges] = useState(new Set());
+  const [sessionsCount, setSessionsCount] = useState(0);
+  const [highestScore, setHighestScore] = useState(0);
+  const [atsScore, setAtsScore] = useState(0);
+
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
@@ -70,6 +77,8 @@ export default function Community() {
   const [modalLanguage, setModalLanguage] = useState("python");
   const [postAnonymous, setPostAnonymous] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState(null);
+  const [standings, setStandings] = useState([]);
+  const [isFullStandingsOpen, setIsFullStandingsOpen] = useState(false);
 
   // Static leaderboard mock profiles
   const mockLeaderboardProfiles = {
@@ -147,7 +156,7 @@ export default function Community() {
       name: `${userName} (You)`,
       rank: 4,
       streak: "15 Days",
-      xp: "750 XP",
+      xp: `${userXP} XP`,
       title: `${domainLabel} at IntervFlow`,
       initials: userName.slice(0, 2).toUpperCase(),
       mentorKey: null,
@@ -176,6 +185,25 @@ export default function Community() {
     setUserDomain(domain);
     setUserEmail(email);
 
+    // Load XP
+    const cachedXP = localStorage.getItem('intervflow_user_xp');
+    if (cachedXP) {
+      setUserXP(parseInt(cachedXP, 10));
+    } else {
+      setUserXP(750);
+      localStorage.setItem('intervflow_user_xp', '750');
+    }
+
+    // Load claimed challenges
+    const claimed = localStorage.getItem('intervflow_claimed_challenges');
+    if (claimed) {
+      try {
+        setClaimedChallenges(new Set(JSON.parse(claimed)));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
     // Load bookmarks
     const saved = localStorage.getItem('intervflow_bookmarks');
     if (saved) {
@@ -187,7 +215,153 @@ export default function Community() {
     }
 
     fetchPosts();
+    fetchUserSessions(email);
+    fetchATSScore();
+    fetchStandings();
   }, []);
+
+  const fetchStandings = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/community/leaderboard`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.leaderboard)) {
+        setStandings(data.leaderboard);
+      }
+    } catch (err) {
+      console.error("Failed to fetch leaderboard standings:", err);
+    }
+  };
+
+  const getMergedStandings = () => {
+    const cleanUserEmail = userEmail ? userEmail.toLowerCase().trim() : "";
+    let list = [...standings];
+    
+    const domainLabel = userDomain === 'backend' 
+      ? 'Backend Eng' 
+      : userDomain === 'frontend' 
+        ? 'Frontend Eng' 
+        : userDomain === 'pm'
+          ? 'Product Manager'
+          : 'Candidate Partner';
+
+    const userSummaries = posts.filter(p => !p.anonymous && (p.author.includes(userName) || p.author.includes("You"))).map(p => ({
+      company: p.title.split(' - ')[0] || "Target Company",
+      role: p.title.split(' - ')[1] || domainLabel,
+      text: p.description
+    }));
+
+    const cachedStreak = sessionStorage.getItem('user_streak_count');
+    const localStreakCount = cachedStreak ? parseInt(cachedStreak, 10) : 15;
+
+    const localBadges = [];
+    if (localStreakCount > 0) {
+      localBadges.push({ emoji: "🔥", name: "Streak Active", desc: `Maintained practice streak for ${localStreakCount} days.` });
+    }
+    if (highestScore >= 80) {
+      localBadges.push({ emoji: "💻", name: "Systems Design", desc: "Demonstrated baseline database architecture capability." });
+    }
+    if (atsScore >= 75) {
+      localBadges.push({ emoji: "📝", name: "ATS 75+", desc: `Resume analyzer score exceeds 75%.` });
+    }
+    if (sessionsCount >= 3) {
+      localBadges.push({ emoji: "🏆", name: "Marathoner", desc: "Completed 3 or more mock interviews." });
+    }
+    if (localBadges.length === 0) {
+      localBadges.push({ emoji: "🌟", name: "Active Member", desc: "Welcome to the IntervFlow community." });
+    }
+
+    const localUserEntry = {
+      name: userName,
+      email: cleanUserEmail,
+      streak: `${localStreakCount} Day${localStreakCount !== 1 ? 's' : ''}`,
+      streakCount: localStreakCount,
+      xp: `${userXP} XP`,
+      xpNumber: userXP,
+      title: `${domainLabel} at ${sessionStorage.getItem('userTargetCompany') || 'IntervFlow'}`,
+      initials: userName.split(/\s+/).map(n => n[0]).join("").slice(0, 2).toUpperCase() || "IF",
+      techStack: userDomain === 'backend' 
+        ? ["Go", "Node.js", "MongoDB", "Docker", "Redis"]
+        : userDomain === 'frontend'
+          ? ["React", "JavaScript", "Tailwind CSS", "CSS", "Vite"]
+          : ["Product Roadmap", "User Personas", "Agile", "KPI metrics"],
+      badges: localBadges,
+      summaries: userSummaries.length > 0 ? userSummaries : [
+        { company: "IntervFlow", role: "Active Candidate", text: "Practicing behavioral STAR responses and resume keyword indexing logs." }
+      ],
+      mentorKey: null
+    };
+
+    const userIndex = list.findIndex(item => item.email && item.email.toLowerCase().trim() === cleanUserEmail);
+    
+    if (userIndex > -1) {
+      list[userIndex] = {
+        ...list[userIndex],
+        ...localUserEntry
+      };
+    } else {
+      if (cleanUserEmail) {
+        list.push(localUserEntry);
+      }
+    }
+
+    list.sort((a, b) => b.xpNumber - a.xpNumber);
+
+    return list.map((item, idx) => ({
+      ...item,
+      rank: idx + 1
+    }));
+  };
+
+  const fetchUserSessions = async (email) => {
+    if (!email) return;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/interview/sessions?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.sessions)) {
+        const completed = data.sessions.filter(s => s.report && s.completedAt);
+        setSessionsCount(completed.length);
+        
+        let highest = 0;
+        completed.forEach(s => {
+          if (s.report.score > highest) {
+            highest = s.report.score;
+          }
+        });
+        setHighestScore(highest);
+      }
+    } catch (err) {
+      console.error("Failed to fetch sessions for challenges:", err);
+    }
+  };
+
+  const fetchATSScore = () => {
+    const cachedAnalysis = sessionStorage.getItem('resumeAnalysisResult');
+    if (cachedAnalysis) {
+      try {
+        const parsed = JSON.parse(cachedAnalysis);
+        if (parsed && parsed.atsScore) {
+          setAtsScore(parsed.atsScore);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
+  const handleClaimChallenge = (challengeId, xp) => {
+    setClaimedChallenges(prev => {
+      const next = new Set(prev);
+      next.add(challengeId);
+      localStorage.setItem('intervflow_claimed_challenges', JSON.stringify([...next]));
+      return next;
+    });
+
+    const newXP = userXP + xp;
+    setUserXP(newXP);
+    localStorage.setItem('intervflow_user_xp', String(newXP));
+    
+    alert(`🎉 Challenge complete! You earned +${xp} XP!`);
+  };
 
   const fetchPosts = async () => {
     try {
@@ -311,7 +485,8 @@ export default function Community() {
           author: postAnonymous ? "Anonymous Candidate" : `${userName} (You)`,
           authorMeta,
           codeSnippet,
-          anonymous: postAnonymous
+          anonymous: postAnonymous,
+          userEmail: userEmail
         })
       });
 
@@ -320,6 +495,13 @@ export default function Community() {
         // Prepend post to state
         setPosts(prev => [data.post, ...prev]);
         
+        // Award 5 XP for sharing a post
+        const newXP = userXP + 5;
+        setUserXP(newXP);
+        localStorage.setItem('intervflow_user_xp', String(newXP));
+        
+        alert("🎉 Experience shared! You earned +5 XP!");
+
         // Reset states & close modal
         setModalTitle("");
         setModalDesc("");
@@ -392,64 +574,109 @@ export default function Community() {
                 <span className="text-[10px] font-mono bg-primary/20 text-primary border border-primary/20 px-3 py-1 rounded-full uppercase font-bold tracking-wider">Active</span>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Challenge 1 */}
-                <div className="glass-card p-5 rounded-xl border border-white/5 bg-white/5 flex flex-col justify-between hover:bg-white/10 transition-all duration-300">
-                  <div>
-                    <div className="flex justify-between items-start gap-2 mb-2">
-                      <h3 className="text-white font-semibold text-sm md:text-body-md">The STAR Master Challenge</h3>
-                      <span className="text-[10px] text-amber-400 font-bold bg-amber-400/10 px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[12px] fill-1">bolt</span>+200 XP
-                      </span>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  {
+                    id: 'marathon',
+                    title: 'Interview Marathon',
+                    description: 'Complete 2 AI Mock Interview sessions (Resume or JD matching mode).',
+                    target: 2,
+                    current: sessionsCount,
+                    xp: 200,
+                    actionLabel: 'Launch AI Mock',
+                    actionPath: '/practice',
+                  },
+                  {
+                    id: 'highscore',
+                    title: 'High-Scorer Club',
+                    description: 'Achieve a score of 75% or higher in any AI Mock Interview.',
+                    target: 75,
+                    current: highestScore,
+                    isPercentage: true,
+                    xp: 300,
+                    actionLabel: 'Launch AI Mock',
+                    actionPath: '/practice',
+                  },
+                  {
+                    id: 'ats',
+                    title: 'Resume Calibrator',
+                    description: 'Upload and audit your resume to achieve an ATS score of 80% or higher.',
+                    target: 80,
+                    current: atsScore,
+                    isPercentage: true,
+                    xp: 150,
+                    actionLabel: 'Audit Resume',
+                    actionPath: '/resume-analyzer',
+                  }
+                ].map((ch) => {
+                  const isClaimed = claimedChallenges.has(ch.id);
+                  let pct = 0;
+                  let progressText = '';
+                  
+                  if (ch.id === 'marathon') {
+                    pct = Math.min(100, Math.round((ch.current / ch.target) * 100));
+                    progressText = `Your Progress: ${ch.current}/${ch.target} complete`;
+                  } else if (ch.id === 'highscore') {
+                    pct = ch.current >= ch.target ? 100 : Math.min(100, Math.round((ch.current / ch.target) * 100));
+                    progressText = `Highest Score: ${ch.current}% / ${ch.target}%`;
+                  } else if (ch.id === 'ats') {
+                    pct = ch.current >= ch.target ? 100 : Math.min(100, Math.round((ch.current / ch.target) * 100));
+                    progressText = `Current ATS: ${ch.current}% / ${ch.target}%`;
+                  }
+                  
+                  const isCompleted = pct >= 100;
+                  
+                  return (
+                    <div key={ch.id} className="glass-card p-5 rounded-xl border border-white/5 bg-white/5 flex flex-col justify-between hover:bg-white/10 transition-all duration-300">
+                      <div>
+                        <div className="flex justify-between items-start gap-2 mb-2">
+                          <h3 className="text-white font-semibold text-xs md:text-sm">{ch.title}</h3>
+                          <span className="text-[9px] text-amber-400 font-bold bg-amber-400/10 px-2 py-0.5 rounded-full flex items-center gap-0.5 shrink-0">
+                            <span className="material-symbols-outlined text-[10px] fill-1">bolt</span>+{ch.xp} XP
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-on-surface-variant mb-4 leading-relaxed">
+                          {ch.description}
+                        </p>
+                      </div>
+                      <div>
+                        <div className="flex justify-between items-center text-[10px] text-on-surface-variant mb-2 font-mono">
+                          <span>{progressText}</span>
+                          <span className="text-primary font-bold">{pct}%</span>
+                        </div>
+                        <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden mb-4">
+                          <div className="bg-primary h-full transition-all duration-300" style={{ width: `${pct}%` }}></div>
+                        </div>
+                        
+                        {isClaimed ? (
+                          <button 
+                            disabled
+                            className="w-full py-2 rounded-lg bg-white/5 border border-white/10 text-on-surface-variant/40 text-[10px] font-bold font-mono cursor-not-allowed flex items-center justify-center gap-1 border-none"
+                          >
+                            <span className="material-symbols-outlined text-xs">check_circle</span>
+                            Claimed ✓
+                          </button>
+                        ) : isCompleted ? (
+                          <button 
+                            onClick={() => handleClaimChallenge(ch.id, ch.xp)}
+                            className="w-full py-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-[0_0_15px_rgba(245,158,11,0.4)] animate-pulse text-[10px] font-bold flex items-center justify-center gap-1 border-none hover:brightness-110 cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-xs font-bold">celebration</span>
+                            Claim Reward
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => navigate(ch.actionPath)} 
+                            className="w-full py-2 rounded-lg border border-primary/30 text-primary hover:bg-primary/10 hover:text-white transition-all text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer bg-transparent"
+                          >
+                            <span className="material-symbols-outlined text-xs">bolt</span>
+                            {ch.actionLabel}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-xs text-on-surface-variant mb-4 leading-relaxed">
-                      Complete 3 Behavioral/HR Mock Sessions scoring 85%+ on response structure details.
-                    </p>
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center text-[11px] text-on-surface-variant mb-2 font-mono">
-                      <span>Your Progress: 2/3 complete</span>
-                      <span className="text-primary font-bold">66%</span>
-                    </div>
-                    <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden mb-4">
-                      <div className="bg-primary h-full w-[66%]"></div>
-                    </div>
-                    <button 
-                      onClick={() => navigate('/practice')} 
-                      className="glow-button w-full py-2.5 text-white font-bold text-xs flex items-center justify-center gap-1.5 border-none"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">bolt</span>
-                      Launch STAR Mock
-                    </button>
-                  </div>
-                </div>
-
-                {/* Challenge 2 */}
-                <div className="glass-card p-5 rounded-xl border border-white/5 bg-white/5 flex flex-col justify-between hover:bg-white/10 transition-all duration-300">
-                  <div>
-                    <div className="flex justify-between items-start gap-2 mb-2">
-                      <h3 className="text-white font-semibold text-sm md:text-body-md">Consistent Architect</h3>
-                      <span className="text-[10px] text-amber-400 font-bold bg-amber-400/10 px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[12px] fill-1">bolt</span>+150 XP
-                      </span>
-                    </div>
-                    <p className="text-xs text-on-surface-variant mb-4 leading-relaxed">
-                      Maintain your streak for 7 consecutive days to lock in permanent system telemetry multipliers.
-                    </p>
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center text-[11px] text-on-surface-variant mb-2 font-mono">
-                      <span>Your Progress: 4/7 days</span>
-                      <span className="text-[#ddb7ff] font-bold">57%</span>
-                    </div>
-                    <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden mb-4">
-                      <div className="bg-gradient-to-r from-primary to-[#ddb7ff] h-full w-[57%]"></div>
-                    </div>
-                    <div className="text-center text-[10px] text-on-surface-variant/80 font-mono">
-                      Streak multiplier: 1.2x active!
-                    </div>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
             </section>
             
@@ -716,84 +943,63 @@ export default function Community() {
               </div>
               
               <div className="flex flex-col gap-3">
-                {/* Rank 1 */}
-                <div 
-                  onClick={() => setSelectedProfile(mockLeaderboardProfiles["Devore Chen"])}
-                  className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-3 text-left">
-                    <div className="w-7 h-7 rounded-full bg-amber-400/20 text-amber-400 font-mono font-bold flex items-center justify-center border border-amber-400/30 text-xs shrink-0">1</div>
-                    <div className="h-9 w-9 rounded-full bg-white/10 border border-white/10 flex items-center justify-center font-bold text-xs select-none shrink-0">DC</div>
-                    <div>
-                      <h4 className="text-xs font-semibold text-white">Devore Chen</h4>
-                      <p className="text-[9px] text-on-surface-variant font-mono">🔥 42 Days Streak</p>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-xs font-bold text-amber-400 font-mono">980 XP</span>
-                  </div>
-                </div>
+                {getMergedStandings().slice(0, 5).map((item) => {
+                  const isSelf = item.email === userEmail.toLowerCase().trim();
+                  
+                  let rankBg = "bg-white/10 text-white/60 border-white/10";
+                  if (item.rank === 1) rankBg = "bg-amber-400/20 text-amber-400 border-amber-400/30";
+                  else if (item.rank === 2) rankBg = "bg-slate-300/20 text-slate-300 border-slate-300/30";
+                  else if (item.rank === 3) rankBg = "bg-amber-600/20 text-amber-600 border-amber-600/30";
 
-                {/* Rank 2 */}
-                <div 
-                  onClick={() => setSelectedProfile(mockLeaderboardProfiles["Sarah Jenkins"])}
-                  className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-3 text-left">
-                    <div className="w-7 h-7 rounded-full bg-slate-300/20 text-slate-300 font-mono font-bold flex items-center justify-center border border-slate-300/30 text-xs shrink-0">2</div>
-                    <div className="h-9 w-9 rounded-full bg-white/10 border border-white/10 flex items-center justify-center font-bold text-xs select-none shrink-0">SJ</div>
-                    <div>
-                      <h4 className="text-xs font-semibold text-white">Sarah Jenkins</h4>
-                      <p className="text-[9px] text-on-surface-variant font-mono">🔥 38 Days Streak</p>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-xs font-bold text-slate-300 font-mono">915 XP</span>
-                  </div>
-                </div>
+                  if (isSelf) {
+                    return (
+                      <div 
+                        key={item.email}
+                        onClick={() => setSelectedProfile(item)}
+                        className="flex items-center justify-between p-3.5 rounded-xl bg-[#2563eb]/10 border-2 border-primary/40 group relative shadow-[0_0_15px_rgba(37,99,235,0.1)] cursor-pointer animate-fade-in"
+                      >
+                        <div className="absolute -top-2.5 -right-2 bg-[#2563eb] text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">You</div>
+                        <div className="flex items-center gap-3 text-left">
+                          <div className={`w-7 h-7 rounded-full font-mono font-bold flex items-center justify-center border text-xs shrink-0 ${rankBg}`}>{item.rank}</div>
+                          <div className="h-9 w-9 rounded-full bg-primary/20 border border-primary/20 flex items-center justify-center font-bold text-xs select-none text-primary shrink-0">
+                            {item.initials}
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-bold text-white">{item.name} (You)</h4>
+                            <p className="text-[9px] text-primary font-bold font-mono">🔥 {item.streak}</p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-xs font-bold text-primary font-mono">{item.xp}</span>
+                        </div>
+                      </div>
+                    );
+                  }
 
-                {/* Rank 3 */}
-                <div 
-                  onClick={() => setSelectedProfile(mockLeaderboardProfiles["Clara Lin"])}
-                  className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-3 text-left">
-                    <div className="w-7 h-7 rounded-full bg-amber-600/20 text-amber-600 font-mono font-bold flex items-center justify-center border border-amber-600/30 text-xs shrink-0">3</div>
-                    <div className="h-9 w-9 rounded-full bg-white/10 border border-white/10 flex items-center justify-center font-bold text-xs select-none shrink-0">CL</div>
-                    <div>
-                      <h4 className="text-xs font-semibold text-white">Clara Lin</h4>
-                      <p className="text-[9px] text-on-surface-variant font-mono">🔥 35 Days Streak</p>
+                  return (
+                    <div 
+                      key={item.email}
+                      onClick={() => setSelectedProfile(item)}
+                      className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-colors cursor-pointer animate-fade-in"
+                    >
+                      <div className="flex items-center gap-3 text-left">
+                        <div className={`w-7 h-7 rounded-full font-mono font-bold flex items-center justify-center border text-xs shrink-0 ${rankBg}`}>{item.rank}</div>
+                        <div className="h-9 w-9 rounded-full bg-white/10 border border-white/10 flex items-center justify-center font-bold text-xs select-none shrink-0">{item.initials}</div>
+                        <div>
+                          <h4 className="text-xs font-semibold text-white">{item.name}</h4>
+                          <p className="text-[9px] text-on-surface-variant font-mono">🔥 {item.streak}</p>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className={`text-xs font-bold font-mono ${item.rank === 1 ? 'text-amber-400' : item.rank === 2 ? 'text-slate-300' : item.rank === 3 ? 'text-amber-600' : 'text-white'}`}>{item.xp}</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-xs font-bold text-amber-600 font-mono">890 XP</span>
-                  </div>
-                </div>
-
-                {/* Rank 4: Current User */}
-                <div 
-                  onClick={handleOpenCurrentUserProfile}
-                  className="flex items-center justify-between p-3.5 rounded-xl bg-[#2563eb]/10 border-2 border-primary/40 group relative shadow-[0_0_15px_rgba(37,99,235,0.1)] cursor-pointer"
-                >
-                  <div className="absolute -top-2.5 -right-2 bg-[#2563eb] text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">You</div>
-                  <div className="flex items-center gap-3 text-left">
-                    <div className="w-7 h-7 rounded-full bg-primary/20 text-primary font-mono font-bold flex items-center justify-center border border-primary/30 text-xs shrink-0">4</div>
-                    <div className="h-9 w-9 rounded-full bg-primary/20 border border-primary/20 flex items-center justify-center font-bold text-xs select-none text-primary shrink-0">
-                      {userName.slice(0, 2).toUpperCase()}
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-white">{userName} (You)</h4>
-                      <p className="text-[9px] text-primary font-bold font-mono">🔥 15 Days Streak</p>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-xs font-bold text-primary font-mono">750 XP</span>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
               
               <button 
-                onClick={() => alert("Simulation: Full standings page is coming soon!")}
+                onClick={() => setIsFullStandingsOpen(true)}
                 className="w-full mt-6 py-2.5 rounded-xl btn-secondary font-semibold text-xs border-none"
               >
                 View Full Standings
@@ -924,6 +1130,12 @@ export default function Community() {
                   readOnly 
                   value="+50 XP for sharing" 
                   className="w-full bg-white/5 border border-white/5 text-[#ddb7ff] font-bold rounded-xl px-4 py-2.5 text-xs font-mono text-center select-none focus:outline-none"
+                  style={{ display: 'none' }}
+                />
+                <input 
+                  readOnly 
+                  value="+5 XP for sharing" 
+                  className="w-full bg-white/5 border border-white/5 text-[#ddb7ff] font-bold rounded-xl px-4 py-2.5 text-xs font-mono text-center select-none focus:outline-none"
                 />
               </div>
             </div>
@@ -1023,7 +1235,7 @@ export default function Community() {
             <div className="mb-5">
               <h4 className="text-[10px] font-mono text-outline uppercase tracking-wider mb-2">Earned Badges</h4>
               <div className="flex flex-wrap gap-2">
-                {selectedProfile.badges.map((badge, idx) => (
+                {(selectedProfile.badges || []).map((badge, idx) => (
                   <div 
                     key={idx} 
                     className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/5 text-[10px] text-on-surface-variant hover:bg-white/10 transition-colors group relative cursor-help"
@@ -1042,7 +1254,7 @@ export default function Community() {
             <div className="mb-5">
               <h4 className="text-[10px] font-mono text-outline uppercase tracking-wider mb-2">Preferred Tech Stack</h4>
               <div className="flex flex-wrap gap-1.5">
-                {selectedProfile.techStack.map((tech, idx) => (
+                {(selectedProfile.techStack || []).map((tech, idx) => (
                   <span key={idx} className="text-[10px] font-mono bg-primary/10 border border-primary/20 text-[#b4c5ff] px-2 py-0.5 rounded-lg">
                     {tech}
                   </span>
@@ -1054,7 +1266,7 @@ export default function Community() {
             <div className="mb-6">
               <h4 className="text-[10px] font-mono text-outline uppercase tracking-wider mb-2">Public Shared Experiences</h4>
               <div className="space-y-3 max-h-40 overflow-y-auto pr-1">
-                {selectedProfile.summaries.map((sum, idx) => (
+                {(selectedProfile.summaries || []).map((sum, idx) => (
                   <div key={idx} className="p-3 rounded-xl bg-white/[0.02] border border-white/5 text-xs text-left">
                     <div className="flex justify-between items-center mb-1 text-[9px] font-mono">
                       <span className="font-bold text-white">{sum.company}</span>
@@ -1085,10 +1297,78 @@ export default function Community() {
                 disabled
                 className="w-full py-3 bg-white/5 border border-white/10 text-on-surface-variant/40 text-xs font-bold font-mono rounded-xl cursor-not-allowed text-center"
               >
-                Your Public Profile Preview
+                {selectedProfile.email === userEmail.toLowerCase().trim() ? "Your Public Profile Preview" : "Candidate Profile Preview"}
               </button>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* Full Standings Modal */}
+      {isFullStandingsOpen && (
+        <div className="fixed inset-0 bg-[#09090b]/80 backdrop-blur-md flex items-center justify-center z-[90] p-4 text-left animate-fade-in">
+          <div className="glass-panel rounded-3xl w-full max-w-2xl p-6 border border-white/10 relative flex flex-col max-h-[85vh]">
+            <button 
+              onClick={() => setIsFullStandingsOpen(false)}
+              className="absolute right-4 top-4 material-symbols-outlined text-on-surface-variant hover:text-white cursor-pointer border-none bg-transparent p-0"
+            >
+              close
+            </button>
+
+            <div className="border-b border-white/10 pb-4 mb-6">
+              <h3 className="text-base md:text-lg font-bold text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-amber-400">workspace_premium</span>
+                Global XP Standings - Top 20 Candidates
+              </h3>
+              <p className="text-[11px] text-on-surface-variant font-body-md mt-1">Real-time leaderboard ranks based on mock interview completions, streak maintenance, and community posts.</p>
+            </div>
+
+            <div className="flex-grow overflow-y-auto space-y-3 pr-2 scrollbar-thin">
+              {getMergedStandings().slice(0, 20).map((item) => {
+                const isSelf = item.email === userEmail.toLowerCase().trim();
+                
+                let rankBg = "bg-white/10 text-white/60 border-white/10";
+                if (item.rank === 1) rankBg = "bg-amber-400/20 text-amber-400 border-amber-400/30";
+                else if (item.rank === 2) rankBg = "bg-slate-300/20 text-slate-300 border-slate-300/30";
+                else if (item.rank === 3) rankBg = "bg-amber-600/20 text-amber-600 border-amber-600/30";
+
+                return (
+                  <div 
+                    key={item.email}
+                    onClick={() => {
+                      setSelectedProfile(item);
+                      setIsFullStandingsOpen(false);
+                    }}
+                    className={`flex items-center justify-between p-3 rounded-xl transition-all cursor-pointer ${
+                      isSelf 
+                        ? 'bg-[#2563eb]/10 border-2 border-primary/40 shadow-[0_0_15px_rgba(37,99,235,0.08)]' 
+                        : 'bg-white/5 border border-white/5 hover:bg-white/10'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 text-left">
+                      <div className={`w-7 h-7 rounded-full font-mono font-bold flex items-center justify-center border text-xs shrink-0 ${rankBg}`}>{item.rank}</div>
+                      <div className={`h-9 w-9 rounded-full flex items-center justify-center font-bold text-xs select-none shrink-0 ${
+                        isSelf ? 'bg-primary/20 border border-primary/20 text-primary' : 'bg-white/10 border border-white/10 text-white/80'
+                      }`}>
+                        {item.initials}
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-semibold text-white flex items-center gap-1.5">
+                          {item.name} {isSelf && <span className="text-[8px] bg-primary/25 border border-primary/30 text-primary px-1.5 py-0.5 rounded font-bold uppercase">You</span>}
+                        </h4>
+                        <p className="text-[9px] text-on-surface-variant font-mono">🔥 {item.streak} • {item.title.split(' at ')[0]}</p>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className={`text-xs font-bold font-mono ${
+                        isSelf ? 'text-primary' : item.rank === 1 ? 'text-amber-400' : item.rank === 2 ? 'text-slate-300' : item.rank === 3 ? 'text-amber-600' : 'text-white'
+                      }`}>{item.xp}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
