@@ -82,7 +82,15 @@ export default function SignUp() {
       sessionStorage.setItem('userEmail', data.user.email);
       sessionStorage.setItem('userName', data.user.name);
       sessionStorage.setItem('userDomain', data.user.domain);
+      sessionStorage.setItem('userRole', data.user.role || 'USER');
+      sessionStorage.setItem('idToken', idToken);
       sessionStorage.setItem('onboardingCompleted', String(data.user.onboardingCompleted));
+
+      if (data.claimsUpdated) {
+        console.log("Custom claims updated on server. Refreshing token on client...");
+        const refreshedToken = await auth.currentUser.getIdToken(true);
+        sessionStorage.setItem('idToken', refreshedToken);
+      }
       
       if (data.user.onboardingCompleted) {
         sessionStorage.setItem('userExperience', data.user.experienceYears || '');

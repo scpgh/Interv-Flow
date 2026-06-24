@@ -38,10 +38,13 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
   }, [activeTab, syncPill]);
 
   // ── Load user ─────────────────────────────────────────────────────
+  const [userRole, setUserRole] = useState('USER');
   useEffect(() => {
     if (sessionStorage.getItem('isAuthenticated') !== 'true') { navigate('/login'); return; }
     const name = sessionStorage.getItem('userName');
     if (name) setUserName(name);
+    const role = sessionStorage.getItem('userRole') || sessionStorage.getItem('adminRole');
+    if (role) setUserRole(role);
   }, [navigate]);
 
   const [streakCount, setStreakCount] = useState(0);
@@ -150,6 +153,25 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
   }, []);
 
   // ── Helpers ───────────────────────────────────────────────────────
+  const handleExitImpersonation = () => {
+    const adminEmail = sessionStorage.getItem('adminEmail');
+    const adminName = sessionStorage.getItem('adminName');
+    const adminRole = sessionStorage.getItem('adminRole');
+
+    if (adminEmail) {
+      sessionStorage.setItem('userEmail', adminEmail);
+      sessionStorage.setItem('userName', adminName);
+      sessionStorage.setItem('userRole', adminRole);
+    }
+
+    sessionStorage.removeItem('impersonatedUser');
+    sessionStorage.removeItem('adminEmail');
+    sessionStorage.removeItem('adminName');
+    sessionStorage.removeItem('adminRole');
+
+    window.location.href = '/admin';
+  };
+
   const handleSignOut = () => { sessionStorage.clear(); navigate('/'); };
   const clearNotifications = (e) => { e.stopPropagation(); setNotifications([]); };
 
@@ -226,6 +248,28 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
 
         {/* ── Right: Streak + Avatar + Hamburger ── */}
         <div className="flex items-center gap-3 flex-shrink-0">
+
+          {/* Direct Navbar Admin Dashboard Button */}
+          {userRole === 'ADMIN' && (
+            <button
+              onClick={() => navigate('/admin')}
+              className="bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 font-bold py-1.5 px-3.5 rounded-full text-[10px] transition-colors cursor-pointer flex items-center gap-1.5 border border-amber-400/20 shadow-md flex-shrink-0"
+            >
+              <span className="material-symbols-outlined text-[14px]">admin_panel_settings</span>
+              Admin Dashboard
+            </button>
+          )}
+
+          {/* Direct Navbar Exit Impersonation Button */}
+          {sessionStorage.getItem('impersonatedUser') && (
+            <button
+              onClick={handleExitImpersonation}
+              className="bg-amber-500 hover:bg-amber-600 text-black font-bold py-1.5 px-3.5 rounded-full text-[10px] transition-colors cursor-pointer flex items-center gap-1 shadow-md border-none flex-shrink-0"
+            >
+              <span className="material-symbols-outlined text-[14px]">logout</span>
+              Exit Impersonation
+            </button>
+          )}
 
           {/* Streak — isolated wrapper for popup */}
           <div className="relative" ref={streakWrapperRef}>
@@ -338,8 +382,43 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
 
                 <div className="border-t border-white/10" />
 
+                {/* User Info & Impersonation Badge */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-3 px-3 py-2 bg-white/5 rounded-xl border border-white/5">
+                    <div className="h-8 w-8 rounded-full overflow-hidden bg-primary/20 flex items-center justify-center font-bold text-primary text-xs flex-shrink-0">
+                      {userName[0]?.toUpperCase() || 'U'}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-white truncate">{userName}</p>
+                      <p className="text-[10px] text-on-surface-variant truncate">{sessionStorage.getItem('userEmail')}</p>
+                    </div>
+                  </div>
+                  {sessionStorage.getItem('impersonatedUser') && (
+                    <div className="flex flex-col gap-1.5 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                      <div className="flex items-center gap-1.5 text-amber-300 text-[10px] font-semibold">
+                        <span className="material-symbols-outlined text-xs text-amber-400">visibility</span>
+                        <span>Viewing As Impersonated User</span>
+                      </div>
+                      <button
+                        onClick={handleExitImpersonation}
+                        className="w-full text-center py-1.5 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-lg text-[9px] border-none transition-colors cursor-pointer flex items-center justify-center gap-1"
+                      >
+                        <span className="material-symbols-outlined text-xs">logout</span>
+                        Exit Impersonation
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-white/10" />
+
                 {/* Actions */}
                 <div className="flex flex-col gap-1.5">
+                  {userRole === 'ADMIN' && (
+                    <button onClick={() => { navigate('/admin'); setIsDropdownOpen(false); }} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 transition-all border border-amber-400/20 cursor-pointer">
+                      <span className="material-symbols-outlined text-[18px]">admin_panel_settings</span>Admin Dashboard
+                    </button>
+                  )}
                   <button onClick={() => { navigate('/dashboard'); setIsDropdownOpen(false); }} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold text-[#ddb7ff] bg-[#ddb7ff]/10 hover:bg-[#ddb7ff]/20 transition-all border border-[#ddb7ff]/20 cursor-pointer">
                     <span className="material-symbols-outlined text-[18px]">verified_user</span>Switch to Mentor Portal
                   </button>

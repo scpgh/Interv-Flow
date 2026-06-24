@@ -12,13 +12,15 @@ server/node_modules/
 client/.env
 server/.env
 
-# Local Databases and Logs
+# Local Databases, Fallbacks and Logs
 *.log
-pdf_debug.log
 server/db_fallback.json
 server/db_sessions_fallback.json
 server/db_community_posts_fallback.json
+server/db_users_fallback.json
+server/db_system_settings.json
 server/pdf_debug.log
+server/users_list_debug.txt
 
 # Service Accounts and Secret Keys
 serviceAccountKey.json
@@ -29,6 +31,13 @@ dist/
 build/
 client/dist/
 client/build/
+
+# Test / debug scripts
+server/test.pdf
+server/test_pdf.js
+server/test_upload_pdf.js
+server/test_ws.js
+server/check_users.js
 
 # Editor / OS files
 .vscode/

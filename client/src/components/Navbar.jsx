@@ -45,10 +45,32 @@ export default function Navbar({ activeTab }) {
   };
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState('USER');
 
   useEffect(() => {
     setIsLoggedIn(sessionStorage.getItem('isAuthenticated') === 'true');
+    const role = sessionStorage.getItem('userRole') || sessionStorage.getItem('adminRole');
+    if (role) setUserRole(role);
   }, []);
+
+  const handleExitImpersonation = () => {
+    const adminEmail = sessionStorage.getItem('adminEmail');
+    const adminName = sessionStorage.getItem('adminName');
+    const adminRole = sessionStorage.getItem('adminRole');
+
+    if (adminEmail) {
+      sessionStorage.setItem('userEmail', adminEmail);
+      sessionStorage.setItem('userName', adminName);
+      sessionStorage.setItem('userRole', adminRole);
+    }
+
+    sessionStorage.removeItem('impersonatedUser');
+    sessionStorage.removeItem('adminEmail');
+    sessionStorage.removeItem('adminName');
+    sessionStorage.removeItem('adminRole');
+
+    window.location.href = '/admin';
+  };
 
   const handleSignOut = () => {
     sessionStorage.clear();
@@ -170,6 +192,26 @@ export default function Navbar({ activeTab }) {
       </div>
       
       <div className="flex items-center gap-3">
+        {userRole === 'ADMIN' && (
+          <button
+            onClick={() => navigate('/admin')}
+            className="bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 font-bold py-1.5 px-3.5 rounded-full text-[10px] transition-colors cursor-pointer flex items-center gap-1.5 border border-amber-400/20 shadow-md flex-shrink-0"
+          >
+            <span className="material-symbols-outlined text-[14px]">admin_panel_settings</span>
+            Admin Dashboard
+          </button>
+        )}
+
+        {sessionStorage.getItem('impersonatedUser') && (
+          <button
+            onClick={handleExitImpersonation}
+            className="bg-amber-500 hover:bg-amber-600 text-black font-bold py-1.5 px-3.5 rounded-full text-[10px] transition-colors cursor-pointer flex items-center gap-1 shadow-md border-none flex-shrink-0"
+          >
+            <span className="material-symbols-outlined text-[14px]">logout</span>
+            Exit Impersonation
+          </button>
+        )}
+
         {isLoggedIn ? (
           <>
             <button className="hidden sm:block text-on-surface-variant hover:text-white text-xs font-semibold px-4 py-2 cursor-pointer border-none bg-transparent" onClick={() => navigate('/dashboard')}>Dashboard</button>

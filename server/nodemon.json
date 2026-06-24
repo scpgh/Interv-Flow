@@ -1,6 +1,6 @@
 {
-  "ignore": ["db_fallback.json", "pdf_debug.log", "*.log"],
-  "watch": ["index.js"],
+  "ignore": ["db_fallback.json", "db_sessions_fallback.json", "db_users_fallback.json", "db_community_posts_fallback.json", "pdf_debug.log", "*.log", "*.txt"],
+  "watch": ["."],
   "ext": "js,mjs,cjs,json",
   "delay": "500"
 }
