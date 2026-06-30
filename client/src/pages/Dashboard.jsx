@@ -143,6 +143,37 @@ export default function Dashboard() {
   const [averageMockScore, setAverageMockScore] = useState(null);
   const [totalSpeechHours, setTotalSpeechHours] = useState("0");
 
+  const [claimedTimeline, setClaimedTimeline] = useState(
+    localStorage.getItem('intervflow_timeline_claimed') === 'true'
+  );
+
+  const claimTimelineBonus = () => {
+    if (sessions.length < 15) {
+      alert(`You have completed ${sessions.length}/15 mock interview sessions. Please complete 15 sessions to claim the XP Bonus!`);
+      return;
+    }
+    if (claimedTimeline) return;
+
+    const currentXp = parseInt(localStorage.getItem('intervflow_user_xp') || '750', 10);
+    const newXp = currentXp + 500;
+    localStorage.setItem('intervflow_user_xp', String(newXp));
+    localStorage.setItem('intervflow_timeline_claimed', 'true');
+    setClaimedTimeline(true);
+
+    // Trigger navbar XP refresh
+    window.dispatchEvent(new Event('intervflow-xp-update'));
+
+    // Trigger global notification
+    if (window.addIntervflowNotification) {
+      window.addIntervflowNotification(
+        'Practice Challenge Completed!',
+        'Outstanding work! You completed the 15-day interview practice challenge and earned +500 XP.',
+        'celebration',
+        'text-amber-400'
+      );
+    }
+  };
+
   const handleSaveSettings = (newName, newDomain, newATS, newExperience, newEducation, newDreamCompany) => {
     setUserName(newName);
     setUserDomain(newDomain);
@@ -556,55 +587,71 @@ export default function Dashboard() {
                   <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-primary text-3xl">emoji_events</span>
                     <div>
-                      <h2 className="font-headline-md text-headline-md text-white font-bold">Active 15-Day DSA Sprint Challenge</h2>
-                      <p className="font-label-sm text-label-sm text-primary font-mono font-bold">Day 4 active • Keep the flame burning!</p>
+                      <h2 className="font-headline-md text-headline-md text-white font-bold">Active 15-Day Interview Practice Challenge</h2>
+                      <p className="font-label-sm text-label-sm text-primary font-mono font-bold">
+                        Day {Math.min(15, sessions.length + 1)} active • {15 - sessions.length > 0 ? `${15 - sessions.length} sessions remaining to claim bonus!` : 'Challenge completed! Click claim to receive your bonus.'}
+                      </p>
                     </div>
                   </div>
-                  <span className="font-label-sm text-label-sm bg-primary/10 border border-primary/20 text-primary px-3 py-1 rounded-full font-mono font-bold w-fit">XP Bonus: +500</span>
+                  {claimedTimeline ? (
+                    <span className="font-label-sm text-label-sm bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full font-mono font-bold w-fit">
+                      Claimed ✓
+                    </span>
+                  ) : (
+                    <button
+                      onClick={claimTimelineBonus}
+                      disabled={sessions.length < 15}
+                      className={`font-label-sm text-label-sm px-3.5 py-1.5 rounded-full font-mono font-bold border transition-all cursor-pointer ${
+                        sessions.length >= 15
+                          ? 'bg-amber-400/20 border-amber-400/40 text-amber-300 hover:bg-amber-400/30'
+                          : 'bg-primary/10 border-primary/20 text-primary opacity-60 cursor-not-allowed'
+                      }`}
+                    >
+                      XP Bonus: +500
+                    </button>
+                  )}
                 </div>
 
                 {/* Horizontal Timeline Track */}
                 <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-white/5 pr-2">
-                  <div className="flex flex-col items-center gap-1 shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/50 flex items-center justify-center text-primary font-mono font-bold shadow-[0_0_10px_rgba(37,99,235,0.2)]">✓</div>
-                    <span className="text-[10px] font-label-sm text-primary font-mono font-bold">Day 1</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1 shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/50 flex items-center justify-center text-primary font-mono font-bold shadow-[0_0_10px_rgba(37,99,235,0.2)]">✓</div>
-                    <span className="text-[10px] font-label-sm text-primary font-mono font-bold">Day 2</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1 shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/50 flex items-center justify-center text-primary font-mono font-bold shadow-[0_0_10px_rgba(37,99,235,0.2)]">✓</div>
-                    <span className="text-[10px] font-label-sm text-primary font-mono font-bold">Day 3</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1 shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-primary/15 border-2 border-dashed border-primary flex items-center justify-center text-primary font-mono font-bold animate-[pulse_2s_infinite]">4</div>
-                    <span className="text-[10px] font-label-sm text-primary font-mono font-bold animate-pulse">Active</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1 opacity-45 shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-on-surface-variant font-mono">5</div>
-                    <span className="text-[10px] font-label-sm text-outline font-mono">Day 5</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1 opacity-30 shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-on-surface-variant font-mono">6</div>
-                    <span className="text-[10px] font-label-sm text-outline font-mono">Day 6</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1 opacity-30 shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-on-surface-variant font-mono">7</div>
-                    <span className="text-[10px] font-label-sm text-outline font-mono">Day 7</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1 opacity-30 shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-on-surface-variant font-mono">8</div>
-                    <span className="text-[10px] font-label-sm text-outline font-mono">Day 8</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1 opacity-20 shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-on-surface-variant font-mono">9</div>
-                    <span className="text-[10px] font-label-sm text-outline font-mono">...</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1 opacity-20 shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-on-surface-variant font-mono">15</div>
-                    <span className="text-[10px] font-label-sm text-outline font-mono font-bold">End</span>
-                  </div>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 15].map((dayNum) => {
+                    const isCompleted = sessions.length >= dayNum;
+                    const isActive = sessions.length + 1 === dayNum;
+                    
+                    if (dayNum === 9) {
+                      return (
+                        <div key="ellipsis" className="flex flex-col items-center gap-1 opacity-20 shrink-0 select-none">
+                          <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-on-surface-variant font-mono">...</div>
+                          <span className="text-[10px] font-label-sm text-outline font-mono">...</span>
+                        </div>
+                      );
+                    }
+                    
+                    if (isCompleted) {
+                      return (
+                        <div key={dayNum} className="flex flex-col items-center gap-1 shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/50 flex items-center justify-center text-primary font-mono font-bold shadow-[0_0_10px_rgba(37,99,235,0.2)]">✓</div>
+                          <span className="text-[10px] font-label-sm text-primary font-mono font-bold">Day {dayNum}</span>
+                        </div>
+                      );
+                    }
+                    
+                    if (isActive) {
+                      return (
+                        <div key={dayNum} className="flex flex-col items-center gap-1 shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-primary/15 border-2 border-dashed border-primary flex items-center justify-center text-primary font-mono font-bold animate-[pulse_2s_infinite]">{dayNum}</div>
+                          <span className="text-[10px] font-label-sm text-primary font-mono font-bold animate-pulse">Active</span>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <div key={dayNum} className={`flex flex-col items-center gap-1 shrink-0 ${dayNum === 15 ? 'opacity-30' : 'opacity-40'}`}>
+                        <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-on-surface-variant font-mono">{dayNum}</div>
+                        <span className="text-[10px] font-label-sm text-outline font-mono">{dayNum === 15 ? 'End' : `Day ${dayNum}`}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
 
@@ -704,12 +751,11 @@ export default function Dashboard() {
                           hour: '2-digit',
                           minute: '2-digit'
                         });
-                        
                         return (
                           <div 
                             key={session.id}
                             onClick={() => navigate(`/practice/feedback/${session.id}`)}
-                            className="group flex items-center justify-between p-4 rounded-xl border border-white/5 bg-[#18181b]/30 hover:bg-white/5 transition-all cursor-pointer hover:border-primary/30"
+                            className="group flex items-center justify-between p-4 rounded-xl border border-white/5 bg-[#18181b]/30 hover:bg-[#18181b]/60 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] hover:border-white/20 transition-all duration-300 ease-out cursor-pointer"
                           >
                             <div className="flex items-center gap-4">
                               <div className={`w-12 h-12 rounded-lg flex items-center justify-center border shrink-0 ${
@@ -722,7 +768,7 @@ export default function Dashboard() {
                                 </span>
                               </div>
                               <div>
-                                <h3 className="font-body-md text-body-md font-semibold text-white group-hover:text-primary transition-colors text-left">
+                                <h3 className="font-body-md text-body-md font-semibold text-white/90 group-hover:text-white transition-colors text-left">
                                   {session.mode === 'jd' ? `${session.title} at ${session.company}` : "Resume Cross-Examination"}
                                 </h3>
                                 <p className="font-label-sm text-label-sm text-on-surface-variant font-mono text-left">
@@ -738,7 +784,7 @@ export default function Dashboard() {
                               }`}>
                                 {scoreText}
                               </span>
-                              <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">
+                              <span className="material-symbols-outlined text-on-surface-variant group-hover:text-white group-hover:translate-x-1 transition-all duration-300">
                                 chevron_right
                               </span>
                             </div>
@@ -824,7 +870,7 @@ export default function Dashboard() {
                         <div 
                           key={session.id}
                           onClick={() => navigate(`/practice/feedback/${session.id}`)}
-                          className="group flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-xl border border-white/5 bg-black/20 hover:bg-white/5 transition-all cursor-pointer hover:border-primary/45 gap-4"
+                          className="group flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-xl border border-white/5 bg-black/20 hover:bg-[#18181b]/60 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] hover:border-white/20 transition-all duration-300 ease-out cursor-pointer gap-4"
                         >
                           <div className="flex items-start gap-4">
                             <div className={`w-12 h-12 rounded-lg flex items-center justify-center border shrink-0 ${
@@ -837,7 +883,7 @@ export default function Dashboard() {
                               </span>
                             </div>
                             <div className="space-y-1">
-                              <h3 className="font-body-md text-body-md font-bold text-white group-hover:text-primary transition-colors text-left">
+                              <h3 className="font-body-md text-body-md font-bold text-white/90 group-hover:text-white transition-colors text-left">
                                 {session.mode === 'jd' ? `${session.title} at ${session.company}` : "Resume Cross-Examination"}
                               </h3>
                               <p className="font-label-sm text-label-sm text-on-surface-variant font-mono text-left flex items-center gap-1.5 flex-wrap">
@@ -867,7 +913,7 @@ export default function Dashboard() {
                                 </span>
                               )}
                             </div>
-                            <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">
+                            <span className="material-symbols-outlined text-on-surface-variant group-hover:text-white group-hover:translate-x-1 transition-all duration-300">
                               chevron_right
                             </span>
                           </div>

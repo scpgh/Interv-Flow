@@ -65,9 +65,7 @@ export default function Billing() {
   // Set active tab based on window hash or location state
   useEffect(() => {
     const hash = window.location.hash;
-    if (hash === '#bookings' || location.state?.activeTab === 'bookings') {
-      setActiveTab('bookings');
-    } else if (hash === '#profile' || location.state?.activeTab === 'profile') {
+    if (hash === '#profile' || location.state?.activeTab === 'profile') {
       setActiveTab('profile');
     } else if (hash === '#preferences' || location.state?.activeTab === 'preferences') {
       setActiveTab('preferences');
@@ -287,15 +285,7 @@ export default function Billing() {
               <span className="material-symbols-outlined text-[20px]">settings</span>
               <span className="text-sm font-medium">Preferences</span>
             </button>
-            <button 
-              onClick={() => { setActiveTab('bookings'); navigate('/billing#bookings'); }}
-              className={`flex items-center gap-3 w-full text-left px-4 py-3 transition-all border-none cursor-pointer rounded-xl ${
-                activeTab === 'bookings' ? 'text-primary font-bold bg-white/5 border-r-2 border-primary' : 'text-on-surface-variant hover:text-primary hover:bg-white/5'
-              }`}
-            >
-              <span className="material-symbols-outlined text-[20px]">calendar_month</span>
-              <span className="text-sm font-medium">Bookings</span>
-            </button>
+            {/* Bookings tab removed */}
             <button 
               onClick={() => { setActiveTab('billing'); navigate('/billing'); }}
               className={`flex items-center gap-3 w-full text-left px-4 py-3 transition-all border-none cursor-pointer rounded-xl ${
@@ -592,184 +582,7 @@ export default function Billing() {
             </div>
           )}
 
-          {/* TAB 2: BOOKINGS PANEL */}
-          {activeTab === 'bookings' && (
-            <div className="space-y-10 animate-fade-in">
-              {/* Credits Alert Header */}
-              <section>
-                <div className="glass-card p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 border border-[#2563eb]/20 bg-[#2563eb]/5">
-                  <div className="flex items-center gap-4 text-left">
-                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
-                      <span className="material-symbols-outlined text-primary text-2xl">calendar_today</span>
-                    </div>
-                    <div>
-                      <h1 className="text-lg text-white font-bold">Mentor Sessions Calibration</h1>
-                      <p className="text-xs text-on-surface-variant">
-                        Schedule 1-on-1 simulations with FAANG mentors scoring and reviewing live.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="px-4 py-2 rounded-xl bg-primary/15 border border-primary/25 text-[10px] font-mono text-primary font-bold">
-                    {currentPlan === 'Pro Plus' ? '14 Booking Credits Left (₹999 Tier)' : currentPlan === 'Pro' ? '2 Booking Credits Left (₹299 Tier)' : '0 Credits (Basic Tier)'}
-                  </div>
-                </div>
-              </section>
-
-              {/* Scheduled Sessions List */}
-              <section>
-                <h2 className="text-base font-bold mb-4 flex items-center gap-2 text-white">
-                  <span className="material-symbols-outlined text-primary text-lg">event_available</span>
-                  Your Scheduled Sessions
-                </h2>
-                <div className="space-y-3">
-                  {scheduledSessions.map((sess) => (
-                    <div 
-                      key={sess.id} 
-                      className={`glass-card p-5 rounded-2xl border border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all bg-white/[0.01] ${
-                        sess.isCompleted ? 'opacity-70' : 'hover:border-primary/40'
-                      }`}
-                    >
-                      <div className="flex items-center gap-4 text-left">
-                        <div className={`h-11 w-11 rounded-full bg-gradient-to-br ${sess.mentorColor} flex items-center justify-center font-bold text-xs text-white shrink-0 border border-white/10`}>
-                          {sess.mentorInitials}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-white text-xs font-bold">{sess.title}</h3>
-                            <span className={`px-2 py-0.5 rounded text-[8px] font-mono font-bold uppercase ${
-                              sess.isCompleted ? 'bg-white/5 border border-white/10 text-on-surface-variant' : 'bg-primary/15 border border-primary/25 text-primary animate-pulse'
-                            }`}>
-                              {sess.status}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-on-surface-variant mt-1 font-mono">{sess.meta}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex gap-2 w-full md:w-auto text-xs font-mono shrink-0">
-                        {sess.isCompleted ? (
-                          <button 
-                            onClick={() => alert("Simulation: Mock telemetry reports for completed sessions can be audited in the performance page.")}
-                            className="btn-secondary px-3 py-2 w-full md:w-auto text-center"
-                          >
-                            View AI Report
-                          </button>
-                        ) : (
-                          <>
-                            <button 
-                              onClick={() => navigate('/dashboard')}
-                              className="btn-secondary px-3 py-2 flex-1 md:flex-initial"
-                            >
-                              Sync Mock Telemetry
-                            </button>
-                            <button 
-                              onClick={() => window.open('https://meet.google.com/', '_blank')}
-                              className="btn-primary px-4 py-2 text-white shadow-xl flex-1 md:flex-initial flex items-center justify-center gap-1 border-none cursor-pointer"
-                            >
-                              <span className="material-symbols-outlined text-[16px]">video_call</span>
-                              Launch Meet
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              {/* Mentor Catalog & Slot Selector */}
-              <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                
-                {/* Catalog (7 cols) */}
-                <div className="lg:col-span-7 space-y-4 text-left">
-                  <h2 className="text-base font-bold text-white flex items-center gap-2">
-                    <span className="material-symbols-outlined text-primary text-lg">groups</span>
-                    Select FAANG Mentor
-                  </h2>
-                  <div className="space-y-3">
-                    {Object.entries(mentors).map(([key, mentor]) => {
-                      const isActive = selectedMentor === key;
-                      return (
-                        <button
-                          key={key}
-                          onClick={() => { setSelectedMentor(key); setSelectedSlot('slot-1'); }}
-                          className={`w-full text-left p-4 rounded-xl border transition-all flex gap-4 cursor-pointer bg-white/[0.01] ${
-                            isActive ? 'border-primary shadow-[0_0_15px_rgba(129,140,248,0.15)] bg-[#1e1b4b]/10' : 'border-white/5 hover:border-white/15'
-                          }`}
-                        >
-                          <div className={`h-12 w-12 rounded-full bg-gradient-to-br ${
-                            key === 'clara' ? 'from-red-600 to-red-800' : key === 'sarah' ? 'from-amber-600 to-amber-800' : 'from-blue-600 to-blue-800'
-                          } flex items-center justify-center font-bold text-white shrink-0 border border-white/10`}>
-                            {mentor.initials}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h3 className="text-white text-xs font-bold flex items-center gap-1.5 flex-wrap">
-                                  {mentor.name}
-                                  <span className="text-[8px] font-mono text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded font-bold uppercase">{mentor.title}</span>
-                                </h3>
-                                <p className="text-[10px] text-on-surface-variant font-medium mt-0.5">{mentor.company}</p>
-                              </div>
-                              <span className="text-[10px] text-amber-400 font-bold shrink-0">{mentor.rating}</span>
-                            </div>
-                            <p className="text-[10px] text-on-surface-variant leading-relaxed mt-2">{mentor.bio}</p>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Slots picker (5 cols) */}
-                <div className="lg:col-span-5 space-y-4 text-left">
-                  <h2 className="text-base font-bold text-white flex items-center gap-2">
-                    <span className="material-symbols-outlined text-primary text-lg">calendar_month</span>
-                    Available Slots
-                  </h2>
-                  <div className="glass-card p-5 rounded-2xl border border-white/8 space-y-5 bg-white/[0.01]">
-                    <div className="space-y-2">
-                      <span className="text-[8px] font-mono text-[#ddb7ff] uppercase block tracking-wider">CALIBRATED TIME WINDOWS:</span>
-                      <div className="flex flex-col gap-2">
-                        {slots[selectedMentor].map((slot) => {
-                          const isSlotActive = selectedSlot === slot.id;
-                          return (
-                            <button
-                              key={slot.id}
-                              onClick={() => setSelectedSlot(slot.id)}
-                              className={`w-full p-2.5 rounded-xl border text-[11px] font-mono text-left flex justify-between items-center cursor-pointer transition-all ${
-                                isSlotActive ? 'border-primary bg-primary/15 text-white font-bold shadow-md' : 'border-white/5 bg-white/2 text-on-surface-variant hover:border-white/10'
-                              }`}
-                            >
-                              <span>📅 {slot.time}</span>
-                              <span className={`text-[8px] font-bold uppercase ${
-                                isSlotActive ? 'text-primary' : 'text-on-surface-variant/75'
-                              }`}>{slot.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="border-t border-white/5 pt-4 space-y-3">
-                      <div className="flex justify-between items-center text-[10px]">
-                        <span className="text-on-surface-variant font-medium">Target Round:</span>
-                        <span className="font-bold text-white font-mono text-right">{mentors[selectedMentor].roleFocus}</span>
-                      </div>
-                      <button 
-                        onClick={handleConfirmAllocation}
-                        className="w-full py-2.5 btn-primary text-white font-bold text-xs flex items-center justify-center gap-1 cursor-pointer border-none shadow-lg mt-2"
-                      >
-                        <span className="material-symbols-outlined text-base">done_all</span>
-                        Confirm Mentor Allocation
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-              </section>
-            </div>
-          )}
+          {/* TAB 2: BOOKINGS PANEL (REMOVED) */}
 
           {/* TAB 3: PROFILE PANEL */}
           {activeTab === 'profile' && (

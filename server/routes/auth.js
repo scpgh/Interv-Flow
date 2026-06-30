@@ -9,9 +9,9 @@ const syncUserClaims = async (email) => {
   const sanitizedEmail = email.toLowerCase().trim();
   const user = await findUserByEmail(sanitizedEmail);
   
-  const adminEmails = ["test@example.com", "admin@intervflow.com"];
+  const adminEmails = ["test@example.com", "admin@intervflow.com", "human@intervflow.com"];
   const isDevAdmin = adminEmails.includes(sanitizedEmail);
-  const expectedRole = (user && user.role === 'ADMIN') || isDevAdmin ? 'ADMIN' : 'USER';
+  const expectedRole = isDevAdmin ? 'ADMIN' : (user && user.role ? user.role : 'USER');
 
   let claimsUpdated = false;
 
@@ -113,7 +113,7 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ error: "An account with this email already exists." });
     }
 
-    const adminEmails = ["test@example.com", "admin@intervflow.com"];
+    const adminEmails = ["test@example.com", "admin@intervflow.com", "human@intervflow.com"];
     const sanitizedEmail = email.toLowerCase().trim();
     const isDevAdmin = adminEmails.includes(sanitizedEmail);
     const expectedRole = isDevAdmin ? 'ADMIN' : 'USER';

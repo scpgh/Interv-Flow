@@ -46,6 +46,9 @@ export default function PracticeSession() {
   const [resumeText, setResumeText] = useState(sessionStorage.getItem('userResumeText') || '');
   const [duration, setDuration] = useState(15); // minutes
   const [errorMsg, setErrorMsg] = useState('');
+  const [jdId, setJdId] = useState('');
+  const [customSystemPrompt, setCustomSystemPrompt] = useState('');
+  const [customQuestions, setCustomQuestions] = useState([]);
 
   // 2. Active Session Telemetry State
   const [sessionId, setSessionId] = useState('');
@@ -82,6 +85,19 @@ export default function PracticeSession() {
       }
       if (location.state.company) {
         setCompany(location.state.company);
+      }
+      if (location.state.jdId) {
+        setJdId(location.state.jdId);
+      }
+      if (location.state.customSystemPrompt) {
+        setCustomSystemPrompt(location.state.customSystemPrompt);
+      }
+      if (location.state.customQuestions) {
+        setCustomQuestions(location.state.customQuestions);
+      }
+      if (location.state.duration) {
+        setDuration(location.state.duration);
+        setTimeLeft(location.state.duration * 60);
       }
       // Clean up location state in history to avoid re-triggering on fresh reloads
       window.history.replaceState({}, document.title);
@@ -281,7 +297,10 @@ export default function PracticeSession() {
           resumeText: mode === 'resume' ? resumeText : '',
           jobTitle: jobTitle,
           company: company,
-          duration: duration
+          duration: duration,
+          jdId: jdId || location.state?.jdId || '',
+          customSystemPrompt: customSystemPrompt || location.state?.customSystemPrompt || '',
+          customQuestions: customQuestions || location.state?.customQuestions || []
         };
         socket.send(JSON.stringify(setupPayload));
       };
@@ -1060,6 +1079,14 @@ export default function PracticeSession() {
     // Redirect to the feedback panel with sessionId
     if (finalSessionId) {
       console.log(`Redirecting candidate to evaluation panel: /practice/feedback/${finalSessionId}`);
+      if (window.addIntervflowNotification) {
+        window.addIntervflowNotification(
+          'Interview Mock Completed',
+          'Your mock session was successfully submitted! Check your score and performance review report.',
+          'school',
+          'text-[#a855f7]'
+        );
+      }
       navigate(`/practice/feedback/${finalSessionId}`);
     } else {
       navigate('/dashboard');
@@ -1259,9 +1286,10 @@ export default function PracticeSession() {
                   <div className="space-y-0.5">
                     <label className="text-[10px] text-on-surface-variant block uppercase tracking-wider font-mono">Session Limit</label>
                     <select 
-                      className="bg-transparent border-none text-xs text-white focus:outline-none font-bold cursor-pointer"
+                      className="bg-transparent border-none text-xs text-white focus:outline-none font-bold cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                       value={duration}
                       onChange={(e) => setDuration(Number(e.target.value))}
+                      disabled={mode === 'jd'}
                     >
                       <option className="bg-[#131315]" value="10">10 Minutes</option>
                       <option className="bg-[#131315]" value="15">15 Minutes</option>
@@ -1272,6 +1300,7 @@ export default function PracticeSession() {
                       <option className="bg-[#131315]" value="75">75 Minutes (1 Hr 15 Min)</option>
                       <option className="bg-[#131315]" value="90">90 Minutes (1 Hr 30 Min)</option>
                       <option className="bg-[#131315]" value="105">105 Minutes (1 Hr 45 Min)</option>
+                      <option className="bg-[#131315]" value="120">120 Minutes (2 Hours)</option>
                     </select>
                   </div>
                 </div>

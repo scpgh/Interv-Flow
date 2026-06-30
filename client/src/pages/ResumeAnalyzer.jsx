@@ -346,6 +346,14 @@ export default function ResumeAnalyzer() {
       setStatusLabel('Analysis complete!');
       setApiData(data);
       sessionStorage.setItem('resumeAnalysisResult', JSON.stringify(data));
+      if (window.addIntervflowNotification) {
+        window.addIntervflowNotification(
+          'Resume Analyzed Successfully',
+          `Your resume achieved an ATS Score of ${data.atsScore || 0}% for the target domain: ${selectedDomain.toUpperCase()}.`,
+          'verified',
+          'text-emerald-400'
+        );
+      }
 
       if (data.generalQuestions && data.technicalQuestions) {
         sessionStorage.setItem('generatedQuestions', JSON.stringify({
@@ -581,14 +589,14 @@ export default function ResumeAnalyzer() {
                 onDrop={handleDrop}
                 className={`glass-panel group cursor-pointer relative rounded-2xl border-dashed border-2 transition-all p-12 flex flex-col items-center justify-center min-h-[340px] w-full ${
                   isDragging 
-                    ? 'border-[#818cf8] bg-[#1E1B4B]/20 shadow-[0_0_20px_rgba(129,140,248,0.2)] animate-pulse' 
-                    : 'border-white/10 hover:border-primary/50 bg-[#18181b]/30'
+                    ? 'border-white/40 bg-white/[0.04] shadow-[0_0_20px_rgba(255,255,255,0.05)] animate-pulse' 
+                    : 'border-white/10 hover:border-white/20 bg-[#18181b]/30'
                 }`}
               >
-                <div className="absolute inset-0 bg-primary/5 pointer-events-none group-hover:bg-primary/10 transition-colors rounded-2xl"></div>
+                <div className="absolute inset-0 bg-white/[0.01] pointer-events-none group-hover:bg-white/[0.03] transition-colors rounded-2xl"></div>
                 <div className="relative z-10 flex flex-col items-center text-center">
                   <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6 border border-white/10 group-hover:scale-110 transition-transform">
-                    <span className="material-symbols-outlined text-4xl text-primary">upload_file</span>
+                    <span className="material-symbols-outlined text-4xl text-white/60 group-hover:text-white transition-colors">upload_file</span>
                   </div>
                   <h3 className="font-headline-md text-headline-md text-white mb-2">Drop PDF or DOCX</h3>
                   <p className="font-body-md text-on-surface-variant mb-8">or click to browse your local files</p>

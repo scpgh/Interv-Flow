@@ -1045,28 +1045,7 @@ export default function Community() {
               </div>
             </section>
 
-            {/* Premium Slots Card */}
-            <div className="glass-panel p-6 rounded-2xl border border-white/10 bg-gradient-to-br from-primary/10 via-transparent to-[#ddb7ff]/10 flex flex-col gap-4 relative overflow-hidden text-left">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
-              <div>
-                <span className="text-[9px] bg-primary/20 text-primary border border-primary/20 px-2 py-0.5 rounded uppercase font-bold tracking-widest font-mono select-none">
-                  Premium Perk
-                </span>
-                <h3 className="text-white font-semibold text-sm md:text-body-md mt-2">
-                  Book Mock Sessions with Top Leaderboard Performers
-                </h3>
-              </div>
-              <p className="text-[11px] text-on-surface-variant leading-relaxed">
-                Review strategies, double streak milestones, and exchange coding answers.
-              </p>
-              <button 
-                onClick={() => navigate('/billing#bookings')}
-                className="glow-button w-full py-2.5 text-white font-bold text-xs flex items-center justify-center gap-1.5 border-none cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[18px]">lock_open</span>
-                Unlock Premium Slots
-              </button>
-            </div>
+            {/* Card spot empty after bookings removal */}
 
           </div>
         </div>
@@ -1280,26 +1259,13 @@ export default function Community() {
               </div>
             </div>
 
-            {/* Book Session CTA */}
-            {selectedProfile.mentorKey ? (
-              <button
-                onClick={() => {
-                  setSelectedProfile(null);
-                  navigate('/billing#bookings', { state: { activeTab: 'bookings' } });
-                }}
-                className="w-full py-3 btn-primary text-white font-bold text-xs flex items-center justify-center gap-1 border-none cursor-pointer shadow-lg"
-              >
-                <span className="material-symbols-outlined text-base">calendar_today</span>
-                Book Mock Session with {selectedProfile.name.split(' ')[0]}
-              </button>
-            ) : (
-              <button
-                disabled
-                className="w-full py-3 bg-white/5 border border-white/10 text-on-surface-variant/40 text-xs font-bold font-mono rounded-xl cursor-not-allowed text-center"
-              >
-                {selectedProfile.email === userEmail.toLowerCase().trim() ? "Your Public Profile Preview" : "Candidate Profile Preview"}
-              </button>
-            )}
+            {/* Profile CTA */}
+            <button
+              disabled
+              className="w-full py-3 bg-white/5 border border-white/10 text-on-surface-variant/40 text-xs font-bold font-mono rounded-xl cursor-not-allowed text-center animate-fade-in"
+            >
+              {selectedProfile.email === userEmail.toLowerCase().trim() ? "Your Public Profile Preview" : "Candidate Profile Preview"}
+            </button>
 
           </div>
         </div>

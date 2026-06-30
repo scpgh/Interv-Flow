@@ -58,20 +58,6 @@
     "githubUrl": ""
   },
   {
-    "createdAt": "2026-06-17T00:05:55.309Z",
-    "name": "John Doe",
-    "email": "johndoe@fakeuser.com",
-    "password": "password",
-    "domain": "swe",
-    "onboardingCompleted": true,
-    "updatedAt": "2026-06-17T00:06:13.843Z",
-    "experienceYears": "0 Yrs",
-    "highestEducation": "B.Tech. Computer Science",
-    "dreamCompany": "",
-    "linkedinUrl": "",
-    "githubUrl": ""
-  },
-  {
     "createdAt": "2026-06-17T00:22:47.324Z",
     "name": "saping",
     "email": "spacing45@gmail.com",

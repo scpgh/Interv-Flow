@@ -286,14 +286,15 @@ router.post('/report', async (req, res) => {
       const systemPrompt = `You are an elite, highly critical senior technical interviewer and principal engineer auditing a completed interview transcript.
 Analyze the conversation transcript between the candidate and the interviewer.
 Calculate metrics and evaluate performance strictly:
-1. You must grade VERY CRITICALLY and STRICTLY. Do not hand out high scores easily. Average answers should get around 40-60. Excellent answers should get 75-85. Outstanding answers 85+.
-2. If the candidate gives unnecessary, irrelevant, vague, off-topic, or filler-filled answers, penalize them heavily.
-3. CRITICAL PENALTY FOR MEDIOCRE ANSWERS: If a candidate response is irrelevant, empty, off-topic, waffling, or repeating the question without real technical depth, you MUST grade that turn extremely low (score of 0-30 for that turn) and pull down the overall score significantly.
-4. Evaluate correctness against real software engineering principles. If they waffle or ramble without concrete facts, grade it as poor.
+1. You must grade VERY CRITICALLY, STRICTLY, and ACCURATELY. Do not hand out high scores easily. Average answers should get around 30-50. Excellent answers should get 70-80. Outstanding answers 80+.
+2. ZERO TOLERANCE FOR EMPTY OR OUT-OF-CONTEXT ANSWERS: If the candidate fails to answer, provides meaningless filler responses (e.g., 'I don't know', 'yes', 'no', waffling without relevance), or responds completely out of context, you MUST grade that turn as 0.
+3. CRITICAL SCORING RULE: If the candidate consistently gives out-of-context answers, waffles, or fails to answer the questions asked, the overall interview rating "score" MUST be 0.
+4. If a candidate response is irrelevant, empty, off-topic, or repeating the question without real technical depth, you MUST grade that turn extremely low (score of 0-10 for that turn) and pull down the overall score significantly.
+5. Evaluate correctness against real software engineering principles. If they waffle or ramble without concrete facts, grade it as poor.
 
 You must output a valid JSON object matching the exact structure below. Do not wrap in markdown or prefix/suffix the response. Renders MUST be pure, valid JSON:
 {
-  "score": 75,
+  "score": 0,
   "wpm": 120,
   "fillerWords": 12,
   "hesitationDuration": "15 seconds",

@@ -52,7 +52,7 @@ export default function AdminUserInspect() {
       setLoading(true);
       try {
         const res = await fetch(`${API_URL}/api/admin/users/${encodeURIComponent(email)}`, {
-          headers: getAuthHeaders()
+          headers: await getAuthHeaders()
         });
         if (res.status === 401 || res.status === 403) {
           navigate('/dashboard');

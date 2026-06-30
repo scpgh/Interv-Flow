@@ -14,6 +14,9 @@ import Community from './pages/Community';
 import Billing from './pages/Billing';
 import Analytics from './pages/Analytics';
 import MaintenancePage from './pages/MaintenancePage';
+import RecruiterApplication from './pages/RecruiterApplication';
+import JobPortal from './pages/JobPortal';
+import RecruiterDashboard from './pages/RecruiterDashboard';
 
 // Lazy loaded Admin Dashboard
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
@@ -89,6 +92,7 @@ export default function App() {
         
         {/* Contact */}
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/apply-recruiter" element={<RecruiterApplication />} />
 
         {/* Authenticated Dashboard, Onboarding & Resume Analyser */}
         <Route path="/onboarding" element={
@@ -104,6 +108,16 @@ export default function App() {
         <Route path="/resume-analyzer" element={
           <ProtectedRoute>
             <ResumeAnalyzer />
+          </ProtectedRoute>
+        } />
+        <Route path="/jobs" element={
+          <ProtectedRoute>
+            <JobPortal />
+          </ProtectedRoute>
+        } />
+        <Route path="/recruiter/dashboard" element={
+          <ProtectedRoute>
+            <RecruiterDashboard />
           </ProtectedRoute>
         } />
         <Route path="/practice" element={

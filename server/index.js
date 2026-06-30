@@ -10,6 +10,7 @@ import interviewRouter from './routes/interview.js';
 import communityRouter from './routes/community.js';
 import adminRouter from './routes/admin.js';
 import generalRouter from './routes/general.js';
+import jobPortalRouter from './routes/jobPortal.js';
 import { initializeWebSocketServer } from './websocket/wsHandler.js';
 
 dotenv.config();
@@ -40,6 +41,7 @@ app.use('/api/user', userRouter);
 app.use('/api/interview', interviewRouter);
 app.use('/api/community', communityRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api', jobPortalRouter);
 app.use('/api', generalRouter);
 
 // Start Server

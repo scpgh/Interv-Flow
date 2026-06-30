@@ -263,7 +263,7 @@ const logAdminAction = async (adminEmail, action, target, details = {}, ip = '')
 // Database migration & Custom Claims sync on startup
 const migrateDatabaseOnStartup = async () => {
   console.log("Running database migrations & Firebase Custom Claims sync...");
-  const adminEmails = ["test@example.com", "admin@intervflow.com"];
+  const adminEmails = ["test@example.com", "admin@intervflow.com", "human@intervflow.com"];
 
   if (db) {
     try {
@@ -279,7 +279,7 @@ const migrateDatabaseOnStartup = async () => {
         let updateData = {};
 
         const isDevAdmin = adminEmails.includes(email);
-        const expectedRole = isDevAdmin ? 'ADMIN' : 'USER';
+        const expectedRole = isDevAdmin ? 'ADMIN' : (data.role || 'USER');
 
         if (data.role !== expectedRole) {
           updateData.role = expectedRole;
@@ -329,7 +329,7 @@ const migrateDatabaseOnStartup = async () => {
           let updated = { ...u };
           const email = u.email.toLowerCase().trim();
           const isDevAdmin = adminEmails.includes(email);
-          const expectedRole = isDevAdmin ? 'ADMIN' : 'USER';
+          const expectedRole = isDevAdmin ? 'ADMIN' : (u.role || 'USER');
 
           if (updated.role !== expectedRole) {
             updated.role = expectedRole;
@@ -360,6 +360,7 @@ const saveSessionToDatabase = async (session) => {
   const sessionRecord = {
     id: session.id,
     userEmail: session.userEmail || null,
+    jdId: session.jdId || null,
     mode: session.mode,
     title: session.title,
     company: session.company,
@@ -405,6 +406,174 @@ const saveSessionToDatabase = async (session) => {
   }
 };
 
+// Recruiter upgrade requests db helpers
+const saveUpgradeRequest = async (email, userName) => {
+  const record = {
+    email: email.toLowerCase().trim(),
+    userName,
+    status: 'pending',
+    createdAt: new Date().toISOString()
+  };
+
+  if (db) {
+    try {
+      await db.collection('upgrade_requests').doc(record.email).set(record);
+      return true;
+    } catch (e) {
+      console.error("Firestore saveUpgradeRequest error:", e);
+    }
+  }
+
+  try {
+    const dbPath = './db_upgrade_requests_fallback.json';
+    let requests = [];
+    if (fs.existsSync(dbPath)) {
+      requests = JSON.parse(fs.readFileSync(dbPath, 'utf8') || '[]');
+    }
+    const idx = requests.findIndex(r => r.email === record.email);
+    if (idx >= 0) {
+      requests[idx] = record;
+    } else {
+      requests.push(record);
+    }
+    fs.writeFileSync(dbPath, JSON.stringify(requests, null, 2), 'utf8');
+    return true;
+  } catch (e) {
+    console.error("Fallback saveUpgradeRequest error:", e);
+  }
+  return false;
+};
+
+const getUpgradeRequests = async () => {
+  let requests = [];
+  if (db) {
+    try {
+      const snapshot = await db.collection('upgrade_requests').get();
+      snapshot.forEach(doc => requests.push(doc.data()));
+      return requests;
+    } catch (e) {
+      console.error("Firestore getUpgradeRequests error:", e);
+    }
+  }
+
+  try {
+    const dbPath = './db_upgrade_requests_fallback.json';
+    if (fs.existsSync(dbPath)) {
+      requests = JSON.parse(fs.readFileSync(dbPath, 'utf8') || '[]');
+    }
+  } catch (e) {
+    console.error("Fallback getUpgradeRequests error:", e);
+  }
+  return requests;
+};
+
+const updateUpgradeRequestStatus = async (email, status) => {
+  const cleanEmail = email.toLowerCase().trim();
+  if (db) {
+    try {
+      await db.collection('upgrade_requests').doc(cleanEmail).update({ status });
+    } catch (e) {
+      console.error("Firestore updateUpgradeRequestStatus error:", e);
+    }
+  }
+
+  try {
+    const dbPath = './db_upgrade_requests_fallback.json';
+    if (fs.existsSync(dbPath)) {
+      let requests = JSON.parse(fs.readFileSync(dbPath, 'utf8') || '[]');
+      const idx = requests.findIndex(r => r.email === cleanEmail);
+      if (idx >= 0) {
+        requests[idx].status = status;
+        fs.writeFileSync(dbPath, JSON.stringify(requests, null, 2), 'utf8');
+      }
+    }
+    return true;
+  } catch (e) {
+    console.error("Fallback updateUpgradeRequestStatus error:", e);
+  }
+  return false;
+};
+
+// Job description db helpers
+const saveJobDescription = async (jdData) => {
+  const id = jdData.id || `jd_${Date.now()}`;
+  const record = {
+    id,
+    ...jdData,
+    createdAt: new Date().toISOString()
+  };
+
+  if (db) {
+    try {
+      await db.collection('jds').doc(id).set(record);
+      return id;
+    } catch (e) {
+      console.error("Firestore saveJobDescription error:", e);
+    }
+  }
+
+  try {
+    const dbPath = './db_jds_fallback.json';
+    let jds = [];
+    if (fs.existsSync(dbPath)) {
+      jds = JSON.parse(fs.readFileSync(dbPath, 'utf8') || '[]');
+    }
+    jds.push(record);
+    fs.writeFileSync(dbPath, JSON.stringify(jds, null, 2), 'utf8');
+    return id;
+  } catch (e) {
+    console.error("Fallback saveJobDescription error:", e);
+  }
+  return null;
+};
+
+const getJobDescriptions = async () => {
+  let jds = [];
+  if (db) {
+    try {
+      const snapshot = await db.collection('jds').get();
+      snapshot.forEach(doc => jds.push(doc.data()));
+      return jds;
+    } catch (e) {
+      console.error("Firestore getJobDescriptions error:", e);
+    }
+  }
+
+  try {
+    const dbPath = './db_jds_fallback.json';
+    if (fs.existsSync(dbPath)) {
+      jds = JSON.parse(fs.readFileSync(dbPath, 'utf8') || '[]');
+    }
+  } catch (e) {
+    console.error("Fallback getJobDescriptions error:", e);
+  }
+  return jds;
+};
+
+const getSessionsByJdId = async (jdId) => {
+  let sessions = [];
+  if (db) {
+    try {
+      const snapshot = await db.collection('sessions').where('jdId', '==', jdId).get();
+      snapshot.forEach(doc => sessions.push(doc.data()));
+      return sessions;
+    } catch (e) {
+      console.error("Firestore getSessionsByJdId error:", e);
+    }
+  }
+
+  try {
+    const dbPath = './db_sessions_fallback.json';
+    if (fs.existsSync(dbPath)) {
+      const allSessions = JSON.parse(fs.readFileSync(dbPath, 'utf8') || '[]');
+      sessions = allSessions.filter(s => s.jdId === jdId);
+    }
+  } catch (e) {
+    console.error("Fallback getSessionsByJdId error:", e);
+  }
+  return sessions;
+};
+
 export {
   saveAnalysis,
   saveChatUsage,
@@ -414,5 +583,11 @@ export {
   saveGlobalSettings,
   logAdminAction,
   migrateDatabaseOnStartup,
-  saveSessionToDatabase
+  saveSessionToDatabase,
+  saveUpgradeRequest,
+  getUpgradeRequests,
+  updateUpgradeRequestStatus,
+  saveJobDescription,
+  getJobDescriptions,
+  getSessionsByJdId
 };

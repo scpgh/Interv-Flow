@@ -5,7 +5,7 @@ import { getGlobalSettings, findUserByEmail } from '../helpers/dbHelpers.js';
 // Rate Limiter cache
 const ipRequestCounts = new Map();
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-const MAX_REQUESTS_PER_WINDOW = 30; // 30 requests per minute
+const MAX_REQUESTS_PER_WINDOW = 120; // 120 requests per minute
 
 const rateLimiter = (req, res, next) => {
   const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
@@ -40,7 +40,7 @@ const verifyAdmin = async (req, res, next) => {
     let email;
     let role;
 
-    const adminEmails = ["test@example.com", "admin@intervflow.com"];
+    const adminEmails = ["test@example.com", "admin@intervflow.com", "human@intervflow.com"];
 
     if (admin.apps.length > 0) {
       try {
@@ -101,7 +101,7 @@ const checkMaintenanceMode = async (req, res, next) => {
         let role = 'USER';
         let email = '';
 
-        const adminEmails = ["test@example.com", "admin@intervflow.com"];
+        const adminEmails = ["test@example.com", "admin@intervflow.com", "human@intervflow.com"];
 
         if (admin.apps.length > 0) {
           try {
@@ -142,4 +142,104 @@ const checkMaintenanceMode = async (req, res, next) => {
   next();
 };
 
-export { rateLimiter, verifyAdmin, checkMaintenanceMode };
+const verifyUser = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: "Unauthorized. No token provided." });
+    }
+    const token = authHeader.split(' ')[1];
+
+    let email;
+    let role = 'USER';
+
+    if (admin.apps.length > 0) {
+      try {
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        email = decodedToken.email;
+        role = decodedToken.role || 'USER';
+      } catch (err) {
+        console.error("JWT token verification failed in verifyUser:", err.message);
+        return res.status(401).json({ error: "Unauthorized. Invalid or expired token." });
+      }
+    } else {
+      email = token.toLowerCase().trim();
+      const adminEmails = ["test@example.com", "admin@intervflow.com", "human@intervflow.com"];
+      role = adminEmails.includes(email) ? 'ADMIN' : 'USER';
+    }
+
+    // Lookup user in DB to ensure fresh role info
+    if (email) {
+      const sanitizedEmail = email.toLowerCase().trim();
+      const dbUser = await findUserByEmail(sanitizedEmail);
+      if (dbUser) {
+        role = dbUser.role || role;
+        req.user = dbUser;
+      }
+    }
+
+    req.userEmail = email;
+    req.userRole = role;
+    next();
+  } catch (err) {
+    console.error("verifyUser middleware error:", err);
+    res.status(500).json({ error: "Server error during user verification." });
+  }
+};
+
+const verifyModerator = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: "Unauthorized. No token provided." });
+    }
+    const token = authHeader.split(' ')[1];
+
+    let email;
+    let role = 'USER';
+
+    const adminEmails = ["test@example.com", "admin@intervflow.com", "human@intervflow.com"];
+
+    if (admin.apps.length > 0) {
+      try {
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        email = decodedToken.email;
+        role = decodedToken.role || 'USER';
+      } catch (err) {
+        console.error("JWT custom claim validation failed in verifyModerator:", err.message);
+        return res.status(401).json({ error: "Unauthorized. Invalid or expired token." });
+      }
+    } else {
+      email = token.toLowerCase().trim();
+      role = adminEmails.includes(email) ? 'ADMIN' : 'USER';
+    }
+
+    if (role !== 'ADMIN' && role !== 'MODERATOR' && email) {
+      const sanitizedEmail = email.toLowerCase().trim();
+      if (adminEmails.includes(sanitizedEmail)) {
+        role = 'ADMIN';
+      } else {
+        const dbUser = await findUserByEmail(sanitizedEmail);
+        if (dbUser) {
+          role = dbUser.role || role;
+        }
+      }
+    }
+
+    console.log(`[verifyModerator] email="${email}" role="${role}" → ${['ADMIN', 'MODERATOR'].includes(role) ? 'ALLOWED' : 'DENIED 403'}`);
+
+    if (role !== 'ADMIN' && role !== 'MODERATOR') {
+      return res.status(403).json({ error: "Forbidden. Moderator or Admin access required." });
+    }
+
+    req.adminEmail = email;
+    req.userEmail = email;
+    req.userRole = role;
+    next();
+  } catch (err) {
+    console.error("verifyModerator middleware error:", err);
+    res.status(500).json({ error: "Server error during moderator verification." });
+  }
+};
+
+export { rateLimiter, verifyAdmin, checkMaintenanceMode, verifyUser, verifyModerator };

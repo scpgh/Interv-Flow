@@ -39,12 +39,15 @@ function initializeWebSocketServer(server) {
 
         // Handle initial configuration
         if (payload.type === 'setup') {
-          const { mode, jdText, resumeText, jobTitle, company, duration, userEmail } = payload;
+          const { mode, jdText, resumeText, jobTitle, company, duration, userEmail, jdId, customSystemPrompt, customQuestions } = payload;
           sessionState.mode = mode || 'jd';
           sessionState.title = jobTitle || 'Technical Interview';
           sessionState.company = company || 'Target Company';
           sessionState.durationMinutes = duration || 15;
           sessionState.userEmail = userEmail || null;
+          sessionState.jdId = jdId || null;
+          sessionState.customSystemPrompt = customSystemPrompt || null;
+          sessionState.customQuestions = customQuestions || null;
 
           console.log(`Setting up ${mode} interview for ${jobTitle} at ${company} (Duration: ${duration}m)`);
 
@@ -60,12 +63,37 @@ function initializeWebSocketServer(server) {
 
           // Construct custom system instructions based on JD/Resume mode
           let systemInstructions = "";
-          if (sessionState.mode === 'jd') {
+          if (customQuestions && Array.isArray(customQuestions) && customQuestions.length > 0) {
+            const listText = customQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n');
+            systemInstructions = `You are a strict technical hiring manager interviewing a candidate for the position of "${jobTitle}" at "${company}".
+You MUST ask the following set of predefined questions sequentially. Do NOT ask any other topics. Wait for their response and then briefly acknowledge (1 sentence) and move to the next question.
+List of Questions to ask:
+${listText}
+
+Start by asking the first question immediately.`;
+          } else if (customSystemPrompt) {
             systemInstructions = `You are a strict, highly professional technical hiring manager interviewing a candidate for the position of "${jobTitle}" at "${company}".
 Role description/Job Details:
 --- JOB DESCRIPTION START ---
 ${jdText || "General Software Engineering expectations"}
 --- JOB DESCRIPTION END ---
+
+Guidelines for the interviewer:
+${customSystemPrompt}
+
+Conduct a realistic, rigorous technical interview. Ask challenging, relevant questions one by one. Keep your responses short (1-3 sentences) so the conversation flows naturally.
+Do not provide feedback or score them during the interview itself. Wrap up cleanly when the interview concludes.`;
+          } else if (sessionState.mode === 'jd') {
+            systemInstructions = `You are a strict, highly professional technical hiring manager interviewing a candidate for the position of "${jobTitle}" at "${company}".
+Role description/Job Details:
+--- JOB DESCRIPTION START ---
+${jdText || "General Software Engineering expectations"}
+--- JOB DESCRIPTION END ---
+
+Structure the interview into three distinct progressive difficulty phases, dynamically adjusted to the total interview duration of ${duration} minutes:
+1. **Easy Phase (First 33% of the session)**: Start with introductory questions, basic conceptual checks, and fundamentals of the role or simple projects on their resume. Ask follow-up questions to probe understanding before moving on.
+2. **Medium Phase (Middle 33% of the session)**: Transition to medium-difficulty questions testing practical implementation, common system design patterns, troubleshooting scenarios, or structural resume claims.
+3. **Hard Phase (Final 33% of the session)**: Conclude with high-difficulty questions exploring complex architectural trade-offs, edge cases, deep debugging, scale optimization, and advanced engineering principles.
 
 Conduct a realistic, rigorous technical interview. Ask challenging, relevant questions one by one. Listen carefully to the candidate's answers, ask follow-up questions, probe their reasoning, and check for depth. 
 Be conversational, realistic, and do not repeat questions. Keep your responses short (1-3 sentences) so the conversation flows naturally.
@@ -76,6 +104,11 @@ Candidate Resume Details:
 --- RESUME START ---
 ${resumeText || "No resume details available."}
 --- RESUME END ---
+
+Structure the interview into three distinct progressive difficulty phases, dynamically adjusted to the total interview duration of ${duration} minutes:
+1. **Easy Phase (First 33% of the session)**: Start with introductory questions, basic conceptual checks, and fundamentals of the role or simple projects on their resume. Ask follow-up questions to probe understanding before moving on.
+2. **Medium Phase (Middle 33% of the session)**: Transition to medium-difficulty questions testing practical implementation, common system design patterns, troubleshooting scenarios, or structural resume claims.
+3. **Hard Phase (Final 33% of the session)**: Conclude with high-difficulty questions exploring complex architectural trade-offs, edge cases, deep debugging, scale optimization, and advanced engineering principles.
 
 Conduct a realistic, rigorous interview cross-examining their specific bullet points, projects, and technologies. Question their claims, check their actual depth of knowledge, and ask relevant behavioral or technical questions one by one.
 Keep your responses short (1-3 sentences) so the conversation flows naturally.
@@ -111,8 +144,11 @@ Do not provide feedback or score them during the interview itself. Wrap up clean
               }));
 
               if (!hasDialogue) {
-                // Generate initial introductory question based on job details
-                const firstQuestion = `Hello! Welcome. Thank you for joining the interview today for the "${jobTitle}" position at "${company}". Let's start by having you introduce yourself and walk me through your background and relevant experiences.`;
+                // Generate initial introductory question based on job details or custom questions
+                let firstQuestion = `Hello! Welcome. Thank you for joining the interview today for the "${jobTitle}" position at "${company}". Let's start by having you introduce yourself and walk me through your background and relevant experiences.`;
+                if (customQuestions && Array.isArray(customQuestions) && customQuestions.length > 0) {
+                  firstQuestion = `Hello! Welcome. Thank you for joining the interview for the "${jobTitle}" position at "${company}". Let's start with the first question: ${customQuestions[0]}`;
+                }
                 
                 sessionState.transcript.push({
                   sender: 'interviewer',
@@ -363,12 +399,58 @@ Do not provide feedback or score them during the interview itself. Wrap up clean
   });
 
   async function generateFallbackQuestion(session) {
+    // If sequential custom questions are specified, pull the next one from the array
+    if (session.customQuestions && Array.isArray(session.customQuestions) && session.customQuestions.length > 0) {
+      const interviewerTurns = session.transcript.filter(turn => turn.sender === 'interviewer').length;
+      if (interviewerTurns < session.customQuestions.length) {
+        return session.customQuestions[interviewerTurns];
+      } else {
+        return "Thank you. That was the final question of the interview. We are all set.";
+      }
+    }
+
+    const elapsedTimeMs = Date.now() - session.startTime;
+    const totalDurationMs = (session.durationMinutes || 15) * 60 * 1000;
+    const progressRatio = totalDurationMs > 0 ? (elapsedTimeMs / totalDurationMs) : 0;
+
+    let difficultyPhase = "EASY (fundamental concepts, simple resume claims, and basic background/fit)";
+    let difficultyLabel = "Easy";
+    if (progressRatio > 0.66) {
+      difficultyPhase = "HARD (complex architecture, edge cases, scalability, performance tuning, and deep technical details)";
+      difficultyLabel = "Hard";
+    } else if (progressRatio > 0.33) {
+      difficultyPhase = "MEDIUM (practical implementation, debugging scenarios, database schema design, and core technical claims)";
+      difficultyLabel = "Medium";
+    }
+
+    console.log(`[FALLBACK] Generating question for session ${session.id}. Progress: ${Math.round(progressRatio * 100)}%. Difficulty selected: ${difficultyLabel}`);
+
+    if (session.customQuestions && Array.isArray(session.customQuestions) && session.customQuestions.length > 0) {
+      const interviewerTurns = session.transcript.filter(t => t.sender === 'interviewer');
+      const nextIndex = interviewerTurns.length;
+      if (nextIndex < session.customQuestions.length) {
+        return session.customQuestions[nextIndex];
+      } else {
+        return "Thank you. That completes all the custom questions I had for today's interview. We are all set!";
+      }
+    }
+
     let systemPrompt = "";
-    if (session.mode === 'jd') {
+    if (session.customSystemPrompt) {
       systemPrompt = `You are a strict, highly professional technical hiring manager interviewing a candidate for the position of "${session.title}" at "${session.company}".
+
+Guidelines for the interviewer:
+${session.customSystemPrompt}
+
+Ask exactly ONE question and nothing else. Do not output any markdown formatting, headers, or pleasantries other than your dialog. Keep it concise (1-2 sentences).`;
+    } else if (session.mode === 'jd') {
+      systemPrompt = `You are a strict, highly professional technical hiring manager interviewing a candidate for the position of "${session.title}" at "${session.company}".
+
+Current Interview Stage: We are currently in the ${difficultyPhase} phase of the interview.
 
 Instructions:
 Conduct a realistic, rigorous technical interview. Ask challenging, relevant questions one by one based on candidate answers or standard expectations for this role.
+Ensure the difficulty of the next question or follow-up matches the current interview stage difficulty specified above.
 Be conversational, realistic, and do not repeat questions. Keep your responses short (1-2 sentences) so the conversation flows naturally.
 Do not provide feedback or score them during the interview itself.
 Ask exactly ONE question and nothing else. Do not output any markdown formatting, headers, or pleasantries other than your dialog.`;
@@ -378,8 +460,11 @@ Interview Details:
 - Job Title Focus: ${session.title}
 - Company Focus: ${session.company}
 
+Current Interview Stage: We are currently in the ${difficultyPhase} phase of the interview.
+
 Instructions:
 Conduct a realistic, rigorous interview cross-examining their specific bullet points, projects, and technologies. Question their claims, check their actual depth of knowledge, and ask relevant behavioral or technical questions one by one.
+Ensure the difficulty of the next question or follow-up matches the current interview stage difficulty specified above.
 Keep your responses short (1-2 sentences) so the conversation flows naturally.
 Do not provide feedback or score them during the interview itself.
 Ask exactly ONE question and nothing else. Do not output any markdown formatting, headers, or pleasantries other than your dialog.`;

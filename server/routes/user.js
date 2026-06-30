@@ -1,9 +1,36 @@
 import express from 'express';
 import fs from 'fs';
 import { db } from '../config/db.js';
-import { findUserByEmail, saveUser } from '../helpers/dbHelpers.js';
+import { findUserByEmail, saveUser, saveUpgradeRequest } from '../helpers/dbHelpers.js';
 
 const router = express.Router();
+
+// GET: Retrieve user profile details
+router.get('/profile', async (req, res) => {
+  try {
+    const email = req.query.email;
+    if (!email) {
+      return res.status(400).json({ error: "User email is required." });
+    }
+    const user = await findUserByEmail(email.toLowerCase().trim());
+    if (!user) {
+      return res.status(404).json({ error: "User profile not found." });
+    }
+    res.json({
+      success: true,
+      user: {
+        name: user.name,
+        email: user.email,
+        domain: user.domain,
+        role: user.role || 'USER',
+        onboardingCompleted: user.onboardingCompleted || false
+      }
+    });
+  } catch (err) {
+    console.error("GET /profile error:", err);
+    res.status(500).json({ error: "Server error fetching profile details." });
+  }
+});
 
 // POST: Update candidate profile parameters
 router.post('/profile/update', async (req, res) => {
@@ -133,6 +160,32 @@ router.delete('/account', async (req, res) => {
   } catch (err) {
     console.error("Account deletion error:", err);
     res.status(500).json({ error: "Server error during account deletion." });
+  }
+});
+
+// POST: Candidate applies for recruiter role upgrade
+router.post('/recruiter/apply', async (req, res) => {
+  try {
+    const { email, name } = req.body;
+    if (!email || !name) {
+      return res.status(400).json({ error: "User email and name are required." });
+    }
+
+    const sanitizedEmail = email.toLowerCase().trim();
+    const user = await findUserByEmail(sanitizedEmail);
+    if (!user) {
+      return res.status(404).json({ error: "User profile not found." });
+    }
+
+    const success = await saveUpgradeRequest(sanitizedEmail, name);
+    if (!success) {
+      return res.status(500).json({ error: "Failed to save recruiter upgrade request." });
+    }
+
+    res.json({ success: true, message: "Recruiter application submitted successfully. Please wait for admin approval." });
+  } catch (err) {
+    console.error("POST recruiter/apply error:", err);
+    res.status(500).json({ error: "Server error submitting recruiter application." });
   }
 });
 

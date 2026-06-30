@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { auth } from '../firebase';
 
 export default function DashboardNavbar({ activeTab, setActiveTab }) {
   const navigate = useNavigate();
@@ -13,11 +14,41 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [navPillStyle, setNavPillStyle] = useState({ opacity: 0, left: 0, width: 0 });
 
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: 'ATS Resume Evals', message: 'Your resume scored 87%! Added 12 keywords for Kubernetes.', icon: 'verified', iconColor: 'text-primary' },
-    { id: 2, title: 'Google Meet Setup', message: 'Mock session scheduled with Mentor Clara (NoSQL Lead).', icon: 'video_call', iconColor: 'text-secondary' },
-    { id: 3, title: 'Day 15 Challenge', message: 'Streak maintained! Day 15 unlocked successfully.', icon: 'local_fire_department', iconColor: 'text-amber-400' },
-  ]);
+  const [notifications, setNotifications] = useState(() => {
+    const saved = localStorage.getItem('intervflow_notifications');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [
+      { id: 'init-1', title: 'ATS Resume Evals', message: 'Your resume scored 87%! Added 12 keywords for Kubernetes.', icon: 'verified', iconColor: 'text-primary' },
+      { id: 'init-2', title: 'Day 15 Challenge', message: 'Streak maintained! Day 15 unlocked successfully.', icon: 'local_fire_department', iconColor: 'text-amber-400' },
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('intervflow_notifications', JSON.stringify(notifications));
+  }, [notifications]);
+
+  useEffect(() => {
+    const handleNewNotification = (e) => {
+      if (e.detail) {
+        setNotifications(prev => [
+          {
+            id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            title: e.detail.title,
+            message: e.detail.message,
+            icon: e.detail.icon || 'notifications',
+            iconColor: e.detail.iconColor || 'text-primary'
+          },
+          ...prev
+        ]);
+      }
+    };
+    window.addEventListener('add-intervflow-notification', handleNewNotification);
+    return () => {
+      window.removeEventListener('add-intervflow-notification', handleNewNotification);
+    };
+  }, []);
 
   // ── Nav pill ──────────────────────────────────────────────────────
   const syncPill = useCallback(() => {
@@ -39,23 +70,101 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
 
   // ── Load user ─────────────────────────────────────────────────────
   const [userRole, setUserRole] = useState('USER');
+  const [viewMode, setViewMode] = useState(() => {
+    return sessionStorage.getItem('activeViewMode') || 
+           ((sessionStorage.getItem('userRole') === 'RECRUITER') ? 'recruiter' : 'candidate');
+  });
+
+  const switchToCandidate = () => {
+    sessionStorage.setItem('activeViewMode', 'candidate');
+    setViewMode('candidate');
+    navigate('/dashboard');
+  };
+
+  const switchToRecruiter = () => {
+    sessionStorage.setItem('activeViewMode', 'recruiter');
+    setViewMode('recruiter');
+    navigate('/recruiter/dashboard');
+  };
+
   useEffect(() => {
     if (sessionStorage.getItem('isAuthenticated') !== 'true') { navigate('/login'); return; }
     const name = sessionStorage.getItem('userName');
     if (name) setUserName(name);
-    const role = sessionStorage.getItem('userRole') || sessionStorage.getItem('adminRole');
-    if (role) setUserRole(role);
+    const cachedRole = sessionStorage.getItem('userRole') || sessionStorage.getItem('adminRole');
+    if (cachedRole) {
+      setUserRole(cachedRole);
+    }
+
+    const email = sessionStorage.getItem('userEmail');
+    if (email) {
+      // Fetch fresh profile details from server to catch upgrades
+      fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/user/profile?email=${encodeURIComponent(email)}`)
+        .then(res => res.json())
+        .then(async data => {
+          if (data.success && data.user) {
+            const dbRole = data.user.role || 'USER';
+            const localRole = sessionStorage.getItem('userRole');
+            if (dbRole !== localRole) {
+              console.log(`[Navbar Sync] Upgraded userRole from ${localRole} to ${dbRole}!`);
+              sessionStorage.setItem('userRole', dbRole);
+              setUserRole(dbRole);
+
+              // Force update View Mode
+              if (dbRole === 'RECRUITER') {
+                sessionStorage.setItem('activeViewMode', 'recruiter');
+                setViewMode('recruiter');
+                // Trigger Recruiter approved notification
+                window.dispatchEvent(new CustomEvent('add-intervflow-notification', {
+                  detail: {
+                    title: 'Recruiter Access Approved!',
+                    message: 'Your recruiter onboarding request has been successfully approved by the admin.',
+                    icon: 'verified',
+                    iconColor: 'text-emerald-400'
+                  }
+                }));
+              } else if (dbRole === 'ADMIN') {
+                // Keep active view mode for admin (don't force override)
+              } else {
+                sessionStorage.setItem('activeViewMode', 'candidate');
+                setViewMode('candidate');
+              }
+
+              // Sync Firebase client custom claims token by forcing refresh
+              try {
+                const currentUser = auth.currentUser;
+                if (currentUser) {
+                  const token = await currentUser.getIdToken(true);
+                  sessionStorage.setItem('idToken', token);
+                }
+              } catch (e) {
+                console.warn("Could not force refresh firebase token on claims sync:", e.message);
+              }
+            }
+          }
+        })
+        .catch(err => console.warn("Failed to check active profile role updates:", err));
+    }
   }, [navigate]);
 
   const [streakCount, setStreakCount] = useState(0);
   const [userXP, setUserXP] = useState(750);
 
   useEffect(() => {
-    const cachedXP = localStorage.getItem('intervflow_user_xp');
-    if (cachedXP) {
-      setUserXP(parseInt(cachedXP, 10));
-    }
-  }, [isStreakOpen]);
+    const loadCachedXP = () => {
+      const cachedXP = localStorage.getItem('intervflow_user_xp');
+      if (cachedXP) {
+        setUserXP(parseInt(cachedXP, 10));
+      }
+    };
+    loadCachedXP();
+    window.addEventListener('storage', loadCachedXP);
+    window.addEventListener('intervflow-xp-update', loadCachedXP);
+    return () => {
+      window.removeEventListener('storage', loadCachedXP);
+      window.removeEventListener('intervflow-xp-update', loadCachedXP);
+    };
+  }, []);
 
   // ── Load streak dynamically based on user usage ───────────────────
   useEffect(() => {
@@ -174,14 +283,19 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
 
   const handleSignOut = () => { sessionStorage.clear(); navigate('/'); };
   const clearNotifications = (e) => { e.stopPropagation(); setNotifications([]); };
+  const dismissNotification = (id, e) => {
+    e.stopPropagation();
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
 
   const handleTabClick = (tab) => {
     setIsDropdownOpen(false);
     setIsMobileMenuOpen(false);
-    if (tab === 'resume') navigate('/resume-analyzer');
+    if (tab === 'recruiter_dashboard') navigate('/recruiter/dashboard');
+    else if (tab === 'resume') navigate('/resume-analyzer');
     else if (tab === 'practice') navigate('/practice');
     else if (tab === 'community') navigate('/community');
-    else if (tab === 'booking') navigate('/billing#bookings');
+    else if (tab === 'jobs') navigate('/jobs');
     else if (tab === 'analytics') navigate('/analytics');
     else { navigate('/dashboard'); if (setActiveTab) setActiveTab(tab); }
   };
@@ -197,14 +311,19 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
       activeTab === tab ? 'text-[#b4c5ff] font-bold bg-[#b4c5ff]/10 border border-[#b4c5ff]/20' : 'text-on-surface-variant hover:text-white hover:bg-white/5'
     }`;
 
-  const tabs = [
-    { key: 'dashboard', label: 'Dashboard' },
-    { key: 'practice',  label: 'Practice' },
-    { key: 'booking',   label: 'Book Session' },
-    { key: 'resume',    label: 'Resume Analyser' },
-    { key: 'analytics', label: 'Analytics' },
-    { key: 'community', label: 'Community' },
-  ];
+  const tabs = viewMode === 'recruiter'
+    ? [
+        { key: 'recruiter_dashboard', label: 'Recruiter Dashboard' },
+        { key: 'community', label: 'Community' }
+      ]
+    : [
+        { key: 'dashboard', label: 'Dashboard' },
+        { key: 'practice',  label: 'Practice' },
+        { key: 'jobs',      label: 'Apply Jobs' },
+        { key: 'resume',    label: 'Resume Analyser' },
+        { key: 'analytics', label: 'Analytics' },
+        { key: 'community', label: 'Community' },
+      ];
 
   return (
     <header
@@ -257,6 +376,23 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
             >
               <span className="material-symbols-outlined text-[14px]">admin_panel_settings</span>
               Admin Dashboard
+            </button>
+          )}
+
+          {/* Recruiter / Candidate Mode Switcher Toggle */}
+          {(userRole === 'RECRUITER' || userRole === 'ADMIN') && (
+            <button
+              onClick={viewMode === 'recruiter' ? switchToCandidate : switchToRecruiter}
+              className={`font-bold py-1.5 px-3.5 rounded-full text-[10px] transition-all cursor-pointer flex items-center gap-1.5 border shadow-md flex-shrink-0 ${
+                viewMode === 'recruiter'
+                  ? 'bg-primary/10 border-primary/20 text-primary hover:bg-primary/20'
+                  : 'bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/20'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[14px]">
+                {viewMode === 'recruiter' ? 'person' : 'work'}
+              </span>
+              {viewMode === 'recruiter' ? 'Switch to Candidate' : 'Switch to Recruiter'}
             </button>
           )}
 
@@ -363,14 +499,23 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
                 </div>
 
                 {/* Notification list */}
-                <div className="flex flex-col gap-2 max-h-44 overflow-y-auto pr-1">
+                <div className="flex flex-col gap-2 max-h-44 overflow-y-auto pr-1 hide-scrollbar">
                   {notifications.length > 0 ? notifications.map((n) => (
-                    <div key={n.id} className="flex items-start gap-2.5 p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors cursor-pointer border border-white/5">
-                      <span className={`material-symbols-outlined ${n.iconColor} text-[18px] mt-0.5`}>{n.icon}</span>
-                      <div>
-                        <p className="text-xs font-medium text-white">{n.title}</p>
-                        <p className="text-[10px] text-on-surface-variant leading-relaxed">{n.message}</p>
+                    <div key={n.id} className="flex items-start justify-between gap-2.5 p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors border border-white/5 group/notif relative text-left">
+                      <div className="flex items-start gap-2.5">
+                        <span className={`material-symbols-outlined ${n.iconColor || 'text-primary'} text-[18px] mt-0.5 shrink-0`}>{n.icon || 'notifications'}</span>
+                        <div>
+                          <p className="text-xs font-semibold text-white">{n.title}</p>
+                          <p className="text-[10px] text-on-surface-variant leading-relaxed">{n.message}</p>
+                        </div>
                       </div>
+                      <button 
+                        onClick={(e) => dismissNotification(n.id, e)} 
+                        className="material-symbols-outlined text-[14px] text-on-surface-variant/40 hover:text-red-400 cursor-pointer border-none bg-transparent self-start pt-0.5 transition-all opacity-0 group-hover/notif:opacity-100 shrink-0"
+                        title="Dismiss"
+                      >
+                        close
+                      </button>
                     </div>
                   )) : (
                     <div className="flex flex-col items-center justify-center py-6 text-center">
@@ -419,9 +564,25 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
                       <span className="material-symbols-outlined text-[18px]">admin_panel_settings</span>Admin Dashboard
                     </button>
                   )}
-                  <button onClick={() => { navigate('/dashboard'); setIsDropdownOpen(false); }} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold text-[#ddb7ff] bg-[#ddb7ff]/10 hover:bg-[#ddb7ff]/20 transition-all border border-[#ddb7ff]/20 cursor-pointer">
-                    <span className="material-symbols-outlined text-[18px]">verified_user</span>Switch to Mentor Portal
-                  </button>
+                  {(userRole === 'RECRUITER' || userRole === 'ADMIN') && (
+                    <button
+                      onClick={() => {
+                        if (viewMode === 'recruiter') switchToCandidate();
+                        else switchToRecruiter();
+                        setIsDropdownOpen(false);
+                      }}
+                      className={`flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
+                        viewMode === 'recruiter'
+                          ? 'text-[#ddb7ff] bg-[#ddb7ff]/10 hover:bg-[#ddb7ff]/20 border-[#ddb7ff]/20'
+                          : 'text-primary bg-primary/10 hover:bg-primary/20 border-primary/20'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[18px]">
+                        {viewMode === 'recruiter' ? 'person' : 'work'}
+                      </span>
+                      Switch to {viewMode === 'recruiter' ? 'Candidate Portal' : 'Recruiter Portal'}
+                    </button>
+                  )}
                   <button onClick={() => { navigate('/billing#profile'); setIsDropdownOpen(false); }} className="flex items-center gap-3 w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-on-surface-variant hover:bg-white/5 hover:text-white transition-all cursor-pointer border-none bg-transparent">
                     <span className="material-symbols-outlined text-[18px]">person</span>Profile Settings
                   </button>
@@ -449,6 +610,21 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
       {/* Mobile drawer */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-white/10 bg-[#09090b]/98 backdrop-blur-2xl px-6 py-4 flex flex-col gap-2">
+          {(userRole === 'RECRUITER' || userRole === 'ADMIN') && (
+            <button
+              onClick={viewMode === 'recruiter' ? switchToCandidate : switchToRecruiter}
+              className={`w-full py-3 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer border ${
+                viewMode === 'recruiter'
+                  ? 'bg-primary/10 border-primary/30 text-primary'
+                  : 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+              }`}
+            >
+              <span className="material-symbols-outlined text-sm">
+                {viewMode === 'recruiter' ? 'person' : 'work'}
+              </span>
+              Switch to {viewMode === 'recruiter' ? 'Candidate View' : 'Recruiter View'}
+            </button>
+          )}
           {tabs.map(({ key, label }) => (
             <button key={key} onClick={() => handleTabClick(key)} className={mTabCls(key)}>
               {label}

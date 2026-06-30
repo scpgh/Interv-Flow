@@ -1,19 +1,28 @@
 import express from 'express';
 import fs from 'fs';
 import { db, admin } from '../config/db.js';
-import { verifyAdmin } from '../middleware/auth.js';
+import { verifyAdmin, verifyModerator } from '../middleware/auth.js';
 import {
   findUserByEmail,
   saveUser,
   getGlobalSettings,
   saveGlobalSettings,
-  logAdminAction
+  logAdminAction,
+  getUpgradeRequests,
+  updateUpgradeRequestStatus
 } from '../helpers/dbHelpers.js';
 
 const router = express.Router();
 
-// Apply verifyAdmin middleware to protect all administrative routes in this file
-router.use(verifyAdmin);
+// Protect administrative and moderation routes
+router.use((req, res, next) => {
+  // Allow moderators to moderate forum posts
+  if (req.path.startsWith('/posts')) {
+    return verifyModerator(req, res, next);
+  }
+  // All other administrative tasks require ADMIN role
+  return verifyAdmin(req, res, next);
+});
 
 // Helper to escape HTML tags to prevent cross-site scripting (XSS)
 const sanitizeString = (str) => {
@@ -223,10 +232,9 @@ router.get('/users', async (req, res) => {
       } catch (e) {}
     }
 
-    // Default missing fields in memory
     users = users.map(u => {
       const email = u.email.toLowerCase().trim();
-      const adminEmails = ["test@example.com", "admin@intervflow.com"];
+      const adminEmails = ["test@example.com", "admin@intervflow.com", "human@intervflow.com"];
       const isDevAdmin = adminEmails.includes(email);
       return {
         role: isDevAdmin ? 'ADMIN' : 'USER',
@@ -802,6 +810,62 @@ router.post('/impersonate', async (req, res) => {
   } catch (err) {
     console.error("POST impersonation trigger failed:", err);
     res.status(500).json({ error: "Server error initializing impersonation session." });
+  }
+});
+
+// GET: Fetch pending recruiter upgrade requests
+router.get('/recruiter/requests', async (req, res) => {
+  try {
+    const requests = await getUpgradeRequests();
+    res.json({ success: true, requests });
+  } catch (err) {
+    console.error("GET recruiter requests failed:", err);
+    res.status(500).json({ error: "Server error fetching recruiter requests." });
+  }
+});
+
+// POST: Approve or reject recruiter upgrade request
+router.post('/recruiter/approve', async (req, res) => {
+  try {
+    const { email, status } = req.body; // status: 'approved' | 'rejected'
+    if (!email || !status || !['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ error: "Email and valid status ('approved' | 'rejected') are required." });
+    }
+
+    const targetEmail = email.toLowerCase().trim();
+    
+    // Update upgrade request status
+    await updateUpgradeRequestStatus(targetEmail, status);
+
+    if (status === 'approved') {
+      // Fetch user profile and update role
+      const user = await findUserByEmail(targetEmail);
+      if (user) {
+        user.role = 'RECRUITER';
+        user.updatedAt = new Date().toISOString();
+        await saveUser(user);
+
+        // Sync Firebase Custom Claims
+        if (admin.apps.length > 0) {
+          try {
+            const firebaseUser = await admin.auth().getUserByEmail(targetEmail);
+            await admin.auth().setCustomUserClaims(firebaseUser.uid, { role: 'RECRUITER' });
+            console.log(`[ADMIN APPROVE] Set role RECRUITER for user ${targetEmail}`);
+          } catch (e) {
+            console.warn(`[ADMIN APPROVE] Failed to set Custom Claims for ${targetEmail}:`, e.message);
+          }
+        }
+      }
+    }
+
+    // Log admin action
+    const clientIp = req.ip || req.socket.remoteAddress || '';
+    await logAdminAction(req.adminEmail, "RECRUITER_APPROVAL", targetEmail, { status }, clientIp);
+
+    res.json({ success: true, message: `Recruiter request ${status} successfully for ${targetEmail}.` });
+  } catch (err) {
+    console.error("POST recruiter approve failed:", err);
+    res.status(500).json({ error: "Server error during recruiter request approval." });
   }
 });
 

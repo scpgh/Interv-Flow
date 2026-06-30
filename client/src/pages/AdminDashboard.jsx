@@ -64,6 +64,9 @@ export default function AdminDashboard() {
   const [auditLogsTotalPages, setAuditLogsTotalPages] = useState(1);
   const [auditLogsSearch, setAuditLogsSearch] = useState('');
 
+  // Tab Recruiter Upgrade Requests state
+  const [recruiterRequests, setRecruiterRequests] = useState([]);
+
   // Tab 1: System Activity Feed pagination state
   const [activityPage, setActivityPage] = useState(1);
 
@@ -249,6 +252,42 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchRecruiterRequests = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/recruiter/requests`, { headers: await getAuthHeaders() });
+      const data = await res.json();
+      if (data.success) {
+        setRecruiterRequests(data.requests || []);
+      }
+    } catch (err) {
+      console.error(err);
+      triggerMessage('error', 'Failed to load recruiter requests.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApproveRecruiter = async (email, status) => {
+    try {
+      const res = await fetch(`${API_URL}/api/admin/recruiter/approve`, {
+        method: 'POST',
+        headers: await getAuthHeaders(),
+        body: JSON.stringify({ email, status })
+      });
+      const data = await res.json();
+      if (data.success) {
+        triggerMessage('success', `Recruiter upgrade request ${status} successfully.`);
+        fetchRecruiterRequests();
+      } else {
+        triggerMessage('error', data.error || 'Failed to process recruiter request.');
+      }
+    } catch (err) {
+      console.error(err);
+      triggerMessage('error', 'Network error processing recruiter request.');
+    }
+  };
+
   // Effect to sync current active tab details
   useEffect(() => {
     if (!authReady) return;
@@ -258,6 +297,7 @@ export default function AdminDashboard() {
     if (activeTab === 'moderation') fetchPostsList();
     if (activeTab === 'settings') fetchSystemSettings();
     if (activeTab === 'audits') fetchAuditLogs();
+    if (activeTab === 'recruiters') fetchRecruiterRequests();
   }, [activeTab, usersPage, usersSortBy, usersSortOrder, sessionsPage, postsPage, auditLogsPage, authReady]);
 
   // Effect for triggering delayed searches
@@ -506,6 +546,7 @@ export default function AdminDashboard() {
               {[
                 { key: 'overview', label: 'System Overview', icon: 'monitoring' },
                 { key: 'users', label: 'Candidate Accounts', icon: 'group' },
+                { key: 'recruiters', label: 'Recruiter Requests', icon: 'verified' },
                 { key: 'sessions', label: 'Completed Sessions', icon: 'record_voice_over' },
                 { key: 'moderation', label: 'Forum Moderation', icon: 'forum' },
                 { key: 'settings', label: 'Global Configurations', icon: 'settings' },
@@ -1238,6 +1279,70 @@ export default function AdminDashboard() {
               </div>
             )}
 
+            {/* TAB: RECRUITER REQUESTS */}
+            {activeTab === 'recruiters' && (
+              <div className="flex flex-col gap-6">
+                <div>
+                  <h1 className="text-xl font-bold text-white">Recruiter Upgrade Requests</h1>
+                  <p className="text-xs text-on-surface-variant">Review and approve applications from candidates requesting Recruiter privileges.</p>
+                </div>
+
+                <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.01]">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-white/5 border-b border-white/10 font-bold text-white">
+                        <th className="py-3 px-4">Name</th>
+                        <th className="py-3 px-4">Email</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4">Date Applied</th>
+                        <th className="py-3 px-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recruiterRequests.length > 0 ? recruiterRequests.map((req, idx) => (
+                        <tr key={idx} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                          <td className="py-3.5 px-4 font-semibold text-white">{req.userName}</td>
+                          <td className="py-3.5 px-4 font-mono text-on-surface-variant">{req.email}</td>
+                          <td className="py-3.5 px-4">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-medium ${
+                              req.status === 'approved' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
+                              req.status === 'rejected' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                              'bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse'
+                            }`}>
+                              {req.status}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-on-surface-variant font-mono">{new Date(req.createdAt).toLocaleDateString()}</td>
+                          <td className="py-3.5 px-4 text-right">
+                            {req.status === 'pending' && (
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => handleApproveRecruiter(req.email, 'approved')}
+                                  className="bg-green-500 hover:bg-green-600 text-black font-bold py-1 px-3 rounded-lg border-none text-[10px] cursor-pointer transition-all"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleApproveRecruiter(req.email, 'rejected')}
+                                  className="bg-red-500/20 hover:bg-red-500/30 text-red-400 font-bold py-1 px-3 rounded-lg border border-red-500/30 text-[10px] cursor-pointer transition-all"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )) : (
+                        <tr>
+                          <td colSpan="5" className="text-center py-8 text-on-surface-variant font-mono">No recruiter requests found.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
           </div>
         </main>
 
@@ -1331,6 +1436,7 @@ export default function AdminDashboard() {
                     className="w-full bg-[#131315]/80 border border-outline-variant rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#818cf8] cursor-pointer appearance-none"
                   >
                     <option className="bg-[#131315]" value="USER">USER</option>
+                    <option className="bg-[#131315]" value="RECRUITER">RECRUITER</option>
                     <option className="bg-[#131315]" value="MODERATOR">MODERATOR</option>
                     <option className="bg-[#131315]" value="ADMIN">ADMIN</option>
                   </select>
@@ -1444,6 +1550,7 @@ export default function AdminDashboard() {
                       className="w-full bg-[#131315]/80 border border-outline-variant rounded-xl pl-4 pr-10 py-3 text-xs text-white focus:outline-none focus:border-[#818cf8] cursor-pointer appearance-none"
                     >
                       <option className="bg-[#131315] text-white" value="USER">USER</option>
+                      <option className="bg-[#131315] text-white" value="RECRUITER">RECRUITER</option>
                       <option className="bg-[#131315] text-white" value="MODERATOR">MODERATOR</option>
                       <option className="bg-[#131315] text-white" value="ADMIN">ADMIN</option>
                     </select>

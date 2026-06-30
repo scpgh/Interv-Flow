@@ -55,7 +55,13 @@ export default function SignIn() {
       if (data.user.onboardingCompleted) {
         sessionStorage.setItem('userExperience', data.user.experienceYears || '');
         sessionStorage.setItem('userEducation', data.user.highestEducation || '');
-        navigate('/dashboard');
+        if (data.user.role === 'RECRUITER') {
+          sessionStorage.setItem('activeViewMode', 'recruiter');
+          navigate('/recruiter/dashboard');
+        } else {
+          sessionStorage.setItem('activeViewMode', 'candidate');
+          navigate('/dashboard');
+        }
       } else {
         navigate('/onboarding');
       }
@@ -113,7 +119,13 @@ export default function SignIn() {
       if (data.user.onboardingCompleted) {
         sessionStorage.setItem('userExperience', data.user.experienceYears || '');
         sessionStorage.setItem('userEducation', data.user.highestEducation || '');
-        navigate('/dashboard');
+        if (data.user.role === 'RECRUITER') {
+          sessionStorage.setItem('activeViewMode', 'recruiter');
+          navigate('/recruiter/dashboard');
+        } else {
+          sessionStorage.setItem('activeViewMode', 'candidate');
+          navigate('/dashboard');
+        }
       } else {
         navigate('/onboarding');
       }

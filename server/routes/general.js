@@ -4,7 +4,7 @@ import pdfParse from 'pdf-parse';
 import mammoth from 'mammoth';
 import fs from 'fs';
 import { db } from '../config/db.js';
-import { saveAnalysis, saveChatUsage } from '../helpers/dbHelpers.js';
+import { saveAnalysis, saveChatUsage, findUserByEmail, saveUser } from '../helpers/dbHelpers.js';
 import { callWithRetry, callGroqChat, fallbackResumeAnalysis, fallbackQueryResponse, domainExpectations, ai } from '../helpers/critiqueHelpers.js';
 
 const router = express.Router();
@@ -217,6 +217,21 @@ IMPORTANT: Return ONLY the raw valid JSON string. Do not wrap the JSON object in
       provider: "groq"
     });
 
+    if (email) {
+      try {
+        const user = await findUserByEmail(email);
+        if (user) {
+          user.atsScore = analysisResult.atsScore || 0;
+          user.highestEducation = analysisResult.highestEducation || user.highestEducation || 'N/A';
+          user.experienceYears = analysisResult.experienceYears || user.experienceYears || '0 Yrs';
+          await saveUser(user);
+          console.log(`[Resume Sync] Updated user profile for ${email} with ATS Score: ${user.atsScore}`);
+        }
+      } catch (userErr) {
+        console.error("Failed to sync analyzed resume score to user profile:", userErr);
+      }
+    }
+
     res.json({
       success: true,
       analysisId: savedId,
@@ -331,7 +346,7 @@ router.post('/chat', async (req, res) => {
       userContextPrompt = `Candidate Domain: ${domain || "Software Engineering"}\n`;
     }
 
-    const systemPrompt = `You are Stitch AI Doubt Tutor, an elite 24/7 technical interviewer and career coach.
+    const systemPrompt = `You are Intervflow AI Doubt Tutor, an elite 24/7 technical interviewer and career coach.
 You help candidates prepare for SDE, PM, Finance, and Consulting interviews.
 Answer the user's question constructively, encouragingly, and concisely (under 3-4 paragraphs or bullet points).
 
@@ -352,7 +367,7 @@ User's Question: "${message}"`;
     try {
       console.log("Calling Groq API for chatbot...");
       answer = await callWithRetry(() => callGroqChat(
-        "You are Stitch AI Doubt Tutor, an elite career coach. Answer concisely and constructively.",
+        "You are Intervflow AI Doubt Tutor, an elite career coach. Answer concisely and constructively.",
         systemPrompt,
         "llama-3.3-70b-versatile",
         false
