@@ -231,6 +231,27 @@ export default function PracticeSession() {
   // ── Start Interview Logic ──
   const handleStartInterview = async () => {
     setErrorMsg('');
+    
+    if (mode === 'jd') {
+      if (!jobTitle.trim()) {
+        setErrorMsg('Please specify a Job Title for your custom session.');
+        return;
+      }
+      if (!company.trim()) {
+        setErrorMsg('Please specify a Target Company.');
+        return;
+      }
+      if (!jdText.trim()) {
+        setErrorMsg('Please paste the Job Description details.');
+        return;
+      }
+    } else if (mode === 'resume') {
+      if (!resumeText.trim()) {
+        setErrorMsg('Please specify or upload your Resume Transcript.');
+        return;
+      }
+    }
+
     setStep('connecting');
 
     try {
@@ -1289,7 +1310,7 @@ export default function PracticeSession() {
                       className="bg-transparent border-none text-xs text-white focus:outline-none font-bold cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                       value={duration}
                       onChange={(e) => setDuration(Number(e.target.value))}
-                      disabled={mode === 'jd'}
+                      disabled={mode === 'jd' && !!(location.state?.jdId || jdId)}
                     >
                       <option className="bg-[#131315]" value="10">10 Minutes</option>
                       <option className="bg-[#131315]" value="15">15 Minutes</option>

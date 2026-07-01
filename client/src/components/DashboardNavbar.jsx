@@ -14,6 +14,19 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [navPillStyle, setNavPillStyle] = useState({ opacity: 0, left: 0, width: 0 });
 
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('intervflow_theme') || 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('intervflow_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
   const [notifications, setNotifications] = useState(() => {
     const saved = localStorage.getItem('intervflow_notifications');
     if (saved) {
@@ -327,10 +340,10 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
 
   return (
     <header
-      style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50 }}
-      className="border-b border-white/10 bg-[#09090b]/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.5)]"
+      style={{ position: 'fixed', top: '16px', left: '50%', transform: 'translateX(-50%)', zIndex: 50 }}
+      className="w-[92%] max-w-[1400px] rounded-full border border-outline/10 bg-surface/80 backdrop-blur-xl px-6 py-2 flex items-center justify-between shadow-[0_10px_30px_rgba(0,0,0,0.1)] transition-all duration-300"
     >
-      <div className="flex items-center justify-between px-6 py-3 w-full max-w-[1400px] mx-auto">
+      <div className="flex items-center justify-between w-full">
 
         {/* ── Left: Logo + Nav ── */}
         <div className="flex items-center gap-6 min-w-0">
@@ -422,7 +435,7 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
               <div
                 onMouseEnter={() => setIsStreakOpen(true)}
                 onMouseLeave={() => setIsStreakOpen(false)}
-                className="absolute top-[calc(100%+8px)] right-0 w-64 p-3 rounded-xl border border-white/10 flex flex-col gap-2 text-left shadow-2xl bg-[#09090b] backdrop-blur-2xl"
+                className="absolute top-[calc(100%+8px)] right-0 w-64 p-3 rounded-xl border border-outline/10 flex flex-col gap-2 text-left shadow-2xl bg-surface backdrop-blur-2xl"
                 style={{ zIndex: 9999 }}
               >
                 <div className="flex justify-between items-center border-b border-white/10 pb-1.5">
@@ -458,6 +471,17 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
             )}
           </div>
 
+          {/* Luxury Light / Dark Mode Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="w-9 h-9 rounded-full flex items-center justify-center border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all cursor-pointer text-primary shrink-0"
+            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+            </span>
+          </button>
+
           {/* Avatar — isolated wrapper for dropdown */}
           <div className="relative" ref={avatarWrapperRef}>
             <button
@@ -482,7 +506,7 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
 
             {isDropdownOpen && (
               <div
-                className="absolute top-[calc(100%+8px)] right-0 w-80 rounded-2xl border border-white/10 p-4 flex flex-col gap-4 shadow-2xl bg-[#09090b] backdrop-blur-2xl"
+                className="absolute top-[calc(100%+8px)] right-0 w-80 rounded-2xl border border-outline/10 p-4 flex flex-col gap-4 shadow-2xl bg-surface backdrop-blur-2xl"
                 style={{ zIndex: 9999 }}
               >
                 {/* Notifications header */}
@@ -609,7 +633,7 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
 
       {/* Mobile drawer */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-white/10 bg-[#09090b]/98 backdrop-blur-2xl px-6 py-4 flex flex-col gap-2">
+        <div className="md:hidden border-t border-outline/10 bg-surface/98 backdrop-blur-2xl px-6 py-4 flex flex-col gap-2">
           {(userRole === 'RECRUITER' || userRole === 'ADMIN') && (
             <button
               onClick={viewMode === 'recruiter' ? switchToCandidate : switchToRecruiter}

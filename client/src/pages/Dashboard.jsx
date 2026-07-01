@@ -142,6 +142,7 @@ export default function Dashboard() {
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [averageMockScore, setAverageMockScore] = useState(null);
   const [totalSpeechHours, setTotalSpeechHours] = useState("0");
+  const [recommendedJob, setRecommendedJob] = useState(null);
 
   const [claimedTimeline, setClaimedTimeline] = useState(
     localStorage.getItem('intervflow_timeline_claimed') === 'true'
@@ -172,6 +173,51 @@ export default function Dashboard() {
         'text-amber-400'
       );
     }
+  };
+
+  // Fetch recommended job matching candidate settings
+  useEffect(() => {
+    const fetchRecommendedJob = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/jobs`);
+        const data = await res.json();
+        if (data.success && Array.isArray(data.jds) && data.jds.length > 0) {
+          const targetCompany = sessionStorage.getItem('userTargetCompany') || userDreamCompany || '';
+          const targetDomain = sessionStorage.getItem('userDomain') || userDomain || '';
+          
+          let matchingJob = null;
+          if (targetCompany) {
+            matchingJob = data.jds.find(j => 
+              j.company.toLowerCase().includes(targetCompany.toLowerCase())
+            );
+          }
+          if (!matchingJob && targetDomain) {
+            matchingJob = data.jds.find(j => 
+              j.title.toLowerCase().includes(targetDomain.toLowerCase())
+            );
+          }
+          setRecommendedJob(matchingJob || data.jds[0]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch recommended job:", err);
+      }
+    };
+    fetchRecommendedJob();
+  }, [userDreamCompany, userDomain]);
+
+  const handleStartInterview = (jd) => {
+    navigate('/practice', {
+      state: {
+        jobTitle: jd.title,
+        jdText: jd.jdText,
+        company: jd.company,
+        jdId: jd.id || jd._id || '',
+        customSystemPrompt: jd.customSystemPrompt || '',
+        customQuestions: jd.customQuestions || [],
+        duration: jd.duration || 15,
+        mode: 'jd'
+      }
+    });
   };
 
   const handleSaveSettings = (newName, newDomain, newATS, newExperience, newEducation, newDreamCompany) => {
@@ -795,33 +841,49 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* AI Timezone-Aware Mentor Matching */}
+                {/* AI Job Matching Card */}
                 <div className="glass-card rounded-xl p-6 flex flex-col gap-4 relative overflow-hidden border border-primary/20 bg-primary/5">
                   <div className="absolute -right-10 -top-10 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
                   <div className="flex items-center gap-3 mb-1 text-left">
                     <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0 shadow-[0_0_15px_rgba(37,99,235,0.15)]">
-                      <span className="material-symbols-outlined text-primary text-xl">verified_user</span>
+                      <span className="material-symbols-outlined text-primary text-xl">work</span>
                     </div>
-                    <h2 className="font-headline-md text-headline-md text-white font-bold">AI Mentor Match</h2>
+                    <h2 className="font-headline-md text-headline-md text-white font-bold">AI Job Match</h2>
                   </div>
                   
                   <div className="bg-black/20 border border-white/5 rounded-lg p-3 text-left">
-                    <p className="font-label-sm text-label-sm text-primary mb-1 font-mono font-bold">RECOMMENDED EXPERT</p>
-                    <p className="font-body-md font-bold text-white text-sm">Clara (Redis &amp; NoSQL Specialist)</p>
-                    <p className="font-mono text-[10px] text-on-surface-variant mt-1 font-bold">Timezone: GMT+5:30 (Your Match)</p>
+                    <p className="font-label-sm text-label-sm text-primary mb-1 font-mono font-bold">RECOMMENDED POSITION</p>
+                    <p className="font-body-md font-bold text-white text-sm">
+                      {recommendedJob ? recommendedJob.title : (userDomain === 'pm' ? 'Associate Product Manager' : 'Software Engineer I')}
+                    </p>
+                    <p className="font-mono text-[10px] text-on-surface-variant mt-1 font-bold">
+                      Company: {recommendedJob ? recommendedJob.company : (userDreamCompany || 'Google')}
+                    </p>
                   </div>
 
-                  <p className="font-body-md text-body-md text-on-surface-variant text-sm leading-relaxed text-left">
-                    Based on your recent database locking telemetry, we recommend reviewing hot partition architectures with Clara.
+                  <p className="font-body-md text-body-md text-on-surface-variant text-xs leading-relaxed text-left line-clamp-3">
+                    {recommendedJob ? recommendedJob.jdText : `We recommend starting a practice run tailored for ${userDreamCompany || 'Google'}'s standard hiring qualifications.`}
                   </p>
 
                   <div className="mt-auto space-y-3 pt-4">
-                    <button onClick={() => alert("Simulation: Open slot claimed (Today at 4:00 PM)!")} className="w-full btn-primary py-3.5 text-xs font-bold border-none cursor-pointer">
-                      Claim Open Slot (Today 4:00 PM)
+                    <button 
+                      onClick={() => handleStartInterview(recommendedJob || {
+                        title: userDomain === 'pm' ? 'Associate Product Manager' : 'Software Engineer I',
+                        company: userDreamCompany || 'Google',
+                        jdText: `Standard hiring qualifications for a technical role at ${userDreamCompany || 'Google'}.`,
+                        duration: 15
+                      })} 
+                      className="w-full btn-primary py-3.5 text-xs font-bold border-none cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <span className="material-symbols-outlined text-sm">play_arrow</span>
+                      Apply &amp; Start Mock Interview
                     </button>
-                    <a href="https://meet.google.com" target="_blank" rel="noreferrer" className="w-full btn-secondary py-3 text-xs font-bold text-center block leading-none">
-                      Join Active Google Meet Session
-                    </a>
+                    <button 
+                      onClick={() => navigate('/jobs')} 
+                      className="w-full btn-secondary py-3 text-xs font-bold text-center block cursor-pointer bg-transparent border border-white/10 hover:bg-white/5 transition-all text-white"
+                    >
+                      Browse All Open Positions
+                    </button>
                   </div>
                 </div>
               </section>

@@ -324,7 +324,7 @@ export default function PracticeFeedback() {
                     <span className={`block text-[9px] font-mono font-bold uppercase mb-1.5 ${
                       item.sender === 'candidate' ? 'text-[#818CF8]' : 'text-primary'
                     }`}>
-                      {item.sender === 'candidate' ? 'Candidate (You)' : 'Interviewer (Stitch AI)'}
+                      {item.sender === 'candidate' ? 'Candidate (You)' : 'Interviewer (IntervFlow AI)'}
                     </span>
                     <p className="text-white/95">{item.text}</p>
                     <span className="block text-[8px] text-on-surface-variant font-mono mt-2 text-right">

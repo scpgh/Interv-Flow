@@ -261,7 +261,7 @@ export default function LandingPage() {
                 </div>
                 {/* Candidate Answer */}
                 <div className="flex gap-3 flex-row-reverse">
-                  <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 flex-shrink-0 bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-white">
+                  <div className="w-8 h-8 rounded-full border border-primary/20 flex-shrink-0 bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
                     ME
                   </div>
                   <div className="bg-primary/5 rounded-2xl rounded-tr-none p-3.5 border border-primary/20 w-3/4">
@@ -315,8 +315,8 @@ export default function LandingPage() {
               </div>
             </div>
             {/* Fade gradients over edges */}
-            <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-[#09090b] to-transparent pointer-events-none"></div>
-            <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-[#09090b] to-transparent pointer-events-none"></div>
+            <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-background to-transparent pointer-events-none"></div>
+            <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-background to-transparent pointer-events-none"></div>
           </div>
         </section>
 

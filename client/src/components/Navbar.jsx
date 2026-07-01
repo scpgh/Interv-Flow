@@ -7,6 +7,19 @@ export default function Navbar({ activeTab }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [navPillStyle, setNavPillStyle] = useState({ opacity: 0, left: 0, width: 0 });
 
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('intervflow_theme') || 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('intervflow_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
   const syncPillToActive = () => {
     if (activeTabRef.current) {
       setNavPillStyle({
@@ -89,7 +102,7 @@ export default function Navbar({ activeTab }) {
   };
 
   return (
-    <header className="fixed top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-container-max-width z-50 rounded-full border border-white/10 bg-[#09090b]/80 backdrop-blur-xl px-6 py-2.5 flex justify-between items-center shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition-all duration-300">
+    <header className="fixed top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-container-max-width z-50 rounded-full border border-outline/10 bg-surface/80 backdrop-blur-xl px-6 py-2.5 flex justify-between items-center shadow-[0_10px_30px_rgba(0,0,0,0.1)] transition-all duration-300">
       <div className="flex items-center gap-8">
         <Link className="font-headline-md text-headline-md font-bold tracking-tight text-white flex items-center gap-2.5 cursor-pointer" to="/">
           <img src="/intervflow_logo.png" alt="IntervFlow Logo" className="h-8 w-8 object-contain" />
@@ -130,7 +143,7 @@ export default function Navbar({ activeTab }) {
             </button>
             
             {/* Dropdown Menu Box */}
-            <div className="absolute top-12 left-0 w-80 rounded-2xl glass-card border border-white/10 p-4 dropdown-menu z-50 flex flex-col gap-3 bg-[#09090b]/95 backdrop-blur-2xl shadow-2xl">
+            <div className="absolute top-12 left-0 w-80 rounded-2xl glass-card border border-outline/10 p-4 dropdown-menu z-50 flex flex-col gap-3 bg-surface/95 backdrop-blur-2xl shadow-2xl">
               <Link to="/#simulator" className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/5 transition-all group/item cursor-pointer">
                 <span className="material-symbols-outlined text-primary text-lg mt-0.5 bg-primary/10 p-1.5 rounded-lg group-hover/item:bg-primary/20 transition-all">psychology</span>
                 <div>
@@ -224,6 +237,17 @@ export default function Navbar({ activeTab }) {
           </>
         )}
         
+        {/* Luxury Light / Dark Mode Toggle Button */}
+        <button
+          onClick={toggleTheme}
+          className="w-9 h-9 rounded-full flex items-center justify-center border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all cursor-pointer text-primary shrink-0"
+          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          <span className="material-symbols-outlined text-[18px]">
+            {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+          </span>
+        </button>
+        
         {/* Hamburger Menu Toggle (Mobile only) */}
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -237,7 +261,7 @@ export default function Navbar({ activeTab }) {
 
       {/* Mobile Navigation Drawer */}
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-[calc(100%+12px)] left-0 w-full bg-[#09090b]/98 backdrop-blur-2xl border border-white/10 p-5 rounded-2xl flex flex-col gap-4 shadow-2xl animate-slideDown z-40 text-left">
+        <div className="md:hidden absolute top-[calc(100%+12px)] left-0 w-full bg-surface/98 backdrop-blur-2xl border border-outline/10 p-5 rounded-2xl flex flex-col gap-4 shadow-2xl animate-slideDown z-40 text-left">
           <nav className="flex flex-col gap-2">
             <a 
               href="/dashboard"
