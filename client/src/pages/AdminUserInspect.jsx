@@ -153,7 +153,7 @@ export default function AdminUserInspect() {
       const data = await res.json();
       if (data.success) {
         // Store admin original details for restoration later
-        sessionStorage.setItem('adminEmail', sessionStorage.getItem('userEmail') || 'admin@intervflow.com');
+        sessionStorage.setItem('adminEmail', sessionStorage.getItem('userEmail') || '');
         sessionStorage.setItem('adminName', sessionStorage.getItem('userName') || 'Admin');
         sessionStorage.setItem('adminRole', sessionStorage.getItem('userRole') || 'ADMIN');
 

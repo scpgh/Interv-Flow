@@ -2,6 +2,32 @@ import { admin } from '../config/db.js';
 import fs from 'fs';
 import { getGlobalSettings, findUserByEmail } from '../helpers/dbHelpers.js';
 
+// Retrieve allowed admin email list dynamically from config
+const getAdminEmails = () => {
+  const envEmails = process.env.ADMIN_EMAILS;
+  if (envEmails) {
+    return envEmails.split(',').map(e => e.trim().toLowerCase());
+  }
+  // Safe default fallback for development only
+  if (process.env.NODE_ENV !== 'production') {
+    return ["test@example.com", "admin@intervflow.com", "human@intervflow.com"];
+  }
+  return [];
+};
+
+// Secure development fallback token check: only active in non-production
+const handleAuthFallback = (token) => {
+  if (process.env.NODE_ENV === 'production') {
+    console.error("Critical Security Guard: Fallback token-to-email bypass blocked in production.");
+    return null;
+  }
+  const email = token.toLowerCase().trim();
+  const adminEmails = getAdminEmails();
+  const role = adminEmails.includes(email) ? 'ADMIN' : 'USER';
+  return { email, role };
+};
+
+
 // Rate Limiter cache
 const ipRequestCounts = new Map();
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
@@ -40,7 +66,7 @@ const verifyAdmin = async (req, res, next) => {
     let email;
     let role;
 
-    const adminEmails = ["test@example.com", "admin@intervflow.com", "human@intervflow.com"];
+    const adminEmails = getAdminEmails();
 
     if (admin.apps.length > 0) {
       try {
@@ -52,9 +78,12 @@ const verifyAdmin = async (req, res, next) => {
         return res.status(401).json({ error: "Unauthorized. Invalid or expired token." });
       }
     } else {
-      // Local fallback bypass check: the token is the user's email
-      email = token.toLowerCase().trim();
-      role = adminEmails.includes(email) ? 'ADMIN' : 'USER';
+      const fallback = handleAuthFallback(token);
+      if (!fallback) {
+        return res.status(500).json({ error: "Authentication system configuration error." });
+      }
+      email = fallback.email;
+      role = fallback.role;
     }
 
     // Dynamic database and admin list fallback check if role custom claim is not set
@@ -101,7 +130,7 @@ const checkMaintenanceMode = async (req, res, next) => {
         let role = 'USER';
         let email = '';
 
-        const adminEmails = ["test@example.com", "admin@intervflow.com", "human@intervflow.com"];
+        const adminEmails = getAdminEmails();
 
         if (admin.apps.length > 0) {
           try {
@@ -110,8 +139,11 @@ const checkMaintenanceMode = async (req, res, next) => {
             email = decodedToken.email;
           } catch (e) {}
         } else {
-          email = token.toLowerCase().trim();
-          role = adminEmails.includes(email) ? 'ADMIN' : 'USER';
+          const fallback = handleAuthFallback(token);
+          if (fallback) {
+            email = fallback.email;
+            role = fallback.role;
+          }
         }
 
         if (role !== 'ADMIN' && email) {
@@ -163,9 +195,12 @@ const verifyUser = async (req, res, next) => {
         return res.status(401).json({ error: "Unauthorized. Invalid or expired token." });
       }
     } else {
-      email = token.toLowerCase().trim();
-      const adminEmails = ["test@example.com", "admin@intervflow.com", "human@intervflow.com"];
-      role = adminEmails.includes(email) ? 'ADMIN' : 'USER';
+      const fallback = handleAuthFallback(token);
+      if (!fallback) {
+        return res.status(500).json({ error: "Authentication system configuration error." });
+      }
+      email = fallback.email;
+      role = fallback.role;
     }
 
     // Lookup user in DB to ensure fresh role info
@@ -198,7 +233,7 @@ const verifyModerator = async (req, res, next) => {
     let email;
     let role = 'USER';
 
-    const adminEmails = ["test@example.com", "admin@intervflow.com", "human@intervflow.com"];
+    const adminEmails = getAdminEmails();
 
     if (admin.apps.length > 0) {
       try {
@@ -210,8 +245,12 @@ const verifyModerator = async (req, res, next) => {
         return res.status(401).json({ error: "Unauthorized. Invalid or expired token." });
       }
     } else {
-      email = token.toLowerCase().trim();
-      role = adminEmails.includes(email) ? 'ADMIN' : 'USER';
+      const fallback = handleAuthFallback(token);
+      if (!fallback) {
+        return res.status(500).json({ error: "Authentication system configuration error." });
+      }
+      email = fallback.email;
+      role = fallback.role;
     }
 
     if (role !== 'ADMIN' && role !== 'MODERATOR' && email) {

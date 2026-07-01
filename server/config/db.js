@@ -34,7 +34,11 @@ if (hasEnvCredentials) {
     console.error("Failed to initialize Firebase Firestore via JSON file:", err);
   }
 } else {
-  console.log("Firebase credentials not found (neither Env variables nor JSON path). Operating in local fallback JSON database mode.");
+  if (process.env.NODE_ENV === 'production') {
+    console.warn("⚠️ CRITICAL SECURITY WARNING: Firebase credentials not found in production! Operating in local fallback mode but authentication will fail.");
+  } else {
+    console.log("Firebase credentials not found (neither Env variables nor JSON path). Operating in local fallback JSON database mode.");
+  }
 }
 
 export { db, admin };

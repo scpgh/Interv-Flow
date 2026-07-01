@@ -50,7 +50,7 @@ export default function Community() {
   const navigate = useNavigate();
   const [userName, setUserName] = useState("Alex");
   const [userDomain, setUserDomain] = useState("fullstack");
-  const [userEmail, setUserEmail] = useState("test@example.com");
+  const [userEmail, setUserEmail] = useState("");
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState("All Categories");
@@ -180,7 +180,7 @@ export default function Community() {
   useEffect(() => {
     const name = sessionStorage.getItem('userName') || 'Alex';
     const domain = sessionStorage.getItem('userDomain') || 'fullstack';
-    const email = sessionStorage.getItem('userEmail') || 'test@example.com';
+    const email = sessionStorage.getItem('userEmail') || '';
     setUserName(name);
     setUserDomain(domain);
     setUserEmail(email);
