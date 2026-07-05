@@ -11,6 +11,7 @@ import communityRouter from './routes/community.js';
 import adminRouter from './routes/admin.js';
 import generalRouter from './routes/general.js';
 import jobPortalRouter from './routes/jobPortal.js';
+import billingRouter from './routes/billing.js';
 import { initializeWebSocketServer } from './websocket/wsHandler.js';
 
 dotenv.config();
@@ -43,6 +44,7 @@ app.use('/api/community', communityRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api', jobPortalRouter);
 app.use('/api', generalRouter);
+app.use('/api', billingRouter);
 
 // Start Server
 const server = app.listen(PORT, async () => {

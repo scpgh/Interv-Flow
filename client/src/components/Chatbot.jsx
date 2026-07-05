@@ -81,6 +81,20 @@ export default function Chatbot() {
       setChatMessages(prev => [...prev, { sender: "bot", text: data.answer }]);
     } catch (err) {
       console.error("Chatbot submission error:", err);
+      const isLimitError = err.message.toLowerCase().includes("exclusive") || 
+                           err.message.toLowerCase().includes("limit") || 
+                           err.message.toLowerCase().includes("upgrade");
+      
+      if (isLimitError) {
+        setChatMessages(prev => [...prev, { 
+          sender: "bot", 
+          text: err.message, 
+          isBillingRedirect: true 
+        }]);
+        setIsBotTyping(false);
+        return;
+      }
+
       // Heuristic fallback response on frontend in case backend is completely offline
       let botResponse = "I'm having trouble connecting to my AI brain. But here's some advice: Focus on MECE structuring for consulting, Google XYZ metrics for resumes, and sharding/caching for SDE interviews!";
       const q = userMsg.toLowerCase();
@@ -119,8 +133,24 @@ export default function Chatbot() {
         </span>
       </button>
  
+      {/* Backdrop Backdrop blur for Fullscreen framed mode */}
+      {isChatOpen && isChatFullscreen && (
+        <div 
+          onClick={() => { setIsChatOpen(false); setIsChatFullscreen(false); }} 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] cursor-pointer animate-fade-in"
+        />
+      )}
+
       {/* Chat Drawer Window */}
-      <div className={`absolute bottom-18 right-0 w-[380px] h-[520px] rounded-2xl border border-white/10 bg-[#09090b]/98 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300 z-50 ${isChatOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95 pointer-events-none'} ${isChatFullscreen ? 'chatbot-fullscreen' : ''}`}>
+      <div 
+        className={`fixed border border-white/10 bg-[#09090b]/98 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-500 ease-in-out z-50 ${
+          isChatOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
+        } ${
+          isChatFullscreen 
+            ? 'bottom-[10vh] right-[4vw] md:right-[calc(50vw-400px)] w-[92vw] md:w-[800px] h-[80vh] rounded-3xl' 
+            : 'bottom-[88px] right-[16px] w-[380px] h-[520px] rounded-2xl'
+        }`}
+      >
         {/* Header */}
         <div className="px-4 py-3.5 bg-gradient-to-r from-white/5 to-white/0 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -146,7 +176,7 @@ export default function Chatbot() {
             </button>
             {/* Close Button */}
             <button 
-              onClick={() => setIsChatOpen(false)} 
+              onClick={() => { setIsChatOpen(false); setIsChatFullscreen(false); }} 
               className="w-7 h-7 rounded-lg hover:bg-white/5 flex items-center justify-center text-on-surface-variant hover:text-white transition-colors cursor-pointer border-none bg-transparent"
             >
               <span className="material-symbols-outlined text-base">close</span>
@@ -158,8 +188,16 @@ export default function Chatbot() {
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {chatMessages.map((msg, index) => (
             <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[85%] rounded-2xl p-3 text-xs leading-relaxed text-left ${msg.sender === 'user' ? 'bg-[#1E1B4B] border border-[#818CF8]/30 text-white rounded-tr-none' : 'bg-white/5 border border-white/5 text-on-surface rounded-tl-none'}`}>
-                {msg.text}
+              <div className={`max-w-[85%] rounded-2xl p-3 text-xs leading-relaxed text-left flex flex-col gap-2.5 ${msg.sender === 'user' ? 'bg-[#1E1B4B] border border-[#818CF8]/30 text-white rounded-tr-none' : 'bg-white/5 border border-white/5 text-on-surface rounded-tl-none'}`}>
+                <span>{msg.text}</span>
+                {msg.isBillingRedirect && (
+                  <button
+                    onClick={() => window.location.href = '/billing'}
+                    className="mt-1 px-3 py-1.5 bg-[#818cf8] text-[#09090b] font-bold rounded-lg border-none hover:scale-105 active:scale-95 transition-transform cursor-pointer text-center"
+                  >
+                    Upgrade Plan
+                  </button>
+                )}
               </div>
             </div>
           ))}

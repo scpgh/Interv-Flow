@@ -176,6 +176,8 @@ export default function ResumeAnalyzer() {
   const [statusLabel, setStatusLabel] = useState('Extracting Skills...');
   const [selectedDomain, setSelectedDomain] = useState(sessionStorage.getItem('userDomain') || 'fullstack');
   const [isDragging, setIsDragging] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeModalMsg, setUpgradeModalMsg] = useState("");
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -376,7 +378,13 @@ export default function ResumeAnalyzer() {
     } catch (err) {
       clearInterval(progressInterval);
       setScanState('idle');
-      setErrorMsg(err.message || "Network error. Please make sure the backend server is running.");
+      const isLimit = err.message.toLowerCase().includes("limit reached") || err.message.toLowerCase().includes("upgrade");
+      if (isLimit) {
+        setUpgradeModalMsg(err.message || "ATS Resume Analysis limit reached. Please upgrade your plan.");
+        setShowUpgradeModal(true);
+      } else {
+        setErrorMsg(err.message || "Network error. Please make sure the backend server is running.");
+      }
       console.error("Resume analysis failed:", err);
     }
   };
@@ -976,8 +984,34 @@ export default function ResumeAnalyzer() {
         )}
       </main>
 
-      <Footer />
+      {/* Upgrade Plan Modal */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-[160] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-card max-w-sm w-full p-6 rounded-3xl border border-[#818cf8]/30 bg-[#09090b] text-center shadow-[0_0_50px_rgba(129,140,248,0.15)] flex flex-col items-center">
+            <span className="material-symbols-outlined text-4xl text-[#818cf8] mb-3 bg-[#818cf8]/10 p-3 rounded-full inline-block animate-pulse">upgrade</span>
+            <h3 className="text-white font-bold text-base mb-1">Limit Reached!</h3>
+            <p className="text-[11px] text-on-surface-variant leading-relaxed mb-6">
+              {upgradeModalMsg}
+            </p>
+            <div className="flex gap-3 w-full">
+              <button 
+                onClick={() => setShowUpgradeModal(false)}
+                className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-xs cursor-pointer transition-all"
+              >
+                Close
+              </button>
+              <button 
+                onClick={() => window.location.href = '/billing'}
+                className="flex-1 py-2.5 rounded-xl bg-[#818cf8] hover:bg-[#707be4] text-[#09090b] font-bold text-xs cursor-pointer border-none transition-colors"
+              >
+                Upgrade Plan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
+      <Footer />
       {/* Floating doubt chatbot */}
       <Chatbot />
     </div>

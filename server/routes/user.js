@@ -23,7 +23,16 @@ router.get('/profile', async (req, res) => {
         email: user.email,
         domain: user.domain,
         role: user.role || 'USER',
-        onboardingCompleted: user.onboardingCompleted || false
+        onboardingCompleted: user.onboardingCompleted || false,
+        subscription: user.subscription || { plan: 'Basic', status: 'active' },
+        credits: user.credits || {
+          atsAnalysesUsed: 0,
+          atsAnalysesLimit: 3,
+          jobApplicationsUsed: 0,
+          jobApplicationsLimit: 3,
+          aiMocksUsed: 0,
+          aiMocksLimit: 3
+        }
       }
     });
   } catch (err) {

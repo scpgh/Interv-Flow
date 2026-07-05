@@ -31,12 +31,10 @@ const handleAuthFallback = (token) => {
 // Rate Limiter cache
 const ipRequestCounts = new Map();
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-const MAX_REQUESTS_PER_WINDOW = 120; // 120 requests per minute
+const MAX_REQUESTS_PER_WINDOW = 60; // 60 requests per minute
 
-const rateLimiter = (req, res, next) => {
-  const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+const checkIpRateLimit = (ip) => {
   const now = Date.now();
-  
   if (!ipRequestCounts.has(ip)) {
     ipRequestCounts.set(ip, []);
   }
@@ -45,12 +43,21 @@ const rateLimiter = (req, res, next) => {
   const activeTimestamps = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
   
   if (activeTimestamps.length >= MAX_REQUESTS_PER_WINDOW) {
-    console.warn(`Rate limit exceeded for IP: ${ip}`);
-    return res.status(429).json({ error: "Too many requests. Please try again after a minute." });
+    return true;
   }
   
   activeTimestamps.push(now);
   ipRequestCounts.set(ip, activeTimestamps);
+  return false;
+};
+
+const rateLimiter = (req, res, next) => {
+  const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  
+  if (checkIpRateLimit(ip)) {
+    console.warn(`Rate limit exceeded for IP: ${ip}`);
+    return res.status(429).json({ error: "Too many requests. Please try again after a minute." });
+  }
   next();
 };
 
@@ -281,4 +288,4 @@ const verifyModerator = async (req, res, next) => {
   }
 };
 
-export { rateLimiter, verifyAdmin, checkMaintenanceMode, verifyUser, verifyModerator };
+export { rateLimiter, verifyAdmin, checkMaintenanceMode, verifyUser, verifyModerator, checkIpRateLimit };

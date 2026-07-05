@@ -6,6 +6,7 @@ import fs from 'fs';
 import { db } from '../config/db.js';
 import { saveAnalysis, saveChatUsage, findUserByEmail, saveUser } from '../helpers/dbHelpers.js';
 import { callWithRetry, callGroqChat, fallbackResumeAnalysis, fallbackQueryResponse, domainExpectations, ai } from '../helpers/critiqueHelpers.js';
+import { checkUsageCredits } from '../middleware/credits.js';
 
 const router = express.Router();
 
@@ -17,7 +18,7 @@ const upload = multer({
 });
 
 // POST: Parse and Analyze Resume
-router.post('/analyze-resume', upload.single('resume'), async (req, res) => {
+router.post('/analyze-resume', checkUsageCredits('ats'), upload.single('resume'), async (req, res) => {
   try {
     const { domain, resumeText: rawResumeText, email } = req.body;
     const file = req.file;
@@ -217,19 +218,28 @@ IMPORTANT: Return ONLY the raw valid JSON string. Do not wrap the JSON object in
       provider: "groq"
     });
 
-    if (email) {
-      try {
-        const user = await findUserByEmail(email);
-        if (user) {
-          user.atsScore = analysisResult.atsScore || 0;
-          user.highestEducation = analysisResult.highestEducation || user.highestEducation || 'N/A';
-          user.experienceYears = analysisResult.experienceYears || user.experienceYears || '0 Yrs';
-          await saveUser(user);
-          console.log(`[Resume Sync] Updated user profile for ${email} with ATS Score: ${user.atsScore}`);
+    try {
+      const user = req.currentUserRecord || (email ? await findUserByEmail(email) : null);
+      if (user) {
+        if (!user.credits) {
+          user.credits = {
+            atsAnalysesUsed: 0,
+            atsAnalysesLimit: 3,
+            jobApplicationsUsed: 0,
+            jobApplicationsLimit: 3,
+            aiMocksUsed: 0,
+            aiMocksLimit: 3
+          };
         }
-      } catch (userErr) {
-        console.error("Failed to sync analyzed resume score to user profile:", userErr);
+        user.credits.atsAnalysesUsed = (user.credits.atsAnalysesUsed || 0) + 1;
+        user.atsScore = analysisResult.atsScore || 0;
+        user.highestEducation = analysisResult.highestEducation || user.highestEducation || 'N/A';
+        user.experienceYears = analysisResult.experienceYears || user.experienceYears || '0 Yrs';
+        await saveUser(user);
+        console.log(`[Resume Sync] Updated user profile for ${user.email} with ATS Score: ${user.atsScore} (ATS Reviews Used: ${user.credits.atsAnalysesUsed})`);
       }
+    } catch (userErr) {
+      console.error("Failed to sync analyzed resume score to user profile:", userErr);
     }
 
     res.json({
@@ -313,7 +323,7 @@ Provide a highly relevant, encouraging, and actionable answer.`;
 });
 
 // POST: General Doubt Chatbot
-router.post('/chat', async (req, res) => {
+router.post('/chat', checkUsageCredits('chat'), async (req, res) => {
   try {
     const { message, history, domain, resumeText, userProfile, email } = req.body;
     if (!message) {

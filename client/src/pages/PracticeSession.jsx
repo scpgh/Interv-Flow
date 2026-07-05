@@ -63,6 +63,8 @@ export default function PracticeSession() {
   const [isFallbackMode, setIsFallbackMode] = useState(false);
   const [typedAnswer, setTypedAnswer] = useState('');
   const [speechWarning, setSpeechWarning] = useState('');
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeModalMsg, setUpgradeModalMsg] = useState('');
   
   // Custom Voice & Focus states
   const [voices, setVoices] = useState([]);
@@ -366,7 +368,14 @@ export default function PracticeSession() {
           
           else if (data.type === 'error') {
             console.error("Received server error during interview session:", data.message);
-            setSpeechWarning(data.message || "Interviewer failed to process response. Please try again.");
+            const isLimit = data.message.toLowerCase().includes("limit reached") || data.message.toLowerCase().includes("upgrade");
+            if (isLimit) {
+              setUpgradeModalMsg(data.message);
+              setShowUpgradeModal(true);
+              setStep('setup'); // Fall back to setup wizard step so the user isn't stuck on connecting loader
+            } else {
+              setSpeechWarning(data.message || "Interviewer failed to process response. Please try again.");
+            }
             setInterviewerState('listening');
           }
 
@@ -1640,6 +1649,33 @@ export default function PracticeSession() {
         )}
 
       </div>
+
+      {/* Upgrade Plan Modal */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-[160] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-card max-w-sm w-full p-6 rounded-3xl border border-[#818cf8]/30 bg-[#09090b] text-center shadow-[0_0_50px_rgba(129,140,248,0.15)] flex flex-col items-center">
+            <span className="material-symbols-outlined text-4xl text-[#818cf8] mb-3 bg-[#818cf8]/10 p-3 rounded-full inline-block animate-pulse">upgrade</span>
+            <h3 className="text-white font-bold text-base mb-1">Limit Reached!</h3>
+            <p className="text-[11px] text-on-surface-variant leading-relaxed mb-6 text-center">
+              {upgradeModalMsg}
+            </p>
+            <div className="flex gap-3 w-full">
+              <button 
+                onClick={() => setShowUpgradeModal(false)}
+                className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-xs cursor-pointer transition-all"
+              >
+                Close
+              </button>
+              <button 
+                onClick={() => window.location.href = '/billing'}
+                className="flex-1 py-2.5 rounded-xl bg-[#818cf8] hover:bg-[#707be4] text-[#09090b] font-bold text-xs cursor-pointer border-none transition-colors"
+              >
+                Upgrade Plan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

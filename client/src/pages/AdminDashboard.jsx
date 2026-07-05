@@ -1163,6 +1163,106 @@ export default function AdminDashboard() {
                     />
                   </div>
 
+                  {/* Pricing Tiers Configuration Panel */}
+                  <div className="border-t border-white/5 pt-6 flex flex-col gap-6">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-1.5 uppercase tracking-wider font-mono">
+                      <span className="material-symbols-outlined text-amber-400 text-lg font-bold">payments</span>
+                      Dynamic Billing Plans Configuration
+                    </h3>
+                    
+                    {/* Pro Plan Configuration */}
+                    <div className="bg-white/[0.02] border border-white/5 p-4 rounded-xl flex flex-col gap-4 text-left">
+                      <h4 className="text-xs font-bold text-[#818cf8] uppercase tracking-wider font-mono">Pro Plan (₹299 defaults)</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] uppercase font-bold text-on-surface-variant font-mono">Price (INR)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={settings.planPro?.price || 299}
+                            onChange={(e) => setSettings(s => ({
+                              ...s,
+                              planPro: { ...(s.planPro || { price: 299, jobApplicationsLimit: 15, aiMocksLimit: 15 }), price: parseInt(e.target.value, 10) || 0 }
+                            }))}
+                            className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400 font-mono"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] uppercase font-bold text-on-surface-variant font-mono">AI Mocks Limit</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={settings.planPro?.aiMocksLimit || 15}
+                            onChange={(e) => setSettings(s => ({
+                              ...s,
+                              planPro: { ...(s.planPro || { price: 299, jobApplicationsLimit: 15, aiMocksLimit: 15 }), aiMocksLimit: parseInt(e.target.value, 10) || 1 }
+                            }))}
+                            className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400 font-mono"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] uppercase font-bold text-on-surface-variant font-mono">Job Applications Limit</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={settings.planPro?.jobApplicationsLimit || 15}
+                            onChange={(e) => setSettings(s => ({
+                              ...s,
+                              planPro: { ...(s.planPro || { price: 299, jobApplicationsLimit: 15, aiMocksLimit: 15 }), jobApplicationsLimit: parseInt(e.target.value, 10) || 1 }
+                            }))}
+                            className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400 font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Pro Plus Plan Configuration */}
+                    <div className="bg-white/[0.02] border border-white/5 p-4 rounded-xl flex flex-col gap-4 text-left">
+                      <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider font-mono">Pro Plus Plan (₹999 defaults)</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] uppercase font-bold text-on-surface-variant font-mono">Price (INR)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={settings.planProPlus?.price || 999}
+                            onChange={(e) => setSettings(s => ({
+                              ...s,
+                              planProPlus: { ...(s.planProPlus || { price: 999, jobApplicationsLimit: 99999, aiMocksLimit: 99999 }), price: parseInt(e.target.value, 10) || 0 }
+                            }))}
+                            className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400 font-mono"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] uppercase font-bold text-on-surface-variant font-mono">AI Mocks Limit</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={settings.planProPlus?.aiMocksLimit || 99999}
+                            onChange={(e) => setSettings(s => ({
+                              ...s,
+                              planProPlus: { ...(s.planProPlus || { price: 999, jobApplicationsLimit: 99999, aiMocksLimit: 99999 }), aiMocksLimit: parseInt(e.target.value, 10) || 1 }
+                            }))}
+                            className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400 font-mono"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] uppercase font-bold text-on-surface-variant font-mono">Job Applications Limit</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={settings.planProPlus?.jobApplicationsLimit || 99999}
+                            onChange={(e) => setSettings(s => ({
+                              ...s,
+                              planProPlus: { ...(s.planProPlus || { price: 999, jobApplicationsLimit: 99999, aiMocksLimit: 99999 }), jobApplicationsLimit: parseInt(e.target.value, 10) || 1 }
+                            }))}
+                            className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400 font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
 
                   {/* Save button */}
                   <button

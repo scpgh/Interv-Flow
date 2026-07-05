@@ -13,6 +13,7 @@ export default function Billing() {
   const [selectedSlot, setSelectedSlot] = useState('slot-1'); // 'slot-1' | 'slot-2' | 'slot-3'
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [simulatedRzp, setSimulatedRzp] = useState(null);
 
   // Profile Form States
   const [profileName, setProfileName] = useState(sessionStorage.getItem('userName') || '');
@@ -61,6 +62,44 @@ export default function Billing() {
       isCompleted: true,
     }
   ]);
+
+  const [plans, setPlans] = useState({
+    Basic: { price: 0, jobApplicationsLimit: 3, aiMocksLimit: 3 },
+    Pro: { price: 299, jobApplicationsLimit: 15, aiMocksLimit: 15 },
+    ProPlus: { price: 999, jobApplicationsLimit: 99999, aiMocksLimit: 99999 }
+  });
+  const [loadingPlans, setLoadingPlans] = useState(true);
+  const [userRecord, setUserRecord] = useState(null);
+
+  useEffect(() => {
+    fetchBillingData();
+  }, []);
+
+  const fetchBillingData = async () => {
+    setLoadingPlans(true);
+    const email = sessionStorage.getItem('userEmail');
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    try {
+      const plansRes = await fetch(`${API_URL}/api/billing/plans`);
+      const plansData = await plansRes.json();
+      if (plansData.success) {
+        setPlans(plansData.plans);
+      }
+
+      if (email) {
+        const userRes = await fetch(`${API_URL}/api/user/profile?email=${encodeURIComponent(email)}`);
+        const userData = await userRes.json();
+        if (userData.success) {
+          setUserRecord(userData.user);
+          setCurrentPlan((userData.user.subscription && userData.user.subscription.plan) || 'Basic');
+        }
+      }
+    } catch (err) {
+      console.error("Error loading billing details:", err);
+    } finally {
+      setLoadingPlans(false);
+    }
+  };
 
   // Set active tab based on window hash or location state
   useEffect(() => {
@@ -169,9 +208,153 @@ export default function Billing() {
     }
   };
 
-  const handleUpgrade = (planName) => {
-    setCurrentPlan(planName);
-    showToast(`Successfully upgraded plan to ${planName}! (Stripe Sandbox Simulated)`);
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleUpgrade = async (planName) => {
+    if (planName === 'Basic') {
+      if (!window.confirm("Are you sure you want to downgrade to the Basic plan? Your credits will be reset to Basic limits.")) return;
+      
+      const email = sessionStorage.getItem('userEmail');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      try {
+        const res = await fetch(`${API_URL}/api/billing/verify-payment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            planName: 'Basic',
+            razorpayOrderId: `cancel_${Date.now()}`,
+            razorpayPaymentId: `cancel_pay_${Date.now()}`
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast("Successfully downgraded plan to Basic!");
+          fetchBillingData();
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Failed to cancel subscription.");
+      }
+      return;
+    }
+
+    const email = sessionStorage.getItem('userEmail');
+    if (!email) {
+      alert("Please log in to upgrade your subscription plan.");
+      navigate('/signin');
+      return;
+    }
+
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    try {
+      const orderRes = await fetch(`${API_URL}/api/billing/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planName })
+      });
+      const orderData = await orderRes.json();
+      if (!orderData.success) {
+        alert(orderData.error || "Failed to create checkout order.");
+        return;
+      }
+
+      if (orderData.keyId === "rzp_test_mock_keys") {
+        setSimulatedRzp({
+          planName,
+          orderId: orderData.orderId,
+          amount: orderData.amount,
+          keyId: orderData.keyId,
+          handler: async function (response) {
+            try {
+              const verifyRes = await fetch(`${API_URL}/api/billing/verify-payment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  email,
+                  planName,
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpaySignature: response.razorpay_signature
+                })
+              });
+              const verifyData = await verifyRes.json();
+              if (verifyData.success) {
+                showToast(`Congratulations! You have successfully upgraded to ${planName}!`);
+                fetchBillingData();
+              } else {
+                alert(verifyData.error || "Payment verification failed.");
+              }
+            } catch (verifyErr) {
+              console.error("Signature verification request failed:", verifyErr);
+              alert("Error verifying payment signature. Please contact support.");
+            }
+          }
+        });
+        return;
+      }
+
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        alert("Razorpay payment gateway failed to load. Please check your network connection.");
+        return;
+      }
+
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "IntervFlow AI",
+        description: `${planName} Subscription Purchase`,
+        order_id: orderData.orderId,
+        handler: async function (response) {
+          try {
+            const verifyRes = await fetch(`${API_URL}/api/billing/verify-payment`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email,
+                planName,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature
+              })
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              showToast(`Congratulations! You have successfully upgraded to ${planName}!`);
+              fetchBillingData();
+            } else {
+              alert(verifyData.error || "Payment verification failed.");
+            }
+          } catch (verifyErr) {
+            console.error("Signature verification request failed:", verifyErr);
+            alert("Error verifying payment signature. Please contact support.");
+          }
+        },
+        prefill: {
+          name: sessionStorage.getItem('userName') || '',
+          email: email
+        },
+        theme: {
+          color: "#818cf8"
+        }
+      };
+
+      const rzpInstance = new window.Razorpay(options);
+      rzpInstance.open();
+    } catch (err) {
+      console.error("Upgrade trigger failed:", err);
+      alert("Error initializing checkout pipeline.");
+    }
   };
 
   const handleConfirmAllocation = () => {
@@ -297,17 +480,30 @@ export default function Billing() {
             </button>
           </nav>
           
-          <div className="mt-auto pt-6">
+          <div className="mt-auto pt-6 flex flex-col gap-4">
             <div className="glass-card p-4 rounded-xl">
-              <p className="text-[9px] font-mono text-outline mb-2">CREDITS CALIBRATION</p>
+              <p className="text-[9px] font-mono text-outline mb-2">JOB APPLICATIONS</p>
               <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-2">
                 <div 
                   className="h-full bg-primary transition-all duration-500" 
-                  style={{ width: currentPlan === 'Pro Plus' ? '72%' : currentPlan === 'Pro' ? '20%' : '5%' }}
+                  style={{ width: `${Math.min(100, ((userRecord?.credits?.jobApplicationsUsed || 0) / (userRecord?.credits?.jobApplicationsLimit || 3)) * 100)}%` }}
                 />
               </div>
               <p className="text-[10px] font-mono text-on-surface">
-                {currentPlan === 'Pro Plus' ? '1 Session Used / 15 Credits' : currentPlan === 'Pro' ? '1 Session Used / 3 Credits' : '0 Sessions / 0 Credits'}
+                {userRecord?.credits?.jobApplicationsUsed || 0} / {userRecord?.credits?.jobApplicationsLimit >= 9999 ? 'Unlimited' : userRecord?.credits?.jobApplicationsLimit || 3} Used
+              </p>
+            </div>
+
+            <div className="glass-card p-4 rounded-xl">
+              <p className="text-[9px] font-mono text-outline mb-2">ATS RESUME REVIEWS</p>
+              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-2">
+                <div 
+                  className="h-full bg-secondary transition-all duration-500" 
+                  style={{ width: `${Math.min(100, ((userRecord?.credits?.atsAnalysesUsed || 0) / (userRecord?.credits?.atsAnalysesLimit || 3)) * 100)}%` }}
+                />
+              </div>
+              <p className="text-[10px] font-mono text-on-surface">
+                {userRecord?.credits?.atsAnalysesUsed || 0} / {userRecord?.credits?.atsAnalysesLimit >= 9999 ? 'Unlimited' : userRecord?.credits?.atsAnalysesLimit || 3} Used
               </p>
             </div>
           </div>
@@ -355,30 +551,30 @@ export default function Billing() {
               <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="glass-card p-6 rounded-xl border border-white/5 text-left">
                   <div className="flex justify-between items-center mb-4">
-                    <span className="text-[10px] font-mono text-outline">INTERVIEW MINUTES</span>
-                    <span className="text-[10px] font-mono text-primary">
-                      {currentPlan === 'Pro Plus' ? '45 / Unlimited min' : currentPlan === 'Pro' ? '30 / 120 min' : '10 / 30 min'}
+                    <span className="text-[10px] font-mono text-outline">AI MOCK INTERVIEWS</span>
+                    <span className="text-[10px] font-mono text-primary font-bold">
+                      {userRecord?.credits?.aiMocksUsed || 0} / {userRecord?.credits?.aiMocksLimit >= 9999 ? 'Unlimited' : userRecord?.credits?.aiMocksLimit || 3} Sessions
                     </span>
                   </div>
                   <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-primary transition-all duration-1000"
-                      style={{ width: currentPlan === 'Pro Plus' ? '30%' : currentPlan === 'Pro' ? '25%' : '33%' }}
+                      style={{ width: `${Math.min(100, ((userRecord?.credits?.aiMocksUsed || 0) / (userRecord?.credits?.aiMocksLimit || 3)) * 100)}%` }}
                     ></div>
                   </div>
                 </div>
                 
                 <div className="glass-card p-6 rounded-xl border border-white/5 text-left">
                   <div className="flex justify-between items-center mb-4">
-                    <span className="text-[10px] font-mono text-outline">MOCK SESSION RECORDINGS</span>
-                    <span className="text-[10px] font-mono text-secondary">
-                      {currentPlan === 'Pro Plus' ? '2 / 15 Sessions' : currentPlan === 'Pro' ? '1 / 3 Sessions' : '0 / 0 Sessions'}
+                    <span className="text-[10px] font-mono text-outline">ATS RESUME REVIEWS</span>
+                    <span className="text-[10px] font-mono text-secondary font-bold">
+                      {userRecord?.credits?.atsAnalysesUsed || 0} / {userRecord?.credits?.atsAnalysesLimit >= 9999 ? 'Unlimited' : userRecord?.credits?.atsAnalysesLimit || 3} Reviews
                     </span>
                   </div>
                   <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-secondary transition-all duration-1000"
-                      style={{ width: currentPlan === 'Pro Plus' ? '13%' : currentPlan === 'Pro' ? '33%' : '0%' }}
+                      style={{ width: `${Math.min(100, ((userRecord?.credits?.atsAnalysesUsed || 0) / (userRecord?.credits?.atsAnalysesLimit || 3)) * 100)}%` }}
                     ></div>
                   </div>
                 </div>
@@ -386,7 +582,7 @@ export default function Billing() {
 
               {/* Available Plans */}
               <section>
-                <h2 className="text-lg md:text-xl font-bold mb-6 text-white">Available Plans</h2>
+                <h2 className="text-lg md:text-xl font-bold mb-6 text-on-surface">Available Plans</h2>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   
                   {/* Basic */}
@@ -407,11 +603,11 @@ export default function Billing() {
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary text-base">check_circle</span>
-                        <span>3 Automated AI Mock Mocks</span>
+                        <span>3 AI Mock Interviews</span>
                       </li>
-                      <li className="flex items-center gap-2 opacity-40">
-                        <span className="material-symbols-outlined text-base">close</span>
-                        <span>0 Mentor Bookings</span>
+                      <li className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-primary text-base">check_circle</span>
+                        <span>Apply to 3 Jobs / month</span>
                       </li>
                     </ul>
                     {currentPlan === 'Basic' ? (
@@ -419,7 +615,7 @@ export default function Billing() {
                     ) : (
                       <button 
                         onClick={() => handleUpgrade('Basic')}
-                        className="w-full py-2.5 rounded-xl border border-white/10 text-white hover:bg-white/5 transition-all text-xs font-bold cursor-pointer"
+                        className="w-full py-2.5 rounded-xl border border-white/10 text-on-surface hover:bg-slate-100 dark:hover:bg-white/5 transition-all text-xs font-bold cursor-pointer"
                       >
                         Downgrade to Basic
                       </button>
@@ -430,30 +626,32 @@ export default function Billing() {
                   <div className={`glass-card p-6 rounded-xl flex flex-col border relative overflow-hidden transition-all ${
                     currentPlan === 'Pro' ? 'border-primary bg-primary/5 shadow-[0_0_20px_rgba(129,140,248,0.15)]' : 'border-white/10 bg-white/[0.02]'
                   }`}>
-                    <div className="absolute top-3 right-3 bg-primary/25 text-indigo-900 dark:text-[#b4c5ff] px-2 py-0.5 rounded text-[8px] border border-primary/30 font-bold uppercase">3 Bookings</div>
+                    <div className="absolute top-3 right-3 bg-indigo-50 dark:bg-primary/25 text-indigo-900 dark:text-[#b4c5ff] px-2 py-0.5 rounded text-[8px] border border-indigo-200 dark:border-primary/30 font-bold uppercase">
+                      {plans.Pro.jobApplicationsLimit >= 9999 ? 'Unlimited' : `${plans.Pro.jobApplicationsLimit} Applications`}
+                    </div>
                     <div className="mb-6">
                       <span className="text-[10px] font-mono text-primary">PRO</span>
                       <div className="flex items-baseline mt-2">
-                        <span className="text-2xl font-bold font-headline-md">₹299</span>
+                        <span className="text-2xl font-bold font-headline-md">₹{plans.Pro.price}</span>
                         <span className="text-on-surface-variant text-xs font-mono ml-1">/ month</span>
                       </div>
                     </div>
                     <ul className="space-y-3.5 mb-6 flex-grow text-xs text-on-surface">
                       <li className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary text-base">check_circle</span>
-                        <span>10 ATS Resume Reviews</span>
+                        <span>{plans.Pro.atsAnalysesLimit || 10} ATS Resume Reviews</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary text-base">check_circle</span>
-                        <span>7 AI Mock Interviews</span>
+                        <span>{plans.Pro.aiMocksLimit || 15} AI Mock Interviews</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary text-base">check_circle</span>
-                        <span>3 Live Mentor Sessions</span>
+                        <span>Apply to {plans.Pro.jobApplicationsLimit || 15} Jobs / month</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary text-base">check_circle</span>
-                        <span>24/7 Doubt Tutor</span>
+                        <span>24/7 AI Doubt Tutor</span>
                       </li>
                     </ul>
                     {currentPlan === 'Pro' ? (
@@ -472,30 +670,36 @@ export default function Billing() {
                   <div className={`glass-card p-6 rounded-xl flex flex-col border relative overflow-hidden transition-all ${
                     currentPlan === 'Pro Plus' ? 'border-emerald-500/40 bg-emerald-500/5 shadow-[0_0_20px_rgba(16,185,129,0.15)]' : 'border-white/10 bg-white/[0.02]'
                   }`}>
-                    <div className="absolute top-3 right-3 bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded text-[8px] border border-emerald-500/30 font-bold uppercase">15 Bookings</div>
+                    <div className="absolute top-3 right-3 bg-emerald-55 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400 px-2 py-0.5 rounded text-[8px] border border-emerald-22 dark:border-emerald-500/30 font-bold uppercase">
+                      {plans.ProPlus.jobApplicationsLimit >= 9999 ? 'Unlimited' : `${plans.ProPlus.jobApplicationsLimit} Applications`}
+                    </div>
                     <div className="mb-6">
-                      <span className="text-[10px] font-mono text-emerald-400 font-bold">PRO PLUS</span>
+                      <span className="text-[10px] font-mono text-emerald-800 dark:text-emerald-400 font-bold">PRO PLUS</span>
                       <div className="flex items-baseline mt-2">
-                        <span className="text-2xl font-bold font-headline-md">₹999</span>
+                        <span className="text-2xl font-bold font-headline-md">₹{plans.ProPlus.price}</span>
                         <span className="text-on-surface-variant text-xs font-mono ml-1">/ month</span>
                       </div>
                     </div>
                     <ul className="space-y-3.5 mb-6 flex-grow text-xs text-on-surface">
                       <li className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-emerald-400 text-base">check_circle</span>
-                        <span><strong>Unlimited</strong> ATS Evaluations</span>
+                        <span>{plans.ProPlus.atsAnalysesLimit >= 9999 ? <strong>Unlimited</strong> : <strong>{plans.ProPlus.atsAnalysesLimit}</strong>} ATS Evaluations</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-emerald-400 text-base">check_circle</span>
-                        <span><strong>Unlimited</strong> AI Mock sessions</span>
+                        <span>{plans.ProPlus.aiMocksLimit >= 9999 ? <strong>Unlimited</strong> : <strong>{plans.ProPlus.aiMocksLimit}</strong>} AI Mock sessions</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-emerald-400 text-base">check_circle</span>
-                        <span><strong>15 Live Sessions</strong> with FAANG experts</span>
+                        <span>{plans.ProPlus.jobApplicationsLimit >= 9999 ? <strong>Unlimited</strong> : <strong>{plans.ProPlus.jobApplicationsLimit}</strong>} Job Applications</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-emerald-400 text-base">check_circle</span>
-                        <span>24/7 AI doubt tutor</span>
+                        <span>Priority recruiter matching</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-emerald-400 text-base">check_circle</span>
+                        <span>24/7 AI Doubt Tutor</span>
                       </li>
                     </ul>
                     {currentPlan === 'Pro Plus' ? (
@@ -514,7 +718,7 @@ export default function Billing() {
 
               {/* Payment Methods */}
               <section>
-                <h2 className="text-lg font-bold mb-4 text-white">Payment Method</h2>
+                <h2 className="text-lg font-bold mb-4 text-on-surface">Payment Method</h2>
                 <div className="glass-card p-6 rounded-xl flex flex-col md:flex-row justify-between items-center gap-4 border border-white/5 bg-white/[0.01]">
                   <div className="flex items-center gap-4 text-left">
                     <div className="w-12 h-8 rounded bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
@@ -524,7 +728,7 @@ export default function Billing() {
                       </div>
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-white">Visa ending in 4242 (Stripe Sandbox Active)</p>
+                      <p className="text-xs font-semibold text-on-surface">Visa ending in 4242 (Stripe Sandbox Active)</p>
                       <p className="text-[10px] font-mono text-outline mt-0.5">Stripe Mock: 4242 4242 4242 4242</p>
                     </div>
                   </div>
@@ -538,12 +742,12 @@ export default function Billing() {
 
               {/* Billing History */}
               <section>
-                <h2 className="text-lg font-bold mb-4 text-white">Billing History</h2>
+                <h2 className="text-lg font-bold mb-4 text-on-surface">Billing History</h2>
                 <div className="glass-card rounded-xl overflow-hidden border border-white/5">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="bg-white/[0.02] border-b border-white/5 font-mono text-outline">
+                        <tr className="border-b border-white/5 font-mono uppercase text-[10px] text-slate-600 dark:text-white bg-slate-100 dark:bg-white/5">
                           <th className="px-6 py-4">DATE</th>
                           <th className="px-6 py-4">DESCRIPTION</th>
                           <th className="px-6 py-4">AMOUNT</th>
@@ -554,7 +758,7 @@ export default function Billing() {
                       <tbody className="divide-y divide-white/5 text-on-surface-variant">
                         <tr className="hover:bg-white/[0.02] transition-colors">
                           <td className="px-6 py-4 font-mono">Jun 14, 2026</td>
-                          <td className="px-6 py-4 font-medium text-white">Pro Plus Subscription — Monthly</td>
+                          <td className="px-6 py-4 font-medium text-on-surface">Pro Plus Subscription — Monthly</td>
                           <td className="px-6 py-4 font-mono">₹999.00</td>
                           <td className="px-6 py-4">
                             <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[9px] font-mono border border-emerald-500/20">Success</span>
@@ -565,7 +769,7 @@ export default function Billing() {
                         </tr>
                         <tr className="hover:bg-white/[0.02] transition-colors">
                           <td className="px-6 py-4 font-mono">May 14, 2026</td>
-                          <td className="px-6 py-4 font-medium text-white">Pro Plus Subscription — Monthly</td>
+                          <td className="px-6 py-4 font-medium text-on-surface">Pro Plus Subscription — Monthly</td>
                           <td className="px-6 py-4 font-mono">₹999.00</td>
                           <td className="px-6 py-4">
                             <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[9px] font-mono border border-emerald-500/20">Success</span>
@@ -589,7 +793,7 @@ export default function Billing() {
             <div className="space-y-10 animate-fade-in text-left">
               <section className="glass-panel p-6 md:p-8 rounded-2xl border border-white/5 bg-white/[0.01]">
                 <div className="border-b border-white/10 pb-4 mb-6">
-                  <h2 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+                  <h2 className="text-lg md:text-xl font-bold text-on-surface flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary text-xl">person</span>
                     Profile Settings
                   </h2>
@@ -742,7 +946,7 @@ export default function Billing() {
             <div className="space-y-10 animate-fade-in text-left">
               <section className="glass-panel p-6 md:p-8 rounded-2xl border border-white/5 bg-white/[0.01]">
                 <div className="border-b border-white/10 pb-4 mb-6">
-                  <h2 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+                  <h2 className="text-lg md:text-xl font-bold text-on-surface flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary text-xl">settings</span>
                     System Preferences
                   </h2>
@@ -817,7 +1021,7 @@ export default function Billing() {
                           className="mt-1 accent-primary rounded cursor-pointer w-4 h-4 shrink-0"
                         />
                         <div className="text-left">
-                          <span className="text-xs text-white font-medium block">Session Indicators</span>
+                          <span className="text-xs text-on-surface font-medium block">Session Indicators</span>
                           <span className="text-[10px] text-on-surface-variant block mt-0.5 font-body-md">Receive session start indicators and calendar links via email.</span>
                         </div>
                       </label>
@@ -829,7 +1033,7 @@ export default function Billing() {
                           className="mt-1 accent-primary rounded cursor-pointer w-4 h-4 shrink-0"
                         />
                         <div className="text-left">
-                          <span className="text-xs text-white font-medium block">Weekly Challenges Digest</span>
+                          <span className="text-xs text-on-surface font-medium block">Weekly Challenges Digest</span>
                           <span className="text-[10px] text-on-surface-variant block mt-0.5 font-body-md">Subscribe to weekly coding practice challenges and mock feedback collections.</span>
                         </div>
                       </label>
@@ -916,6 +1120,91 @@ export default function Billing() {
               >
                 {isDeletingAccount ? "Deleting..." : "Permanently Delete"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Simulated Razorpay Sandbox Modal */}
+      {simulatedRzp && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-6 z-[150] animate-fade-in">
+          <div className="w-full max-w-[420px] bg-[#09090b]/95 text-white rounded-3xl overflow-hidden shadow-2xl border border-white/10 animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="p-6 flex flex-col gap-2 relative border-b border-white/5 bg-black/25">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold tracking-widest text-[#818cf8] text-base">Razorpay</span>
+                  <span className="bg-[#818cf8]/15 text-[#b4c5ff] px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider font-mono border border-[#818cf8]/25">SIMULATION</span>
+                </div>
+                <button 
+                  onClick={() => setSimulatedRzp(null)}
+                  className="bg-transparent border-none text-[#94a3b8] hover:text-white cursor-pointer hover:bg-white/5 p-1 rounded-full transition-colors flex items-center justify-center"
+                >
+                  <span className="material-symbols-outlined text-lg">close</span>
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-2 font-mono text-left">{simulatedRzp.orderId}</p>
+              <div className="flex justify-between items-baseline mt-4 pt-1 text-left">
+                <span className="text-xs text-slate-400">Upgrade Plan: <strong className="text-[#818cf8]">{simulatedRzp.planName}</strong></span>
+                <span className="text-2xl font-bold font-mono text-white">₹{simulatedRzp.amount / 100}</span>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 flex flex-col gap-6 text-left">
+              <div className="flex items-center gap-3 bg-[#1e1b4b]/20 border border-[#818cf8]/20 rounded-2xl p-4 text-xs text-[#b4c5ff]">
+                <span className="material-symbols-outlined text-[#818cf8] text-lg shrink-0">info</span>
+                <span>Active API keys are not detected in server env. Running local simulation sandbox.</span>
+              </div>
+
+              <div className="flex flex-col gap-2.5">
+                <label className="text-[10px] uppercase font-bold text-slate-400 font-mono tracking-wide">Prefilled Details</label>
+                <div className="bg-white/[0.01] border border-white/5 rounded-2xl p-4 flex flex-col gap-2 text-xs">
+                  <div className="flex justify-between text-slate-400">
+                    <span>Name</span>
+                    <span className="font-semibold text-white">{sessionStorage.getItem('userName') || 'Candidate'}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Email</span>
+                    <span className="font-mono text-white">{sessionStorage.getItem('userEmail') || ''}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3.5 mt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const paymentId = `pay_sim_${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
+                    const signature = `sig_sim_${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
+                    simulatedRzp.handler({
+                      razorpay_order_id: simulatedRzp.orderId,
+                      razorpay_payment_id: paymentId,
+                      razorpay_signature: signature
+                    });
+                    setSimulatedRzp(null);
+                  }}
+                  className="w-full py-3.5 bg-[#1e1b4b] hover:bg-[#1e1b4b]/80 border border-[#818cf8]/35 text-white font-bold text-xs rounded-xl transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer text-center shadow-md"
+                >
+                  Simulate Successful Payment
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    alert("Payment cancelled.");
+                    setSimulatedRzp(null);
+                  }}
+                  className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold text-xs rounded-xl border border-red-500/20 transition-all active:scale-[0.99] cursor-pointer text-center"
+                >
+                  Simulate Payment Failure
+                </button>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-black/25 border-t border-white/5 p-4 text-center flex items-center justify-center gap-1.5 text-[9px] text-[#e5e1e4]/40 font-mono">
+              <span className="material-symbols-outlined text-xs">security</span>
+              <span>Secured by Razorpay Simulator Engine</span>
             </div>
           </div>
         </div>

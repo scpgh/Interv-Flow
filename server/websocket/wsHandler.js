@@ -1,6 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { saveSessionToDatabase } from '../helpers/dbHelpers.js';
 import { ai, callWithRetry, callGroqChat } from '../helpers/critiqueHelpers.js';
+import { checkIpRateLimit } from '../middleware/auth.js';
 
 function initializeWebSocketServer(server) {
   const wss = new WebSocketServer({ noServer: true });
@@ -8,6 +9,14 @@ function initializeWebSocketServer(server) {
   server.on('upgrade', (request, socket, head) => {
     const { pathname } = new URL(request.url, `http://${request.headers.host}`);
     if (pathname === '/api/interview/session') {
+      const ip = request.headers['x-forwarded-for'] || request.socket.remoteAddress;
+      if (checkIpRateLimit(ip)) {
+        console.warn(`WebSocket upgrade rate limited for IP: ${ip}`);
+        socket.write('HTTP/1.1 429 Too Many Requests\r\nConnection: close\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+
       wss.handleUpgrade(request, socket, head, (ws) => {
         wss.emit('connection', ws, request);
       });
@@ -40,6 +49,69 @@ function initializeWebSocketServer(server) {
         // Handle initial configuration
         if (payload.type === 'setup') {
           const { mode, jdText, resumeText, jobTitle, company, duration, userEmail, jdId, customSystemPrompt, customQuestions } = payload;
+          
+          if (userEmail) {
+            const { findUserByEmail, getGlobalSettings, saveUser } = await import('../helpers/dbHelpers.js');
+            const sanitizedEmail = userEmail.toLowerCase().trim();
+            const user = await findUserByEmail(sanitizedEmail);
+            if (user) {
+              const settings = await getGlobalSettings();
+              const planName = (user.subscription && user.subscription.plan) || 'Basic';
+              
+              let credits = user.credits;
+              if (!credits) {
+                const defaultLimits = {
+                  jobApplicationsLimit: 3,
+                  aiMocksLimit: 3
+                };
+                if (planName === 'Pro') {
+                  defaultLimits.jobApplicationsLimit = settings.planPro?.jobApplicationsLimit || 15;
+                  defaultLimits.aiMocksLimit = settings.planPro?.aiMocksLimit || 15;
+                } else if (planName === 'Pro Plus') {
+                  defaultLimits.jobApplicationsLimit = settings.planProPlus?.jobApplicationsLimit || 99999;
+                  defaultLimits.aiMocksLimit = settings.planProPlus?.aiMocksLimit || 99999;
+                }
+                credits = {
+                  jobApplicationsUsed: 0,
+                  jobApplicationsLimit: defaultLimits.jobApplicationsLimit,
+                  aiMocksUsed: 0,
+                  aiMocksLimit: defaultLimits.aiMocksLimit
+                };
+              }
+
+              if (jdId) {
+                const limit = credits.jobApplicationsLimit || 3;
+                if (credits.jobApplicationsUsed >= limit) {
+                  console.warn(`[BILLING] Job application limit reached for user ${sanitizedEmail}`);
+                  ws.send(JSON.stringify({ 
+                    type: 'error', 
+                    message: "Job application limit reached. Please upgrade your subscription tier." 
+                  }));
+                  setTimeout(() => ws.close(), 1000);
+                  return;
+                }
+                credits.jobApplicationsUsed = (credits.jobApplicationsUsed || 0) + 1;
+                console.log(`[BILLING] Incremented Job Applications Used to ${credits.jobApplicationsUsed} for ${sanitizedEmail}`);
+              } else {
+                const limit = credits.aiMocksLimit || 3;
+                if (credits.aiMocksUsed >= limit) {
+                  console.warn(`[BILLING] AI mock interview limit reached for user ${sanitizedEmail}`);
+                  ws.send(JSON.stringify({ 
+                    type: 'error', 
+                    message: "AI mock interview limit reached. Please upgrade your subscription tier." 
+                  }));
+                  setTimeout(() => ws.close(), 1000);
+                  return;
+                }
+                credits.aiMocksUsed = (credits.aiMocksUsed || 0) + 1;
+                console.log(`[BILLING] Incremented AI Mocks Used to ${credits.aiMocksUsed} for ${sanitizedEmail}`);
+              }
+
+              user.credits = credits;
+              await saveUser(user);
+            }
+          }
+
           sessionState.mode = mode || 'jd';
           sessionState.title = jobTitle || 'Technical Interview';
           sessionState.company = company || 'Target Company';

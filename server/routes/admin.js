@@ -690,13 +690,23 @@ router.get('/settings', async (req, res) => {
 // POST: Save system configurations
 router.post('/settings', async (req, res) => {
   try {
-    const { maintenanceMode, globalXpMultiplier, defaultAiModel } = req.body;
+    const { maintenanceMode, globalXpMultiplier, defaultAiModel, planPro, planProPlus } = req.body;
 
     const previousSettings = await getGlobalSettings();
     const settings = {
       maintenanceMode: maintenanceMode !== undefined ? !!maintenanceMode : previousSettings.maintenanceMode,
       globalXpMultiplier: globalXpMultiplier !== undefined ? parseFloat(globalXpMultiplier) : previousSettings.globalXpMultiplier,
-      defaultAiModel: defaultAiModel ? sanitizeString(defaultAiModel) : previousSettings.defaultAiModel
+      defaultAiModel: defaultAiModel ? sanitizeString(defaultAiModel) : previousSettings.defaultAiModel,
+      planPro: {
+        price: planPro && planPro.price !== undefined ? Math.max(0, parseInt(planPro.price, 10)) : (previousSettings.planPro?.price || 299),
+        jobApplicationsLimit: planPro && planPro.jobApplicationsLimit !== undefined ? Math.max(1, parseInt(planPro.jobApplicationsLimit, 10)) : (previousSettings.planPro?.jobApplicationsLimit || 15),
+        aiMocksLimit: planPro && planPro.aiMocksLimit !== undefined ? Math.max(1, parseInt(planPro.aiMocksLimit, 10)) : (previousSettings.planPro?.aiMocksLimit || 15)
+      },
+      planProPlus: {
+        price: planProPlus && planProPlus.price !== undefined ? Math.max(0, parseInt(planProPlus.price, 10)) : (previousSettings.planProPlus?.price || 999),
+        jobApplicationsLimit: planProPlus && planProPlus.jobApplicationsLimit !== undefined ? Math.max(1, parseInt(planProPlus.jobApplicationsLimit, 10)) : (previousSettings.planProPlus?.jobApplicationsLimit || 99999),
+        aiMocksLimit: planProPlus && planProPlus.aiMocksLimit !== undefined ? Math.max(1, parseInt(planProPlus.aiMocksLimit, 10)) : (previousSettings.planProPlus?.aiMocksLimit || 99999)
+      }
     };
 
     await saveGlobalSettings(settings);
