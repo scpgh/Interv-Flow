@@ -354,11 +354,11 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
 
           {/* Desktop nav pill */}
           <nav
-            className="relative hidden md:flex items-center gap-1 p-1 bg-white/[0.02] border border-white/[0.04] rounded-full"
+            className="relative hidden md:flex items-center gap-1 p-1 bg-white/[0.02] border border-white/[0.04] rounded-full nav-pill-container"
             onMouseLeave={syncPill}
           >
             <div
-              className="absolute top-1/2 -translate-y-1/2 h-[80%] bg-white/[0.07] rounded-full transition-all duration-300 ease-out pointer-events-none"
+              className="absolute top-1/2 -translate-y-1/2 h-[80%] bg-white/[0.07] rounded-full transition-all duration-300 ease-out pointer-events-none nav-sliding-indicator"
               style={{ left: navPillStyle.left, width: navPillStyle.width, opacity: navPillStyle.opacity }}
             />
             {tabs.map(({ key, label }) => (
@@ -385,7 +385,7 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
           {userRole === 'ADMIN' && (
             <button
               onClick={() => navigate('/admin')}
-              className="bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 font-bold py-1.5 px-3.5 rounded-full text-[10px] transition-colors cursor-pointer flex items-center gap-1.5 border border-amber-400/20 shadow-md flex-shrink-0"
+              className="bg-amber-50 dark:bg-amber-400/10 hover:bg-amber-100 dark:hover:bg-amber-400/20 text-amber-800 dark:text-amber-300 font-bold py-1.5 px-3.5 rounded-full text-[10px] transition-colors cursor-pointer flex items-center gap-1.5 border border-amber-200 dark:border-amber-400/20 shadow-md flex-shrink-0"
             >
               <span className="material-symbols-outlined text-[14px]">admin_panel_settings</span>
               Admin Dashboard
@@ -563,9 +563,9 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
                     </div>
                   </div>
                   {sessionStorage.getItem('impersonatedUser') && (
-                    <div className="flex flex-col gap-1.5 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                      <div className="flex items-center gap-1.5 text-amber-300 text-[10px] font-semibold">
-                        <span className="material-symbols-outlined text-xs text-amber-400">visibility</span>
+                    <div className="flex flex-col gap-1.5 px-3 py-2 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl">
+                      <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300 text-[10px] font-semibold">
+                        <span className="material-symbols-outlined text-xs text-amber-800 dark:text-amber-400">visibility</span>
                         <span>Viewing As Impersonated User</span>
                       </div>
                       <button
@@ -584,7 +584,7 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
                 {/* Actions */}
                 <div className="flex flex-col gap-1.5">
                   {userRole === 'ADMIN' && (
-                    <button onClick={() => { navigate('/admin'); setIsDropdownOpen(false); }} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 transition-all border border-amber-400/20 cursor-pointer">
+                    <button onClick={() => { navigate('/admin'); setIsDropdownOpen(false); }} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-400/10 hover:bg-amber-100 dark:hover:bg-amber-400/20 transition-all border border-amber-200 dark:border-amber-400/20 cursor-pointer">
                       <span className="material-symbols-outlined text-[18px]">admin_panel_settings</span>Admin Dashboard
                     </button>
                   )}

@@ -230,7 +230,7 @@ npm run dev          # starts on http://localhost:5173
 | `USER` | All standard pages (Dashboard, Practice, Resume, Community, Billing) |
 | `ADMIN` | All of the above + Admin Control Panel, user management, audit logs |
 
-Admin access is controlled via Firebase Custom Claims, synchronized automatically on login. The admin email is configured in the server-side `adminEmails` constant in `server/routes/auth.js`.
+Admin access is controlled via Firebase Custom Claims, synchronized automatically on login. The allowed admin emails are configured via the server-side `ADMIN_EMAILS` environment variable in the `.env` file.
 
 ---
 

@@ -532,7 +532,7 @@ export default function AdminDashboard() {
             
             {/* Branding Header */}
             <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-amber-400 text-3xl font-bold bg-amber-400/10 p-2 rounded-xl border border-amber-400/20">admin_panel_settings</span>
+              <span className="material-symbols-outlined text-amber-800 dark:text-amber-400 text-3xl font-bold bg-amber-50 dark:bg-amber-400/10 p-2 rounded-xl border border-amber-200 dark:border-amber-400/20">admin_panel_settings</span>
               <div>
                 <h2 className="text-sm font-bold text-white tracking-wide uppercase">Admin Portal</h2>
                 <p className="text-[10px] text-on-surface-variant">Control Panel</p>
@@ -560,8 +560,8 @@ export default function AdminDashboard() {
                   }}
                   className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left text-xs font-semibold transition-all border-none bg-transparent cursor-pointer ${
                     activeTab === item.key
-                      ? 'bg-amber-400/10 text-amber-300 border border-amber-400/20 shadow-md shadow-amber-400/5'
-                      : 'text-on-surface-variant hover:text-white hover:bg-white/5'
+                      ? 'bg-amber-50 dark:bg-amber-400/10 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-400/20 shadow-md shadow-amber-400/5'
+                      : 'text-on-surface-variant hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
                   }`}
                 >
                   <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
@@ -751,7 +751,7 @@ export default function AdminDashboard() {
                 <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.01]">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="bg-white/5 border-b border-white/10 font-bold text-white">
+                      <tr className="border-b border-white/5 font-mono uppercase text-[10px] text-slate-600 dark:text-white bg-slate-100 dark:bg-white/5">
                         <th className="py-3 px-4">Candidate</th>
                         <th className="py-3 px-4">Role &amp; Domain</th>
                         <th className="py-3 px-4 font-mono">Experience &amp; Edu</th>
@@ -776,9 +776,9 @@ export default function AdminDashboard() {
                           <td className="py-3.5 px-4">
                             <div className="flex flex-col gap-1 items-start">
                               <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
-                                user.role === 'ADMIN' ? 'bg-amber-400/10 text-amber-300 border border-amber-400/20' :
-                                user.role === 'MODERATOR' ? 'bg-purple-400/10 text-purple-300 border border-purple-400/20' :
-                                'bg-blue-400/10 text-blue-300 border border-blue-400/20'
+                                user.role === 'ADMIN' ? 'bg-amber-50 dark:bg-amber-400/10 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-400/20' :
+                                user.role === 'MODERATOR' ? 'bg-purple-50 dark:bg-purple-400/10 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-400/20' :
+                                'bg-blue-50 dark:bg-blue-400/10 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-400/20'
                               }`}>
                                 {user.role || 'USER'}
                               </span>
@@ -842,7 +842,7 @@ export default function AdminDashboard() {
                               </button>
                               <button
                                 onClick={() => handleStartImpersonate(user)}
-                                className="bg-transparent border-none text-amber-400 hover:text-amber-300 p-1 cursor-pointer flex items-center"
+                                className="bg-transparent border-none text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 p-1 cursor-pointer flex items-center"
                                 title="View As User (Troubleshoot)"
                               >
                                 <span className="material-symbols-outlined text-[16px]">visibility</span>
@@ -915,7 +915,7 @@ export default function AdminDashboard() {
                 <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.01]">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="bg-white/5 border-b border-white/10 font-bold text-white">
+                      <tr className="border-b border-white/5 font-mono uppercase text-[10px] text-slate-600 dark:text-white bg-slate-100 dark:bg-white/5">
                         <th className="py-3 px-4">Candidate Email</th>
                         <th className="py-3 px-4">Target Job Details</th>
                         <th className="py-3 px-4">Duration &amp; Date</th>
@@ -954,7 +954,7 @@ export default function AdminDashboard() {
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 onClick={() => setSelectedSession(s)}
-                                className="bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 font-semibold py-1 px-2.5 rounded-lg border border-amber-400/20 text-[10px] cursor-pointer flex items-center gap-1 transition-all"
+                                className="bg-amber-50 dark:bg-amber-400/10 hover:bg-amber-100 dark:hover:bg-amber-400/20 text-amber-800 dark:text-amber-300 font-semibold py-1 px-2.5 rounded-lg border border-amber-200 dark:border-amber-400/20 text-[10px] cursor-pointer flex items-center gap-1 transition-all"
                               >
                                 <span className="material-symbols-outlined text-[12px]">chat</span>
                                 View Dialog
@@ -1033,7 +1033,7 @@ export default function AdminDashboard() {
                 <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.01]">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="bg-white/5 border-b border-white/10 font-bold text-white">
+                      <tr className="border-b border-white/5 font-mono uppercase text-[10px] text-slate-600 dark:text-white bg-slate-100 dark:bg-white/5">
                         <th className="py-3 px-4">Author</th>
                         <th className="py-3 px-4">Topic Title &amp; Description</th>
                         <th className="py-3 px-4">Stats &amp; Date</th>
@@ -1212,7 +1212,7 @@ export default function AdminDashboard() {
                 <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.01]">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="bg-white/5 border-b border-white/10 font-bold text-white">
+                      <tr className="border-b border-white/5 font-mono uppercase text-[10px] text-slate-600 dark:text-white bg-slate-100 dark:bg-white/5">
                         <th className="py-3 px-4">Admin Email</th>
                         <th className="py-3 px-4">Action Event</th>
                         <th className="py-3 px-4">Target Item</th>
@@ -1226,11 +1226,11 @@ export default function AdminDashboard() {
                         <tr key={idx} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors font-mono text-[11px] text-on-surface-variant">
                           <td className="py-3.5 px-4 font-semibold text-white">{log.adminEmail}</td>
                           <td className="py-3.5 px-4">
-                            <span className={`px-2 py-0.5 rounded font-bold text-[9px] ${
-                              log.action === 'IMPERSONATION_START' ? 'bg-amber-400/10 text-amber-300 border border-amber-400/20' :
-                              log.action.includes('DELETE') ? 'bg-red-400/10 text-red-300 border border-red-400/20' :
-                              log.action.includes('UPDATE') ? 'bg-blue-400/10 text-blue-300 border border-blue-400/20' :
-                              'bg-white/10 text-white'
+                            <span className={`px-2 py-0.5 rounded font-bold text-[9px] border ${
+                              log.action === 'IMPERSONATION_START' ? 'bg-amber-50 dark:bg-amber-400/10 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-400/20' :
+                              log.action.includes('DELETE') ? 'bg-red-50 dark:bg-red-400/10 text-red-800 dark:text-red-300 border-red-200 dark:border-red-400/20' :
+                              log.action.includes('UPDATE') ? 'bg-blue-50 dark:bg-blue-400/10 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-400/20' :
+                              'bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-white border-slate-200 dark:border-white/10'
                             }`}>
                               {log.action}
                             </span>

@@ -265,14 +265,14 @@ export default function PracticeFeedback() {
                   {/* Transcript block */}
                   <div className="ml-5 p-3 rounded-xl bg-white/[0.02] border border-white/5 space-y-1">
                     <span className="text-[9px] font-mono text-on-surface-variant uppercase tracking-wider font-bold">Your Response:</span>
-                    <p className="text-xs text-white/90 italic leading-relaxed">"{qa.userResponse || 'No verbal answer recorded.'}"</p>
+                    <p className="text-xs text-on-surface italic leading-relaxed">"{qa.userResponse || 'No verbal answer recorded.'}"</p>
                   </div>
 
                   {/* Feedback grid */}
                   <div className="ml-5 grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 border-t border-white/5">
                     {/* Flaws / Critique */}
                     <div className="space-y-1.5">
-                      <h4 className="text-[10px] font-mono text-rose-400 uppercase tracking-wider font-bold flex items-center gap-1.5">
+                      <h4 className="text-[10px] font-mono text-rose-500 dark:text-rose-400 uppercase tracking-wider font-bold flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-[14px]">error_outline</span>
                         Areas for Improvement
                       </h4>
@@ -283,11 +283,11 @@ export default function PracticeFeedback() {
 
                     {/* Ideal formulation */}
                     <div className="space-y-1.5">
-                      <h4 className="text-[10px] font-mono text-emerald-400 uppercase tracking-wider font-bold flex items-center gap-1.5">
+                      <h4 className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 uppercase tracking-wider font-bold flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-[14px]">check_circle</span>
                         Recommended Formulation
                       </h4>
-                      <p className="text-xs text-white/90 bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-xl leading-relaxed">
+                      <p className="text-xs text-on-surface bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-xl leading-relaxed">
                         {qa.idealAnswer || "Ensure to mention system capacity parameters or financial ratios."}
                       </p>
                     </div>
@@ -322,11 +322,11 @@ export default function PracticeFeedback() {
                     }`}
                   >
                     <span className={`block text-[9px] font-mono font-bold uppercase mb-1.5 ${
-                      item.sender === 'candidate' ? 'text-[#818CF8]' : 'text-primary'
+                      item.sender === 'candidate' ? 'text-indigo-600 dark:text-[#818CF8]' : 'text-indigo-900 dark:text-primary'
                     }`}>
                       {item.sender === 'candidate' ? 'Candidate (You)' : 'Interviewer (IntervFlow AI)'}
                     </span>
-                    <p className="text-white/95">{item.text}</p>
+                    <p className="text-on-surface">{item.text}</p>
                     <span className="block text-[8px] text-on-surface-variant font-mono mt-2 text-right">
                       {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                     </span>

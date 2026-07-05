@@ -1370,9 +1370,9 @@ export default function PracticeSession() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">Live Simulation</h3>
                         {isFallbackMode ? (
-                          <span className="text-[9px] px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 font-mono font-semibold">Voice Assist (WebSpeech)</span>
+                          <span className="text-[9px] px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-400 font-mono font-semibold">Voice Assist (WebSpeech)</span>
                         ) : (
-                          <span className="text-[9px] px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono font-semibold">Gemini Live API</span>
+                          <span className="text-[9px] px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-800 dark:text-emerald-400 font-mono font-semibold">Gemini Live API</span>
                         )}
                       </div>
                       <p className="text-[10px] text-on-surface-variant mt-0.5">
@@ -1438,7 +1438,7 @@ export default function PracticeSession() {
 
                 {/* Speech recognition warning if browser unsupported */}
                 {speechWarning && (
-                  <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 p-3 rounded-xl text-[10px] font-mono flex items-center gap-2 mt-4 w-full">
+                  <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-400 p-3 rounded-xl text-[10px] font-mono flex items-center gap-2 mt-4 w-full">
                     <span className="material-symbols-outlined text-xs">warning</span>
                     {speechWarning}
                   </div>
@@ -1559,33 +1559,33 @@ export default function PracticeSession() {
               
               {/* Telemetry Dashboard Stats */}
               <div className="glass-card rounded-2xl p-5 flex flex-col gap-4 bg-[#18181b]/35 border border-white/10">
-                <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono">Live Speech Telemetry</h4>
+                <h4 className="text-xs font-bold text-on-surface uppercase tracking-wider font-mono">Live Speech Telemetry</h4>
                 
                 <div className="grid grid-cols-3 lg:grid-cols-1 gap-4">
                   {/* WPM */}
                   <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-center gap-3">
                     <span className="material-symbols-outlined text-primary text-lg">speed</span>
                     <div>
-                      <span className="text-[10px] text-on-surface-variant block uppercase tracking-wider font-mono">Speaking WPM</span>
-                      <span className="text-sm font-bold text-white font-mono">{wpm || '--'}</span>
+                      <span className="text-[10px] text-slate-500 dark:text-on-surface-variant block uppercase tracking-wider font-mono">Speaking WPM</span>
+                      <span className="text-sm font-bold text-on-surface font-mono">{wpm || '--'}</span>
                     </div>
                   </div>
 
                   {/* Filler words */}
                   <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-center gap-3">
-                    <span className="material-symbols-outlined text-rose-400 text-lg">sms_failed</span>
+                    <span className="material-symbols-outlined text-rose-500 dark:text-rose-400 text-lg">sms_failed</span>
                     <div>
-                      <span className="text-[10px] text-on-surface-variant block uppercase tracking-wider font-mono">Fillers Count</span>
-                      <span className="text-sm font-bold text-rose-400 font-mono">{fillerCount}</span>
+                      <span className="text-[10px] text-slate-500 dark:text-on-surface-variant block uppercase tracking-wider font-mono">Fillers Count</span>
+                      <span className="text-sm font-bold text-rose-500 dark:text-rose-400 font-mono">{fillerCount}</span>
                     </div>
                   </div>
 
                   {/* Hesitations */}
                   <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-center gap-3">
-                    <span className="material-symbols-outlined text-amber-400 text-lg">pause_circle</span>
+                    <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-lg">pause_circle</span>
                     <div>
-                      <span className="text-[10px] text-on-surface-variant block uppercase tracking-wider font-mono">Hesitations</span>
-                      <span className="text-sm font-bold text-amber-400 font-mono">{hesitationCount}</span>
+                      <span className="text-[10px] text-slate-500 dark:text-on-surface-variant block uppercase tracking-wider font-mono">Hesitations</span>
+                      <span className="text-sm font-bold text-amber-600 dark:text-amber-400 font-mono">{hesitationCount}</span>
                     </div>
                   </div>
                 </div>
@@ -1593,11 +1593,11 @@ export default function PracticeSession() {
 
               {/* Running Transcript Logger Box */}
               <div className="glass-card rounded-2xl p-5 flex flex-col bg-[#18181b]/35 border border-white/10 flex-grow h-[260px] lg:h-[350px]">
-                <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono mb-3">Live Transcript</h4>
+                <h4 className="text-xs font-bold text-on-surface uppercase tracking-wider font-mono mb-3">Live Transcript</h4>
                 
                 <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar text-xs">
                   {transcript.length === 0 ? (
-                    <div className="h-full flex items-center justify-center text-center text-[10px] text-on-surface-variant p-4">
+                    <div className="h-full flex items-center justify-center text-center text-[10px] text-slate-500 dark:text-on-surface-variant p-4">
                       No speech recorded yet. Tap start and speak.
                     </div>
                   ) : (
@@ -1611,11 +1611,11 @@ export default function PracticeSession() {
                         }`}
                       >
                         <span className={`block text-[9px] font-mono font-bold uppercase mb-1 ${
-                          item.sender === 'candidate' ? 'text-[#818CF8]' : 'text-primary'
+                          item.sender === 'candidate' ? 'text-indigo-600 dark:text-[#818CF8]' : 'text-indigo-900 dark:text-primary'
                         }`}>
                           {item.sender === 'candidate' ? 'You (Candidate)' : 'Interviewer (Gemini)'}
                         </span>
-                        <p className="text-white/90">{item.text}</p>
+                        <p className="text-on-surface">{item.text}</p>
                       </div>
                     ))
                   )}

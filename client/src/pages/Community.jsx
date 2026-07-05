@@ -1234,7 +1234,7 @@ export default function Community() {
               <h4 className="text-[10px] font-mono text-outline uppercase tracking-wider mb-2">Preferred Tech Stack</h4>
               <div className="flex flex-wrap gap-1.5">
                 {(selectedProfile.techStack || []).map((tech, idx) => (
-                  <span key={idx} className="text-[10px] font-mono bg-primary/10 border border-primary/20 text-[#b4c5ff] px-2 py-0.5 rounded-lg">
+                  <span key={idx} className="text-[10px] font-mono bg-primary/10 border border-primary/20 text-indigo-900 dark:text-[#b4c5ff] px-2 py-0.5 rounded-lg">
                     {tech}
                   </span>
                 ))}

@@ -434,7 +434,7 @@ export default function Analytics() {
               <p className="text-[9px] text-on-surface-variant font-mono uppercase font-bold tracking-wider">Recommended ATS Keywords to Inject</p>
               <div className="flex flex-wrap gap-1.5">
                 {resAnalysis.atsKeywords && resAnalysis.atsKeywords.map((kw, idx) => (
-                  <span key={idx} className="text-[10px] px-2 py-0.5 bg-primary/10 border border-primary/20 text-[#b4c5ff] font-mono rounded">
+                  <span key={idx} className="text-[10px] px-2 py-0.5 bg-primary/10 border border-primary/20 text-indigo-900 dark:text-[#b4c5ff] font-mono rounded">
                     {kw}
                   </span>
                 ))}
@@ -628,7 +628,7 @@ export default function Analytics() {
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left text-on-surface-variant border-collapse">
                 <thead>
-                  <tr className="border-b border-white/5 font-mono uppercase text-[10px] text-white bg-[#18181b]/60">
+                  <tr className="border-b border-white/5 font-mono uppercase text-[10px] text-slate-600 dark:text-white bg-slate-100 dark:bg-[#18181b]/60">
                     <th className="py-3 px-4">Role Title</th>
                     <th className="py-3 px-4 text-center">Score</th>
                     <th className="py-3 px-4 text-center">WPM</th>

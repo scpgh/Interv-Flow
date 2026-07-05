@@ -457,21 +457,23 @@ html[data-theme='light'] .bg-glow {
 /* Translucent Glass components in Light Theme */
 html[data-theme='light'] .glass-panel {
   background: rgba(255, 255, 255, 0.7) !important;
-  border: 1px solid rgba(30, 27, 75, 0.08) !important;
+  border: 1px solid rgba(30, 27, 75, 0.2) !important;
   box-shadow: 0 4px 30px rgba(30, 27, 75, 0.02) !important;
 }
 
 html[data-theme='light'] .glass-card {
   background: rgba(255, 255, 255, 0.6) !important;
-  border: 1px solid rgba(30, 27, 75, 0.08) !important;
-  box-shadow: 0 4px 20px rgba(30, 27, 75, 0.01) !important;
+  border: 1px solid rgba(30, 27, 75, 0.2) !important;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 html[data-theme='light'] .glass-card:hover {
   background: rgba(255, 255, 255, 0.9) !important;
   transform: translateY(-2.5px) !important;
   box-shadow: 0 16px 36px -12px rgba(30, 27, 75, 0.08) !important;
-  border-color: rgba(30, 27, 75, 0.16) !important;
+  border-color: rgba(30, 27, 75, 0.35) !important;
 }
 
 /* Primary/Secondary Buttons in Light Theme */
@@ -482,13 +484,13 @@ html[data-theme='light'] .btn-primary:hover {
 
 html[data-theme='light'] .btn-secondary {
   background: rgba(255, 255, 255, 0.85) !important;
-  border: 1px solid rgba(30, 27, 75, 0.1) !important;
+  border: 1px solid rgba(30, 27, 75, 0.25) !important;
   color: #1E1B4B !important;
 }
 
 html[data-theme='light'] .btn-secondary:hover {
   background: rgba(30, 27, 75, 0.04) !important;
-  border-color: rgba(30, 27, 75, 0.2) !important;
+  border-color: rgba(30, 27, 75, 0.4) !important;
   color: #1E1B4B !important;
 }
 
@@ -510,7 +512,7 @@ html[data-theme='light'] .hover\:bg-white\/10:hover {
 /* Override borders to be clean brand borders in Light Theme */
 html[data-theme='light'] .border-white\/5,
 html[data-theme='light'] .border-white\/10 {
-  border-color: rgba(30, 27, 75, 0.08) !important;
+  border-color: rgba(30, 27, 75, 0.2) !important;
 }
 
 /* Text overrides in Light Theme to avoid invisible white-on-white text */
@@ -537,6 +539,23 @@ html[data-theme='light'] .text-white\/40 {
 }
 html[data-theme='light'] .text-white\/30 {
   color: rgba(30, 27, 75, 0.3) !important;
+}
+
+html[data-theme='light'] .text-on-surface-variant {
+  color: #475569 !important;
+}
+html[data-theme='light'] .text-amber-400 {
+  color: #B45309 !important;
+}
+html[data-theme='light'] .text-emerald-400 {
+  color: #047857 !important;
+}
+html[data-theme='light'] .text-rose-400 {
+  color: #BE123C !important;
+}
+html[data-theme='light'] input::placeholder,
+html[data-theme='light'] textarea::placeholder {
+  color: #94A3B8 !important;
 }
 
 /* Retain white text inside dark background components */
@@ -627,14 +646,14 @@ html[data-theme='light'] .bg-primary\/10 {
 
 html[data-theme='light'] .border-\[\#ddb7ff\]\/20,
 html[data-theme='light'] .border-primary\/20 {
-  border-color: rgba(30, 27, 75, 0.15) !important;
+  border-color: rgba(30, 27, 75, 0.3) !important;
 }
 
 /* Light Theme Header Dropdown Menu Overrides */
 html[data-theme='light'] .glass-card.dropdown-menu,
 html[data-theme='light'] .glass-card.dropdown-menu:hover {
   background: rgba(255, 255, 255, 0.98) !important;
-  border-color: rgba(30, 27, 75, 0.08) !important;
+  border-color: rgba(30, 27, 75, 0.2) !important;
 }
 
 /* Light Theme Navigation Tabs Hover Override */
@@ -645,7 +664,7 @@ html[data-theme='light'] .hover\:text-white:hover {
 /* Light Theme Focus Mode Selector & Voice Preview Button Overrides */
 html[data-theme='light'] .bg-\[\#131315\]\/80 {
   background-color: rgba(30, 27, 75, 0.05) !important;
-  border-color: rgba(30, 27, 75, 0.08) !important;
+  border-color: rgba(30, 27, 75, 0.2) !important;
 }
 
 html[data-theme='light'] .text-\[\#818CF8\] {
@@ -656,11 +675,11 @@ html[data-theme='light'] .bg-\[\#1E1B4B\]\/50,
 html[data-theme='light'] .bg-\[\#1E1B4B\]\/80,
 html[data-theme='light'] .bg-\[\#1E1B4B\]\/90 {
   background-color: rgba(30, 27, 75, 0.05) !important;
-  border-color: rgba(30, 27, 75, 0.15) !important;
+  border-color: rgba(30, 27, 75, 0.3) !important;
 }
 
 html[data-theme='light'] .border-\[\#818CF8\]\/30 {
-  border-color: rgba(30, 27, 75, 0.15) !important;
+  border-color: rgba(30, 27, 75, 0.3) !important;
 }
 
 /* Preserve active tab white/light text color inside dark button backgrounds */
@@ -680,27 +699,41 @@ html[data-theme='light'] .bg-gradient-to-r.from-white.to-white\/70 {
 }
 
 /* Light Mode Navbar Pill Wrapper & Sliding Hover Indicator Overrides */
-html[data-theme='light'] .bg-white\/\[0\.02\] {
+html[data-theme='light'] .nav-pill-container {
   background-color: rgba(30, 27, 75, 0.03) !important;
-}
-
-html[data-theme='light'] .border-white\/\[0\.04\] {
   border-color: rgba(30, 27, 75, 0.08) !important;
 }
 
-html[data-theme='light'] .bg-white\/\[0\.07\] {
+html[data-theme='light'] .nav-sliding-indicator {
   background-color: #FFFFFF !important;
   box-shadow: 0 2px 8px rgba(30, 27, 75, 0.08) !important;
+}
+
+html[data-theme='light'] .nav-pill-container button,
+html[data-theme='light'] .nav-pill-container a {
+  color: #475569 !important;
+}
+
+html[data-theme='light'] .nav-pill-container button:hover,
+html[data-theme='light'] .nav-pill-container a:hover {
+  color: #1E1B4B !important;
+}
+
+html[data-theme='light'] .nav-pill-container button.text-primary,
+html[data-theme='light'] .nav-pill-container a.text-primary {
+  color: #1E1B4B !important;
+  background-color: rgba(30, 27, 75, 0.05) !important;
+  border-color: rgba(30, 27, 75, 0.1) !important;
 }
 
 /* Light Mode Transcript Chat Bubbles & Text Overrides */
 html[data-theme='light'] .bg-\[\#1E1B4B\]\/30 {
   background-color: rgba(30, 27, 75, 0.05) !important;
-  border-color: rgba(30, 27, 75, 0.15) !important;
+  border-color: rgba(30, 27, 75, 0.3) !important;
 }
 
 html[data-theme='light'] .border-\[\#818CF8\]\/25 {
-  border-color: rgba(30, 27, 75, 0.15) !important;
+  border-color: rgba(30, 27, 75, 0.3) !important;
 }
 
 html[data-theme='light'] .text-white\/90,

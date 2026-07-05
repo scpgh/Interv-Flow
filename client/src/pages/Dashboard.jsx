@@ -649,7 +649,7 @@ export default function Dashboard() {
                       disabled={sessions.length < 15}
                       className={`font-label-sm text-label-sm px-3.5 py-1.5 rounded-full font-mono font-bold border transition-all cursor-pointer ${
                         sessions.length >= 15
-                          ? 'bg-amber-400/20 border-amber-400/40 text-amber-300 hover:bg-amber-400/30'
+                          ? 'bg-amber-50 dark:bg-amber-400/20 border-amber-200 dark:border-amber-400/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-400/30'
                           : 'bg-primary/10 border-primary/20 text-primary opacity-60 cursor-not-allowed'
                       }`}
                     >

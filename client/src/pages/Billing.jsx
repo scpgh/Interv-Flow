@@ -430,7 +430,7 @@ export default function Billing() {
                   <div className={`glass-card p-6 rounded-xl flex flex-col border relative overflow-hidden transition-all ${
                     currentPlan === 'Pro' ? 'border-primary bg-primary/5 shadow-[0_0_20px_rgba(129,140,248,0.15)]' : 'border-white/10 bg-white/[0.02]'
                   }`}>
-                    <div className="absolute top-3 right-3 bg-primary/25 text-[#b4c5ff] px-2 py-0.5 rounded text-[8px] border border-primary/30 font-bold uppercase">3 Bookings</div>
+                    <div className="absolute top-3 right-3 bg-primary/25 text-indigo-900 dark:text-[#b4c5ff] px-2 py-0.5 rounded text-[8px] border border-primary/30 font-bold uppercase">3 Bookings</div>
                     <div className="mb-6">
                       <span className="text-[10px] font-mono text-primary">PRO</span>
                       <div className="flex items-baseline mt-2">

@@ -111,12 +111,12 @@ export default function Navbar({ activeTab }) {
         
         {/* Desktop Menu with hoverable Dropdowns */}
         <nav 
-          className="relative hidden md:flex items-center gap-1 ml-4 p-1 bg-white/[0.02] border border-white/[0.04] rounded-full"
+          className="relative hidden md:flex items-center gap-1 ml-4 p-1 bg-white/[0.02] border border-white/[0.04] rounded-full nav-pill-container"
           onMouseLeave={handleMouseLeave}
         >
           {/* Sliding Hover Pill Background */}
           <div 
-            className="absolute top-1/2 -translate-y-1/2 h-[80%] bg-white/[0.07] rounded-full transition-all duration-300 ease-out pointer-events-none"
+            className="absolute top-1/2 -translate-y-1/2 h-[80%] bg-white/[0.07] rounded-full transition-all duration-300 ease-out pointer-events-none nav-sliding-indicator"
             style={{
               left: `${navPillStyle.left}px`,
               width: `${navPillStyle.width}px`,
@@ -137,7 +137,7 @@ export default function Navbar({ activeTab }) {
 
           {/* Use Cases Dropdown */}
           <div className="relative dropdown-parent group" onMouseEnter={handleMouseEnter}>
-            <button className="relative z-10 font-body-md text-body-md text-on-surface-variant hover:text-white px-4 py-1.5 rounded-full transition-colors duration-200 flex items-center gap-1 focus:outline-none cursor-pointer">
+            <button className="relative z-10 font-body-md text-body-md text-on-surface-variant hover:text-white px-4 py-1.5 rounded-full transition-colors duration-200 flex items-center gap-1 focus:outline-none cursor-pointer bg-transparent border-none">
               Use Cases
               <span className="material-symbols-outlined text-[16px] transition-transform duration-300 group-hover:rotate-180">keyboard_arrow_down</span>
             </button>
@@ -208,7 +208,7 @@ export default function Navbar({ activeTab }) {
         {userRole === 'ADMIN' && (
           <button
             onClick={() => navigate('/admin')}
-            className="bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 font-bold py-1.5 px-3.5 rounded-full text-[10px] transition-colors cursor-pointer flex items-center gap-1.5 border border-amber-400/20 shadow-md flex-shrink-0"
+            className="bg-amber-50 dark:bg-amber-400/10 hover:bg-amber-100 dark:hover:bg-amber-400/20 text-amber-800 dark:text-amber-300 font-bold py-1.5 px-3.5 rounded-full text-[10px] transition-colors cursor-pointer flex items-center gap-1.5 border border-amber-200 dark:border-amber-400/20 shadow-md flex-shrink-0"
           >
             <span className="material-symbols-outlined text-[14px]">admin_panel_settings</span>
             Admin Dashboard
