@@ -134,7 +134,7 @@ IntervFlow/
 
 ---
 
-## ⚙️ Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -152,7 +152,7 @@ git clone https://github.com/your-username/intervflow.git
 cd intervflow
 ```
 
-### 2. Configure the server
+### 2. Configure the server side code
 
 ```bash
 cd server
