@@ -205,7 +205,8 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
       }
 
       try {
-        const res = await fetch(`http://localhost:5000/api/interview/sessions?email=${encodeURIComponent(email)}`);
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const res = await fetch(`${API_URL}/api/interview/sessions?email=${encodeURIComponent(email)}`);
         const data = await res.json();
         if (data.success && Array.isArray(data.sessions)) {
           const uniqueDates = new Set();

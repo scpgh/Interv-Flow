@@ -36,7 +36,8 @@ export default function PracticeFeedback() {
 
       try {
         // 1. Check if the session is saved and has a report generated on the backend
-        const response = await fetch(`http://localhost:5000/api/interview/session/${sessionId}`);
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const response = await fetch(`${API_URL}/api/interview/session/${sessionId}`);
         const data = await response.json();
         
         if (!response.ok) {
@@ -55,7 +56,8 @@ export default function PracticeFeedback() {
 
         // 3. Otherwise, trigger report generation POST request to backend
         console.log("No report cached. Generating new feedback report...");
-        const reportResponse = await fetch(`http://localhost:5000/api/interview/report`, {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const reportResponse = await fetch(`${API_URL}/api/interview/report`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

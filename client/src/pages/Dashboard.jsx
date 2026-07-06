@@ -179,7 +179,8 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchRecommendedJob = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/jobs`);
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const res = await fetch(`${API_URL}/api/jobs`);
         const data = await res.json();
         if (data.success && Array.isArray(data.jds) && data.jds.length > 0) {
           const targetCompany = sessionStorage.getItem('userTargetCompany') || userDreamCompany || '';
@@ -259,7 +260,8 @@ export default function Dashboard() {
     const fetchSessions = async () => {
       try {
         const userEmail = sessionStorage.getItem('userEmail') || '';
-        const res = await fetch(`http://localhost:5000/api/interview/sessions?email=${encodeURIComponent(userEmail)}`);
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const res = await fetch(`${API_URL}/api/interview/sessions?email=${encodeURIComponent(userEmail)}`);
         const data = await res.json();
         if (data.success && Array.isArray(data.sessions)) {
           setSessions(data.sessions);
