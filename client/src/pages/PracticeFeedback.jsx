@@ -3,6 +3,15 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import DashboardNavbar from '../components/DashboardNavbar';
 import Footer from '../components/Footer';
 
+const LOADING_MESSAGES = [
+  "Establishing telemetry handshake with AI server...",
+  "Parsing vocal speech patterns & average WPM pacing...",
+  "Scanning transcript for verbal crutch/filler words...",
+  "Evaluating technical correctness & clarity scores...",
+  "Drafting ideal recommended formulations with Llama 3.3...",
+  "Finalizing evaluation report cards..."
+];
+
 export default function PracticeFeedback() {
   const { sessionId } = useParams();
   const navigate = useNavigate();
@@ -11,6 +20,7 @@ export default function PracticeFeedback() {
   // Loading and Error States
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
 
   // Loaded Session Data
   const [session, setSession] = useState(null);
@@ -18,6 +28,15 @@ export default function PracticeFeedback() {
 
   // Prevent duplicate fetching in React StrictMode double-mount
   const fetchedSessionIdRef = useRef(null);
+
+  useEffect(() => {
+    if (loading) {
+      const interval = setInterval(() => {
+        setLoadingMsgIdx(prev => (prev + 1) % LOADING_MESSAGES.length);
+      }, 1300);
+      return () => clearInterval(interval);
+    }
+  }, [loading]);
 
   useEffect(() => {
     // Invalidate streak cache to ensure a fresh value is fetched on navigation
@@ -108,11 +127,35 @@ export default function PracticeFeedback() {
         <div className="fixed inset-0 pointer-events-none z-0 bg-radial-gradient"></div>
         <DashboardNavbar activeTab={activeNavTab} setActiveTab={setActiveNavTab} />
         
-        <div className="flex-grow flex flex-col items-center justify-center gap-5 p-margin-desktop z-10 relative">
-          <div className="w-12 h-12 rounded-full border-2 border-dashed border-primary border-t-transparent animate-spin"></div>
-          <div className="text-center space-y-1">
-            <h3 className="font-headline-md text-headline-md text-white font-bold">Compiling Session Metrics</h3>
-            <p className="text-xs text-on-surface-variant">Crunching telemetry data and generating ideal answer templates via Groq AI Llama 3.3...</p>
+        <div className="flex-grow flex flex-col items-center justify-center gap-6 p-8 z-10 relative max-w-md w-full text-center">
+          {/* Glowing Scanning Animation */}
+          <div className="relative w-24 h-24 flex items-center justify-center mb-2">
+            {/* Outer Pulsing Glow */}
+            <div className="absolute inset-0 rounded-full bg-[#818cf8]/10 animate-ping duration-1000"></div>
+            {/* Mid Pulsing Circle */}
+            <div className="absolute inset-2 rounded-full bg-[#818cf8]/10 animate-pulse"></div>
+            {/* Core Scanner Ring */}
+            <div className="absolute inset-4 rounded-full border border-dashed border-[#818cf8]/40 animate-spin duration-3000"></div>
+            {/* Scanner Core Icon */}
+            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#818cf8] to-[#a78bfa] flex items-center justify-center shadow-[0_0_30px_rgba(129,140,248,0.5)]">
+              <span className="material-symbols-outlined text-black font-bold text-xl animate-bounce">insights</span>
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            <h3 className="text-white text-lg font-bold tracking-tight flex items-center justify-center gap-2">
+              AI Diagnostic Analysis
+              <span className="flex gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#818cf8] animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#818cf8] animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#818cf8] animate-bounce" style={{ animationDelay: '300ms' }}></span>
+              </span>
+            </h3>
+            <div className="h-6 overflow-hidden">
+              <p className="text-xs text-on-surface-variant leading-relaxed font-mono text-[#818cf8]">
+                {LOADING_MESSAGES[loadingMsgIdx]}
+              </p>
+            </div>
           </div>
         </div>
         <Footer />
