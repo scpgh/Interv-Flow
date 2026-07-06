@@ -179,7 +179,7 @@ GROQ_API_KEY=gsk_your_key_here
 
 Place your Firebase service account JSON file at `server/serviceAccountKey.json`.
 
-> **Tip:** Download it from Firebase Console → Project Settings → Service Accounts → Generate new private key.
+> **Tip:** Download it from Firebase Console → Project Settings → Service Accounts → Generate new private keys.
 
 ### 3. Configure the client
 
