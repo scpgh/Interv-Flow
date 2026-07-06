@@ -25,6 +25,7 @@ const AdminUserInspect = lazy(() => import('./pages/AdminUserInspect'));
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export default function App() {
+  console.log("🚀 IntervFlow UI mounted. Backend Target Endpoint URL:", API_URL);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [statusChecked, setStatusChecked] = useState(false);
 
