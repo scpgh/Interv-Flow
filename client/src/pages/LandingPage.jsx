@@ -612,35 +612,35 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-            <div className="relative timeline-step pl-10 md:pl-0 flex flex-col gap-3">
+            <div className="relative timeline-step pl-16 md:pl-0 flex flex-col gap-3">
               <div className="absolute left-0 md:relative w-10 h-10 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-primary font-bold z-10">1</div>
               <h3 className="text-white font-bold text-sm mt-2">Upload Resume &amp; Set Role</h3>
               <p className="text-xs text-on-surface-variant leading-relaxed">
                 Drop your resume and select your target role. Our AI instantly generates your ATS score, flags keyword gaps, and suggests improvements.
               </p>
             </div>
-            <div className="relative timeline-step pl-10 md:pl-0 flex flex-col gap-3">
+            <div className="relative timeline-step pl-16 md:pl-0 flex flex-col gap-3">
               <div className="absolute left-0 md:relative w-10 h-10 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-primary font-bold z-10">2</div>
               <h3 className="text-white font-bold text-sm mt-2">AI Mock Interview</h3>
               <p className="text-xs text-on-surface-variant leading-relaxed">
                 Take a live voice-based AI mock. Get real-time questions, filler word detection, pacing analysis, and a full post-session scorecard.
               </p>
             </div>
-            <div className="relative timeline-step pl-10 md:pl-0 flex flex-col gap-3">
+            <div className="relative timeline-step pl-16 md:pl-0 flex flex-col gap-3">
               <div className="absolute left-0 md:relative w-10 h-10 rounded-full bg-[#ddb7ff]/10 border-2 border-[#ddb7ff]/50 flex items-center justify-center text-[#ddb7ff] font-bold z-10">3</div>
               <h3 className="text-white font-bold text-sm mt-2">Book a Live Mentor</h3>
               <p className="text-xs text-on-surface-variant leading-relaxed">
                 Schedule a 1:1 session with a verified FAANG expert on Google Meet. Your AI mock report is automatically shared before the call.
               </p>
             </div>
-            <div className="relative timeline-step pl-10 md:pl-0 flex flex-col gap-3">
+            <div className="relative timeline-step pl-16 md:pl-0 flex flex-col gap-3">
               <div className="absolute left-0 md:relative w-10 h-10 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-emerald-400 font-bold z-10">4</div>
               <h3 className="text-white font-bold text-sm mt-2">Review &amp; Improve</h3>
               <p className="text-xs text-on-surface-variant leading-relaxed">
                 Deep-dive into your performance dashboard — WPM, filler count, answer structure scores, and specific feedback from your AI and mentor sessions.
               </p>
             </div>
-            <div className="relative pl-10 md:pl-0 flex flex-col gap-3">
+            <div className="relative pl-16 md:pl-0 flex flex-col gap-3">
               <div className="absolute left-0 md:relative w-10 h-10 rounded-full bg-amber-400/10 border-2 border-amber-400/50 flex items-center justify-center text-amber-400 font-bold z-10">5</div>
               <h3 className="text-white font-bold text-sm mt-2">Community &amp; Streaks</h3>
               <p className="text-xs text-on-surface-variant leading-relaxed">

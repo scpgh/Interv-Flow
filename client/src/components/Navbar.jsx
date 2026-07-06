@@ -208,7 +208,7 @@ export default function Navbar({ activeTab }) {
         {userRole === 'ADMIN' && (
           <button
             onClick={() => navigate('/admin')}
-            className="bg-amber-50 dark:bg-amber-400/10 hover:bg-amber-100 dark:hover:bg-amber-400/20 text-amber-800 dark:text-amber-300 font-bold py-1.5 px-3.5 rounded-full text-[10px] transition-colors cursor-pointer flex items-center gap-1.5 border border-amber-200 dark:border-amber-400/20 shadow-md flex-shrink-0"
+            className="hidden lg:flex bg-amber-50 dark:bg-amber-400/10 hover:bg-amber-100 dark:hover:bg-amber-400/20 text-amber-800 dark:text-amber-300 font-bold py-1.5 px-3.5 rounded-full text-[10px] transition-colors cursor-pointer items-center gap-1.5 border border-amber-200 dark:border-amber-400/20 shadow-md flex-shrink-0"
           >
             <span className="material-symbols-outlined text-[14px]">admin_panel_settings</span>
             Admin Dashboard
@@ -218,7 +218,7 @@ export default function Navbar({ activeTab }) {
         {sessionStorage.getItem('impersonatedUser') && (
           <button
             onClick={handleExitImpersonation}
-            className="bg-amber-500 hover:bg-amber-600 text-black font-bold py-1.5 px-3.5 rounded-full text-[10px] transition-colors cursor-pointer flex items-center gap-1 shadow-md border-none flex-shrink-0"
+            className="hidden lg:flex bg-amber-500 hover:bg-amber-600 text-black font-bold py-1.5 px-3.5 rounded-full text-[10px] transition-colors cursor-pointer items-center gap-1 shadow-md border-none flex-shrink-0"
           >
             <span className="material-symbols-outlined text-[14px]">logout</span>
             Exit Impersonation
@@ -228,19 +228,19 @@ export default function Navbar({ activeTab }) {
         {isLoggedIn ? (
           <>
             <button className="hidden sm:block text-on-surface-variant hover:text-white text-xs font-semibold px-4 py-2 cursor-pointer border-none bg-transparent" onClick={() => navigate('/dashboard')}>Dashboard</button>
-            <button className="btn-primary px-5 py-2 text-xs rounded-full text-white font-bold cursor-pointer" onClick={handleSignOut}>Sign Out</button>
+            <button className="hidden sm:block btn-primary px-5 py-2 text-xs rounded-full text-white font-bold cursor-pointer" onClick={handleSignOut}>Sign Out</button>
           </>
         ) : (
           <>
             <button className="hidden sm:block text-on-surface-variant hover:text-white text-xs font-semibold px-4 py-2 cursor-pointer border-none bg-transparent" onClick={() => navigate('/login')}>Sign In</button>
-            <button className="btn-primary px-5 py-2 text-xs rounded-full text-white font-bold cursor-pointer" onClick={() => navigate('/signup')}>Get Started</button>
+            <button className="hidden sm:block btn-primary px-5 py-2 text-xs rounded-full text-white font-bold cursor-pointer" onClick={() => navigate('/signup')}>Get Started</button>
           </>
         )}
         
         {/* Luxury Light / Dark Mode Toggle Button */}
         <button
           onClick={toggleTheme}
-          className="w-9 h-9 rounded-full flex items-center justify-center border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all cursor-pointer text-primary shrink-0"
+          className="hidden sm:flex w-9 h-9 rounded-full items-center justify-center border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all cursor-pointer text-primary shrink-0"
           title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
           <span className="material-symbols-outlined text-[18px]">
@@ -263,6 +263,34 @@ export default function Navbar({ activeTab }) {
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-[calc(100%+12px)] left-0 w-full bg-surface/98 backdrop-blur-2xl border border-outline/10 p-5 rounded-2xl flex flex-col gap-4 shadow-2xl animate-slideDown z-40 text-left">
           <nav className="flex flex-col gap-2">
+            {/* Impersonation status */}
+            {sessionStorage.getItem('impersonatedUser') && (
+              <div className="flex flex-col gap-1.5 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl mb-2">
+                <div className="flex items-center gap-1.5 text-amber-400 text-[10px] font-semibold">
+                  <span className="material-symbols-outlined text-xs">visibility</span>
+                  <span>Viewing As Impersonated User</span>
+                </div>
+                <button
+                  onClick={handleExitImpersonation}
+                  className="w-full text-center py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-lg text-[10px] border-none transition-colors cursor-pointer flex items-center justify-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-xs">logout</span>
+                  Exit Impersonation
+                </button>
+              </div>
+            )}
+
+            {/* Admin Dashboard */}
+            {userRole === 'ADMIN' && (
+              <button
+                onClick={() => { navigate('/admin'); setIsMobileMenuOpen(false); }}
+                className="w-full py-3 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer border bg-amber-400/10 border-amber-400/30 text-amber-300 hover:bg-amber-400/20 mb-2"
+              >
+                <span className="material-symbols-outlined text-sm">admin_panel_settings</span>
+                Admin Dashboard
+              </button>
+            )}
+
             <a 
               href="/dashboard"
               onClick={(e) => { e.preventDefault(); navigate('/dashboard'); setIsMobileMenuOpen(false); }}
@@ -309,6 +337,19 @@ export default function Navbar({ activeTab }) {
                   <button className="w-full btn-primary py-3 text-xs font-bold rounded-xl" onClick={() => { navigate('/signup'); setIsMobileMenuOpen(false); }}>Get Started</button>
                 </>
               )}
+            </div>
+
+            {/* Mobile Theme Toggle */}
+            <div className="border-t border-white/10 my-2 pt-2 flex flex-col gap-2">
+              <button
+                onClick={() => { toggleTheme(); }}
+                className="w-full py-3 px-4 rounded-xl border border-primary/20 bg-primary/5 text-primary text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[16px]">
+                  {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+                </span>
+                <span>{theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}</span>
+              </button>
             </div>
           </nav>
         </div>

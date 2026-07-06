@@ -16,6 +16,49 @@ router.get('/profile', async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: "User profile not found." });
     }
+
+    // Dynamic credit boundaries mapping based on active plan
+    const plan = (user.subscription && user.subscription.plan) || 'Basic';
+    let expectedLimits = {
+      jobApplicationsLimit: 3,
+      aiMocksLimit: 3,
+      atsAnalysesLimit: 3
+    };
+
+    if (plan === 'Pro') {
+      expectedLimits = {
+        jobApplicationsLimit: 15,
+        aiMocksLimit: 7,
+        atsAnalysesLimit: 10
+      };
+    } else if (plan === 'Pro Plus') {
+      expectedLimits = {
+        jobApplicationsLimit: 99999,
+        aiMocksLimit: 99999,
+        atsAnalysesLimit: 99999
+      };
+    }
+
+    const mergedCredits = {
+      atsAnalysesUsed: user.credits?.atsAnalysesUsed || 0,
+      atsAnalysesLimit: user.credits?.atsAnalysesLimit || expectedLimits.atsAnalysesLimit,
+      jobApplicationsUsed: user.credits?.jobApplicationsUsed || 0,
+      jobApplicationsLimit: user.credits?.jobApplicationsLimit || expectedLimits.jobApplicationsLimit,
+      aiMocksUsed: user.credits?.aiMocksUsed || 0,
+      aiMocksLimit: user.credits?.aiMocksLimit || expectedLimits.aiMocksLimit
+    };
+
+    // Ensure database values correspond to plan definitions
+    if (plan === 'Pro Plus') {
+      mergedCredits.jobApplicationsLimit = 99999;
+      mergedCredits.aiMocksLimit = 99999;
+      mergedCredits.atsAnalysesLimit = 99999;
+    } else if (plan === 'Pro') {
+      if (mergedCredits.jobApplicationsLimit < 15) mergedCredits.jobApplicationsLimit = 15;
+      if (mergedCredits.aiMocksLimit < 7) mergedCredits.aiMocksLimit = 7;
+      if (mergedCredits.atsAnalysesLimit < 10) mergedCredits.atsAnalysesLimit = 10;
+    }
+
     res.json({
       success: true,
       user: {
@@ -25,14 +68,7 @@ router.get('/profile', async (req, res) => {
         role: user.role || 'USER',
         onboardingCompleted: user.onboardingCompleted || false,
         subscription: user.subscription || { plan: 'Basic', status: 'active' },
-        credits: user.credits || {
-          atsAnalysesUsed: 0,
-          atsAnalysesLimit: 3,
-          jobApplicationsUsed: 0,
-          jobApplicationsLimit: 3,
-          aiMocksUsed: 0,
-          aiMocksLimit: 3
-        }
+        credits: mergedCredits
       }
     });
   } catch (err) {

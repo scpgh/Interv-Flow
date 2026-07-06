@@ -128,22 +128,27 @@ router.post('/billing/verify-payment', async (req, res) => {
     // Calculate dynamic limits from configuration settings
     const limits = {
       jobApplicationsLimit: 3,
-      aiMocksLimit: 3
+      aiMocksLimit: 3,
+      atsAnalysesLimit: 3
     };
 
     if (planName === 'Pro') {
       limits.jobApplicationsLimit = settings.planPro?.jobApplicationsLimit || 15;
-      limits.aiMocksLimit = settings.planPro?.aiMocksLimit || 15;
+      limits.aiMocksLimit = settings.planPro?.aiMocksLimit || 7;
+      limits.atsAnalysesLimit = settings.planPro?.atsAnalysesLimit || 10;
     } else if (planName === 'Pro Plus') {
       limits.jobApplicationsLimit = settings.planProPlus?.jobApplicationsLimit || 99999;
       limits.aiMocksLimit = settings.planProPlus?.aiMocksLimit || 99999;
+      limits.atsAnalysesLimit = settings.planProPlus?.atsAnalysesLimit || 99999;
     }
 
     user.credits = {
       jobApplicationsUsed: 0,
       jobApplicationsLimit: limits.jobApplicationsLimit,
       aiMocksUsed: 0,
-      aiMocksLimit: limits.aiMocksLimit
+      aiMocksLimit: limits.aiMocksLimit,
+      atsAnalysesUsed: 0,
+      atsAnalysesLimit: limits.atsAnalysesLimit
     };
 
     await saveUser(user);

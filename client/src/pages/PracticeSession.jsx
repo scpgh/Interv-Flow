@@ -1627,7 +1627,7 @@ export default function PracticeSession() {
               <div className="glass-card rounded-2xl p-5 flex flex-col gap-4 bg-[#18181b]/35 border border-white/10">
                 <h4 className="text-xs font-bold text-on-surface uppercase tracking-wider font-mono">Live Speech Telemetry</h4>
                 
-                <div className="grid grid-cols-3 lg:grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-4">
                   {/* WPM */}
                   <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-center gap-3">
                     <span className="material-symbols-outlined text-primary text-lg">speed</span>
@@ -1650,7 +1650,7 @@ export default function PracticeSession() {
                   <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-center gap-3">
                     <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-lg">pause_circle</span>
                     <div>
-                      <span className="text-[10px] text-slate-500 dark:text-on-surface-variant block uppercase tracking-wider font-mono">Hesitations</span>
+                      <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-on-surface-variant block uppercase tracking-tight sm:tracking-wider font-mono">Hesitations</span>
                       <span className="text-sm font-bold text-amber-600 dark:text-amber-400 font-mono">{hesitationCount}</span>
                     </div>
                   </div>

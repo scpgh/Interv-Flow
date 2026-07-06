@@ -429,7 +429,7 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
               className="px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-primary/20 bg-primary/5 cursor-pointer hover:bg-primary/10 transition-all select-none"
             >
               <span className="text-sm">🔥</span>
-              <span className="text-xs text-primary font-bold">{streakCount} {streakCount === 1 ? 'Day' : 'Days'}</span>
+              <span className="text-xs text-primary font-bold">{streakCount}<span className="hidden sm:inline"> {streakCount === 1 ? 'Day' : 'Days'}</span></span>
             </div>
 
             {isStreakOpen && (
@@ -484,7 +484,7 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
           </button>
 
           {/* Avatar — isolated wrapper for dropdown */}
-          <div className="relative" ref={avatarWrapperRef}>
+          <div className="relative hidden md:block" ref={avatarWrapperRef}>
             <button
               onClick={() => setIsDropdownOpen((o) => !o)}
               className="relative flex items-center justify-center rounded-full border-none bg-transparent cursor-pointer p-0"
@@ -622,12 +622,28 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
             )}
           </div>
 
-          {/* Hamburger (mobile) */}
+          {/* Hamburger / Profile Toggle (mobile) */}
           <button
             onClick={() => setIsMobileMenuOpen((o) => !o)}
-            className="md:hidden flex items-center justify-center w-9 h-9 rounded-full hover:bg-white/5 border-none bg-transparent cursor-pointer text-white"
+            className="md:hidden flex items-center justify-center rounded-full hover:bg-white/5 border-none bg-transparent cursor-pointer text-white relative"
+            style={{ padding: '2px' }}
           >
-            <span className="material-symbols-outlined text-[24px]">{isMobileMenuOpen ? 'close' : 'menu'}</span>
+            {isMobileMenuOpen ? (
+              <span className="material-symbols-outlined text-[24px] w-9.5 h-9.5 flex items-center justify-center">close</span>
+            ) : (
+              <div className="relative">
+                <div className="h-8.5 w-8.5 rounded-full overflow-hidden border-2 border-primary/50 hover:border-primary transition-all shadow-[0_0_10px_rgba(37,99,235,0.2)]">
+                  <img
+                    alt="User Menu"
+                    className="w-full h-full object-cover"
+                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23374151'/%3E%3Cstop offset='100%25' style='stop-color:%231f2937'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3Ccircle cx='50' cy='36' r='16' fill='%239ca3af'/%3E%3Cellipse cx='50' cy='80' rx='28' ry='20' fill='%239ca3af'/%3E%3C/svg%3E"
+                  />
+                </div>
+                {notifications.length > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border border-[#09090b]" />
+                )}
+              </div>
+            )}
           </button>
         </div>
       </div>
