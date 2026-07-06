@@ -1055,15 +1055,8 @@ export default function PracticeSession() {
   }, [timeLeft, step]);
 
   // ── Session Teardown & Redirect to Feedback Report ──
-  const handleCompleteSession = async () => {
-    activeSessionRef.current = false;
-    setStep('finished');
-
-    // Invalidate streak cache so it gets recalculated on returning to dashboard
-    sessionStorage.removeItem('user_streak_count');
-    sessionStorage.removeItem('user_streak_last_fetched');
-    sessionStorage.removeItem('user_streak_email');
-
+  // Helper method to teardown media resources and navigate
+  const finalizeTeardownAndRedirect = (finalSessionId) => {
     // Stop Web Speech Synthesis & Recognition if active
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
@@ -1103,9 +1096,11 @@ export default function PracticeSession() {
     clearTimeout(silenceStartRef.current);
 
     // 4. Close WebSocket Connection cleanly
-    const finalSessionId = sessionId;
     if (socketRef.current) {
-      socketRef.current.close();
+      try {
+        socketRef.current.onclose = null; // Prevent recursive trigger
+        socketRef.current.close();
+      } catch (e) {}
     }
 
     // Redirect to the feedback panel with sessionId
@@ -1122,6 +1117,66 @@ export default function PracticeSession() {
       navigate(`/practice/feedback/${finalSessionId}`);
     } else {
       navigate('/dashboard');
+    }
+  };
+
+  // ── Session Teardown & Redirect to Feedback Report ──
+  const handleCompleteSession = async () => {
+    if (step === 'finished') return; // Prevent double trigger
+    activeSessionRef.current = false;
+    setStep('finished');
+
+    // Invalidate streak cache so it gets recalculated on returning to dashboard
+    sessionStorage.removeItem('user_streak_count');
+    sessionStorage.removeItem('user_streak_last_fetched');
+    sessionStorage.removeItem('user_streak_email');
+
+    const finalSessionId = sessionId;
+
+    // Send explicit end_session packet if socket is active to trigger server write before redirect
+    let redirectionTriggered = false;
+    const triggerRedirect = () => {
+      if (redirectionTriggered) return;
+      redirectionTriggered = true;
+      finalizeTeardownAndRedirect(finalSessionId);
+    };
+
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      try {
+        console.log("Sending explicit end_session request to server...");
+        socketRef.current.send(JSON.stringify({ type: 'end_session' }));
+      } catch (e) {
+        console.error("Failed to send end_session packet:", e);
+      }
+      
+      // Fallback timer: wait max 1.5 seconds for confirmation, then force redirect
+      const fallbackTimer = setTimeout(() => {
+        console.log("Fallback force redirect triggered (handshake timed out)");
+        triggerRedirect();
+      }, 1500);
+
+      // Listen for socket confirmation or closure
+      const originalOnMessage = socketRef.current.onmessage;
+      socketRef.current.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'session_saved') {
+            console.log("Server confirmed session is successfully saved!");
+            clearTimeout(fallbackTimer);
+            triggerRedirect();
+            return;
+          }
+        } catch (e) {}
+        if (originalOnMessage) originalOnMessage(event);
+      };
+
+      socketRef.current.onclose = () => {
+        console.log("Server closed socket, proceeding to redirect.");
+        clearTimeout(fallbackTimer);
+        triggerRedirect();
+      };
+    } else {
+      triggerRedirect();
     }
   };
 

@@ -45,6 +45,21 @@ function initializeWebSocketServer(server) {
     ws.on('message', async (message) => {
       try {
         const payload = JSON.parse(message.toString());
+        if (payload.type === 'end_session') {
+          console.log(`Explicit end_session request received for session ${sessionId}`);
+          try {
+            await saveSessionToDatabase(sessionState);
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ type: 'session_saved', sessionId }));
+            }
+          } catch (saveErr) {
+            console.error("Failed to process explicit end_session database write:", saveErr);
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ type: 'session_saved', sessionId }));
+            }
+          }
+          return;
+        }
 
         // Handle initial configuration
         if (payload.type === 'setup') {
