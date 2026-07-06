@@ -18,7 +18,7 @@ const upload = multer({
 });
 
 // POST: Parse and Analyze Resume
-router.post('/analyze-resume', checkUsageCredits('ats'), upload.single('resume'), async (req, res) => {
+router.post('/analyze-resume', upload.single('resume'), checkUsageCredits('ats'), async (req, res) => {
   try {
     const { domain, resumeText: rawResumeText, email } = req.body;
     const file = req.file;

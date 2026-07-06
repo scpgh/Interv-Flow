@@ -303,8 +303,9 @@ export default function PracticeSession() {
       silentGain.connect(audioContext.destination);
 
       // 6. Connect to backend WebSocket proxy
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//localhost:5000/api/interview/session`;
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const wsBase = apiUrl.replace(/^http/, 'ws');
+      const wsUrl = `${wsBase}/api/interview/session`;
       const socket = new WebSocket(wsUrl);
       socketRef.current = socket;
 
