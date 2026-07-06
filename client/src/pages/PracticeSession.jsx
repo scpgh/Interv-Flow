@@ -1339,30 +1339,26 @@ export default function PracticeSession() {
                     )}
                   </select>
                   
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!window.speechSynthesis) return;
-                      window.speechSynthesis.cancel();
-                      const utterance = new SpeechSynthesisUtterance("Hi there! I am your AI interviewer. How does my voice sound to you?");
-                      const voice = voices.find(v => v.name === selectedVoiceName);
-                      if (voice) {
-                        utterance.voice = voice;
-                        if (voice.localService) {
-                          utterance.rate = 0.90;
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!window.speechSynthesis) return;
+                        window.speechSynthesis.cancel();
+                        const utterance = new SpeechSynthesisUtterance("Hi there! I am your AI interviewer. How does my voice sound to you?");
+                        const voice = voices.find(v => v.name === selectedVoiceName);
+                        if (voice) {
+                          utterance.voice = voice;
+                          utterance.rate = voice.localService ? 0.90 : 0.95;
                         } else {
-                          utterance.rate = 0.95;
+                          utterance.rate = 0.90;
                         }
-                      } else {
-                        utterance.rate = 0.90;
-                      }
-                      window.speechSynthesis.speak(utterance);
-                    }}
-                    className="px-4 py-3 rounded-lg text-xs font-bold text-[#818CF8] bg-[#1E1B4B]/50 hover:bg-[#1E1B4B] border border-[#818CF8]/30 transition-all cursor-pointer flex items-center gap-1"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">play_arrow</span>
-                    Preview
-                  </button>
+                        window.speechSynthesis.speak(utterance);
+                      }}
+                      className="inline-flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-bold text-[#818CF8] bg-[#1E1B4B]/50 hover:bg-[#1E1B4B] border border-[#818CF8]/30 transition-all cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">play_arrow</span>
+                      Preview
+                    </button>
                 </div>
               </div>
 

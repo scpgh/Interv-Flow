@@ -745,7 +745,7 @@ export default function ResumeAnalyzer() {
                     <h2 className="font-headline-md text-headline-md text-white font-bold mb-1">{displayName}</h2>
                     <p className="text-sm text-primary font-bold mb-4">{currentRole.title}</p>
                     
-                    <div className="grid grid-cols-3 gap-6 pt-4 border-t border-white/5">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4 border-t border-white/5">
                       <div>
                         <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mb-1 font-mono font-bold">Experience</p>
                         <p className="text-lg font-bold text-white">{displayExperience}</p>

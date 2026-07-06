@@ -66,13 +66,13 @@ export default function LandingPage() {
       avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%232563eb'/%3E%3Cstop offset='100%25' style='stop-color:%231d4ed8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='0' fill='url(%23bg)'/%3E%3Ctext x='50' y='56' font-family='Inter,system-ui,sans-serif' font-size='38' font-weight='600' fill='%23ffffff' text-anchor='middle' dominant-baseline='middle'%3ERM%3C/text%3E%3C/svg%3E"
     },
     {
-      quote: `"My ATS score jumped from 54% to 91% in a single scan. IntervFlow pinpointed the exact keywords missing from Amazon's JD. The mentor session was incredibly valuable too — the feedback was laser-focused. I got the offer in just 3 weeks!"`,
+      quote: `"My ATS score jumped from 54% to 91% in a single scan. IntervFlow pinpointed the exact keywords missing from Amazon's JD. The job matching system was incredibly valuable too — the match was laser-focused. I got the offer in just 3 weeks!"`,
       name: "Priya Nair",
       role: "Product Manager at Amazon, Hyderabad",
       avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%237c3aed'/%3E%3Cstop offset='100%25' style='stop-color:%236d28d9'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='0' fill='url(%23bg)'/%3E%3Ctext x='50' y='56' font-family='Inter,system-ui,sans-serif' font-size='38' font-weight='600' fill='%23ffffff' text-anchor='middle' dominant-baseline='middle'%3EPN%3C/text%3E%3C/svg%3E"
     },
     {
-      quote: `"The case study practice for finance interviews was extremely helpful. The AI spotted gaps in my 3-statement model that my mentor later confirmed during our session. I secured an Analyst role at Deloitte. IntervFlow genuinely changed the game for me!"`,
+      quote: `"The case study practice for finance interviews was extremely helpful. The AI spotted gaps in my 3-statement model that I instantly addressed to boost my score. I secured an Analyst role at Deloitte. IntervFlow genuinely changed the game for me!"`,
       name: "Arjun Sharma",
       role: "Financial Analyst at Deloitte, Mumbai",
       avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23059669'/%3E%3Cstop offset='100%25' style='stop-color:%23047857'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='0' fill='url(%23bg)'/%3E%3Ctext x='50' y='56' font-family='Inter,system-ui,sans-serif' font-size='38' font-weight='600' fill='%23ffffff' text-anchor='middle' dominant-baseline='middle'%3EAS%3C/text%3E%3C/svg%3E"
@@ -170,47 +170,47 @@ export default function LandingPage() {
         <section className="flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-gutter min-h-[620px] mb-16 pt-8">
           
           {/* Left: Captivating Hero Content */}
-          <div className="flex-1 flex flex-col items-start z-10">
+          <div className="flex-1 flex flex-col items-center lg:items-start text-center lg:text-left z-10">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-6 shadow-[0_0_15px_rgba(37,99,235,0.15)]">
               <span className="w-2 h-2 rounded-full bg-primary ai-pulse"></span>
               <span className="font-label-sm text-label-sm text-primary uppercase tracking-wider font-bold">IntervFlow AI Practice Studio</span>
             </div>
-            <h1 className="font-display-lg text-display-lg text-glow text-white leading-tight mb-6">
-              Prepare for <br /> the Interviews <br /><span className="text-[#818CF8] text-glow">That Define Careers.</span>
+            <h1 className="font-display-lg text-3xl sm:text-5xl lg:text-display-lg text-glow text-white leading-tight mb-6">
+              Prepare for <br className="hidden sm:inline" /> the Interviews <br /><span className="text-[#818CF8] text-glow">That Define Careers.</span>
             </h1>
-            <p className="font-body-lg text-body-lg text-on-surface-variant mb-10 max-w-xl h-12">
+            <p className="font-body-lg text-base sm:text-body-lg text-on-surface-variant mb-10 max-w-xl min-h-[4.5rem] sm:min-h-[3rem] lg:min-h-[2.5rem] mx-auto lg:mx-0 px-4 sm:px-0">
               {typedText}
               <span className="typing-cursor"></span>
             </p>
             
-            <div className="flex flex-wrap gap-4 mb-8">
-              <button onClick={() => navigate('/login')} className="btn-primary px-8 py-4 rounded-full text-white flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4 mb-8 w-full sm:w-auto px-6 sm:px-0">
+              <button onClick={() => navigate('/login')} className="btn-primary px-8 py-4 rounded-full text-white flex items-center justify-center gap-2 w-full sm:w-auto">
                 Start Mock Session
                 <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"></path>
                 </svg>
               </button>
-              <button onClick={() => navigate('/login')} className="btn-secondary px-8 py-4 rounded-full flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm">calendar_month</span>
-                Book Expert Mentor
+              <button onClick={() => navigate('/login')} className="btn-secondary px-8 py-4 rounded-full flex items-center justify-center gap-2 w-full sm:w-auto">
+                <span className="material-symbols-outlined text-sm">work</span>
+                Explore & Apply Jobs
               </button>
             </div>
 
             {/* Highly Informative Telemetry Stats Row */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full border-t border-white/10 pt-6">
-              <div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full border-t border-white/10 pt-6 px-4 sm:px-0">
+              <div className="text-center lg:text-left">
                 <span className="text-xl md:text-2xl font-bold text-white block">1,000+</span>
                 <span className="text-[10px] text-on-surface-variant font-mono uppercase tracking-wider block leading-normal">Mock Scenarios</span>
               </div>
-              <div>
+              <div className="text-center lg:text-left">
                 <span className="text-xl md:text-2xl font-bold text-white block">85%+</span>
                 <span className="text-[10px] text-on-surface-variant font-mono uppercase tracking-wider block leading-normal">ATS Score Audits</span>
               </div>
-              <div>
-                <span className="text-xl md:text-2xl font-bold text-[#ddb7ff] block">Top 1%</span>
-                <span className="text-[10px] text-on-surface-variant font-mono uppercase tracking-wider block leading-normal">Expert Mentors</span>
+              <div className="text-center lg:text-left">
+                <span className="text-xl md:text-2xl font-bold text-[#ddb7ff] block">100+</span>
+                <span className="text-[10px] text-on-surface-variant font-mono uppercase tracking-wider block leading-normal">Verified Jobs</span>
               </div>
-              <div>
+              <div className="text-center lg:text-left">
                 <span className="text-xl md:text-2xl font-bold text-emerald-400 block">₹299/mo</span>
                 <span className="text-[10px] text-on-surface-variant font-mono uppercase tracking-wider block leading-normal">Calibrated Price</span>
               </div>
@@ -322,10 +322,10 @@ export default function LandingPage() {
 
         {/* Interactive AI Prep Sandbox Playground */}
         <section id="simulator" className="mb-24 relative">
-          <div className="mb-12 text-center">
+          <div className="mb-12 text-center px-4">
             <span className="text-xs text-primary className font-mono font-bold uppercase tracking-widest bg-primary/10 border border-primary/20 px-3 py-1 rounded-full">Interactive Sandbox</span>
-            <h2 className="font-headline-lg text-headline-lg text-white mt-4">Interactive AI Prep Simulator</h2>
-            <p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto mt-2">Test drive our evaluation intelligence directly inside your browser. Pick a target track and click evaluate to see our high-fidelity scoring scorecard in action!</p>
+            <h2 className="font-headline-lg text-2xl sm:text-3xl lg:text-headline-lg text-white mt-4">Interactive AI Prep Simulator</h2>
+            <p className="font-body-lg text-sm sm:text-base lg:text-body-lg text-on-surface-variant max-w-2xl mx-auto mt-2">Test drive our evaluation intelligence directly inside your browser. Pick a target track and click evaluate to see our high-fidelity scoring scorecard in action!</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
@@ -416,19 +416,17 @@ export default function LandingPage() {
               </div>
 
               {/* Footer Console Buttons */}
-              <div className="mt-4 flex flex-wrap gap-3 items-center justify-between border-t border-white/10 pt-4">
-                <button onClick={() => navigate('/login')} className="btn-secondary px-4 py-2.5 rounded-full text-xs flex items-center gap-1.5 cursor-pointer">
+              <div className="mt-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center sm:justify-between border-t border-white/10 pt-4">
+                <button onClick={() => navigate('/login')} className="btn-secondary px-4 py-2.5 rounded-full text-xs flex items-center justify-center gap-1.5 cursor-pointer w-full sm:w-auto">
                   <span className="material-symbols-outlined text-[16px]">mic</span>
                   Simulate Voice Audio
                 </button>
-                <div className="flex gap-2">
-                  <button
-                    className="btn-primary px-6 py-2.5 rounded-full text-xs text-white cursor-pointer animate-pulse"
-                    onClick={() => navigate('/login')}
-                  >
-                     Run Automated AI Evaluation
-                  </button>
-                </div>
+                <button
+                  className="btn-primary px-6 py-2.5 rounded-full text-xs text-white cursor-pointer animate-pulse w-full sm:w-auto justify-center"
+                  onClick={() => navigate('/login')}
+                >
+                   Run Automated AI Evaluation
+                </button>
               </div>
             </div>
           </div>
@@ -436,15 +434,15 @@ export default function LandingPage() {
 
         {/* Multi-Industry Support Grid */}
         <section id="resume" className="mb-24">
-          <div className="mb-12 text-center">
+          <div className="mb-12 text-center px-4">
             <span className="text-xs text-primary font-mono font-bold uppercase tracking-widest bg-primary/10 border border-primary/20 px-3 py-1 rounded-full">Alumni Coverage</span>
-            <h2 className="font-headline-lg text-headline-lg text-white mt-4 font-bold">Portfolios Targeted Globally</h2>
-            <p className="font-body-lg text-body-lg text-on-surface-variant max-w-xl mx-auto mt-2">Tailored calibration parameters across technical, financial, and management domains.</p>
+            <h2 className="font-headline-lg text-2xl sm:text-3xl lg:text-headline-lg text-white mt-4 font-bold">Portfolios Targeted Globally</h2>
+            <p className="font-body-lg text-sm sm:text-base lg:text-body-lg text-on-surface-variant max-w-xl mx-auto mt-2">Tailored calibration parameters across technical, financial, and management domains.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="glass-card rounded-2xl p-6 border border-white/5 flex flex-col gap-4">
-              <span className="material-symbols-outlined text-primary text-2xl bg-primary/10 p-2.5 rounded-xl self-start">code</span>
+            <div className="glass-card rounded-2xl p-6 border border-white/5 flex flex-col gap-4 items-center text-center sm:items-start sm:text-left">
+              <span className="material-symbols-outlined text-primary text-2xl bg-primary/10 p-2.5 rounded-xl self-center sm:self-start">code</span>
               <div>
                 <h3 className="text-white font-bold text-sm">Software Engineering</h3>
                 <p className="text-xs text-on-surface-variant leading-relaxed mt-2">
@@ -453,8 +451,8 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="glass-card rounded-2xl p-6 border border-white/5 flex flex-col gap-4">
-              <span className="material-symbols-outlined text-[#ddb7ff] text-2xl bg-[#ddb7ff]/10 p-2.5 rounded-xl self-start">category</span>
+            <div className="glass-card rounded-2xl p-6 border border-white/5 flex flex-col gap-4 items-center text-center sm:items-start sm:text-left">
+              <span className="material-symbols-outlined text-[#ddb7ff] text-2xl bg-[#ddb7ff]/10 p-2.5 rounded-xl self-center sm:self-start">category</span>
               <div>
                 <h3 className="text-white font-bold text-sm">Product Management</h3>
                 <p className="text-xs text-on-surface-variant leading-relaxed mt-2">
@@ -463,8 +461,8 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="glass-card rounded-2xl p-6 border border-white/5 flex flex-col gap-4">
-              <span className="material-symbols-outlined text-emerald-400 text-2xl bg-emerald-500/10 p-2.5 rounded-xl self-start">trending_up</span>
+            <div className="glass-card rounded-2xl p-6 border border-white/5 flex flex-col gap-4 items-center text-center sm:items-start sm:text-left">
+              <span className="material-symbols-outlined text-emerald-400 text-2xl bg-emerald-500/10 p-2.5 rounded-xl self-center sm:self-start">trending_up</span>
               <div>
                 <h3 className="text-white font-bold text-sm">Finance &amp; Strategy</h3>
                 <p className="text-xs text-on-surface-variant leading-relaxed mt-2">
@@ -473,8 +471,8 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="glass-card rounded-2xl p-6 border border-white/5 flex flex-col gap-4">
-              <span className="material-symbols-outlined text-amber-400 text-2xl bg-amber-400/10 p-2.5 rounded-xl self-start">business_center</span>
+            <div className="glass-card rounded-2xl p-6 border border-white/5 flex flex-col gap-4 items-center text-center sm:items-start sm:text-left">
+              <span className="material-symbols-outlined text-amber-400 text-2xl bg-amber-400/10 p-2.5 rounded-xl self-center sm:self-start">business_center</span>
               <div>
                 <h3 className="text-white font-bold text-sm">Business Consulting</h3>
                 <p className="text-xs text-on-surface-variant leading-relaxed mt-2">
@@ -487,10 +485,10 @@ export default function LandingPage() {
 
         {/* Calibrated Value Comparison Table */}
         <section id="pricing" className="mb-24">
-          <div className="mb-12 text-center">
+          <div className="mb-12 text-center px-4">
             <span className="text-xs text-primary font-mono font-bold uppercase tracking-widest bg-primary/10 border border-primary/20 px-3 py-1 rounded-full">Value Comparison</span>
-            <h2 className="font-headline-lg text-headline-lg text-white mt-4 font-bold">Transparent Pricing. No Surprises.</h2>
-            <p className="font-body-lg text-body-lg text-on-surface-variant max-w-xl mx-auto mt-2">Whether you're just starting out or going all in, we have a plan to take you from preparation to placement.</p>
+            <h2 className="font-headline-lg text-2xl sm:text-3xl lg:text-headline-lg text-white mt-4 font-bold">Transparent Pricing. No Surprises.</h2>
+            <p className="font-body-lg text-sm sm:text-base lg:text-body-lg text-on-surface-variant max-w-xl mx-auto mt-2">Whether you're just starting out or going all in, we have a plan to take you from preparation to placement.</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch max-w-5xl mx-auto">
@@ -518,7 +516,7 @@ export default function LandingPage() {
                   </li>
                   <li className="flex items-start gap-2 opacity-30">
                     <span className="material-symbols-outlined text-base mt-0.5">close</span>
-                    <span>0 Mentor Bookings</span>
+                    <span>Premium Curated Jobs</span>
                   </li>
                   <li className="flex items-start gap-2 opacity-30">
                     <span className="material-symbols-outlined text-base mt-0.5">close</span>
@@ -550,7 +548,7 @@ export default function LandingPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="material-symbols-outlined text-emerald-400 text-base mt-0.5">check_circle</span>
-                    <span><strong>3 Live Mentor Sessions</strong> via Google Meet</span>
+                    <span><strong>3 Premium Job Applications</strong> monthly</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="material-symbols-outlined text-emerald-400 text-base mt-0.5">check_circle</span>
@@ -586,7 +584,7 @@ export default function LandingPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="material-symbols-outlined text-primary text-base mt-0.5">check_circle</span>
-                    <span><strong>15 Live Mentor Sessions</strong> with Top 1% FAANG Experts</span>
+                    <span><strong>Unlimited Applications</strong> with AI Profile Card</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="material-symbols-outlined text-primary text-base mt-0.5">check_circle</span>
@@ -605,45 +603,45 @@ export default function LandingPage() {
 
         {/* How it Works Timeline Section */}
         <section className="mb-24">
-          <div className="mb-12 text-center">
+          <div className="mb-12 text-center px-4">
             <span className="text-xs text-[#ddb7ff] font-mono font-bold uppercase tracking-widest bg-[#ddb7ff]/10 border border-[#ddb7ff]/20 px-3 py-1 rounded-full">How It Works</span>
-            <h2 className="font-headline-lg text-white mt-4 font-bold">From Resume to Offer — Your Journey</h2>
-            <p className="text-on-surface-variant max-w-md mx-auto mt-2">Five steps that take you from prep to placement, guided by AI and verified experts.</p>
+            <h2 className="font-headline-lg text-2xl sm:text-3xl lg:text-headline-lg text-white mt-4 font-bold">From Resume to Offer — Your Journey</h2>
+            <p className="text-sm sm:text-base text-on-surface-variant max-w-md mx-auto mt-2">Five steps that take you from prep to placement, guided by AI and verified experts.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
             <div className="relative timeline-step pl-16 md:pl-0 flex flex-col gap-3">
               <div className="absolute left-0 md:relative w-10 h-10 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-primary font-bold z-10">1</div>
-              <h3 className="text-white font-bold text-sm mt-2">Upload Resume &amp; Set Role</h3>
-              <p className="text-xs text-on-surface-variant leading-relaxed">
+              <h3 className="text-white font-bold text-sm sm:text-base mt-2">Upload Resume &amp; Set Role</h3>
+              <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
                 Drop your resume and select your target role. Our AI instantly generates your ATS score, flags keyword gaps, and suggests improvements.
               </p>
             </div>
             <div className="relative timeline-step pl-16 md:pl-0 flex flex-col gap-3">
               <div className="absolute left-0 md:relative w-10 h-10 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-primary font-bold z-10">2</div>
-              <h3 className="text-white font-bold text-sm mt-2">AI Mock Interview</h3>
-              <p className="text-xs text-on-surface-variant leading-relaxed">
+              <h3 className="text-white font-bold text-sm sm:text-base mt-2">AI Mock Interview</h3>
+              <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
                 Take a live voice-based AI mock. Get real-time questions, filler word detection, pacing analysis, and a full post-session scorecard.
               </p>
             </div>
             <div className="relative timeline-step pl-16 md:pl-0 flex flex-col gap-3">
               <div className="absolute left-0 md:relative w-10 h-10 rounded-full bg-[#ddb7ff]/10 border-2 border-[#ddb7ff]/50 flex items-center justify-center text-[#ddb7ff] font-bold z-10">3</div>
-              <h3 className="text-white font-bold text-sm mt-2">Book a Live Mentor</h3>
-              <p className="text-xs text-on-surface-variant leading-relaxed">
-                Schedule a 1:1 session with a verified FAANG expert on Google Meet. Your AI mock report is automatically shared before the call.
+              <h3 className="text-white font-bold text-sm sm:text-base mt-2">Explore &amp; Apply Jobs</h3>
+              <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
+                Browse verified job postings tailored to your profile. Apply directly using your optimized resume and AI mock scorecard.
               </p>
             </div>
             <div className="relative timeline-step pl-16 md:pl-0 flex flex-col gap-3">
               <div className="absolute left-0 md:relative w-10 h-10 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-emerald-400 font-bold z-10">4</div>
-              <h3 className="text-white font-bold text-sm mt-2">Review &amp; Improve</h3>
-              <p className="text-xs text-on-surface-variant leading-relaxed">
-                Deep-dive into your performance dashboard — WPM, filler count, answer structure scores, and specific feedback from your AI and mentor sessions.
+              <h3 className="text-white font-bold text-sm sm:text-base mt-2">Review &amp; Improve</h3>
+              <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
+                Deep-dive into your performance dashboard — WPM, filler count, answer structure scores, and specific feedback from your AI mock simulations and job matches.
               </p>
             </div>
             <div className="relative pl-16 md:pl-0 flex flex-col gap-3">
               <div className="absolute left-0 md:relative w-10 h-10 rounded-full bg-amber-400/10 border-2 border-amber-400/50 flex items-center justify-center text-amber-400 font-bold z-10">5</div>
-              <h3 className="text-white font-bold text-sm mt-2">Community &amp; Streaks</h3>
-              <p className="text-xs text-on-surface-variant leading-relaxed">
+              <h3 className="text-white font-bold text-sm sm:text-base mt-2">Community &amp; Streaks</h3>
+              <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
                 Join weekly challenges, earn XP, climb the leaderboard, and stay consistent with daily prep streaks alongside 10k+ fellow candidates.
               </p>
             </div>
@@ -657,7 +655,7 @@ export default function LandingPage() {
               <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider font-mono">Success Stories</span>
               <h3 className="text-white font-bold text-body-lg mt-1">Verified Placements</h3>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 self-end md:self-auto">
               <button onClick={prevTestimonial} className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 text-white cursor-pointer">
                 <span className="material-symbols-outlined text-sm font-bold">arrow_back</span>
               </button>
@@ -685,9 +683,9 @@ export default function LandingPage() {
 
         {/* Interactive FAQ Accordion */}
         <section id="faq" className="mb-24 max-w-3xl mx-auto">
-          <div className="mb-12 text-center">
+          <div className="mb-12 text-center px-4">
             <span className="text-xs text-[#ddb7ff] font-mono font-bold uppercase tracking-widest bg-[#ddb7ff]/10 border border-[#ddb7ff]/20 px-3 py-1 rounded-full">FAQ Calibration</span>
-            <h2 className="font-headline-lg text-headline-lg text-white mt-4 font-bold">Frequently Asked Questions</h2>
+            <h2 className="font-headline-lg text-2xl sm:text-3xl lg:text-headline-lg text-white mt-4 font-bold">Frequently Asked Questions</h2>
           </div>
 
           <div className="space-y-4">
@@ -713,11 +711,11 @@ export default function LandingPage() {
 
             <div className={`glass-card rounded-2xl border border-white/5 faq-item transition-all ${activeFaq === 2 ? 'active' : ''}`} onClick={() => toggleFaq(2)}>
               <button className="w-full flex justify-between items-center p-6 text-left focus:outline-none cursor-pointer">
-                <span className="text-white text-sm font-bold">What's the difference between AI mock and a mentor session?</span>
+                <span className="text-white text-sm font-bold">What's the difference between AI mock and direct job portal applications?</span>
                 <span className="material-symbols-outlined text-primary transition-transform duration-300 faq-arrow">expand_more</span>
               </button>
               <div className="faq-answer px-6 pb-6 text-xs text-on-surface-variant leading-relaxed">
-                The AI mock is fully automated — you can practice anytime, get instant scores, and repeat at no extra cost. A mentor session is a live 1:1 Google Meet call with a verified industry expert (e.g., from Google, Deloitte, or Razorpay). Before the session, your AI mock telemetry is automatically shared with them so they can give you targeted, personalised feedback right from the start.
+                The AI mock is fully automated — you can practice anytime, get instant verbal pacing scoring, filler words counts, and review reports. The Job Portal connects these mocks directly to recruiters. By submitting your mock telemetry scorecard alongside your ATS-optimized resume, you prove your job-readiness instantly and secure interviews faster.
               </div>
             </div>
 
@@ -727,7 +725,7 @@ export default function LandingPage() {
                 <span className="material-symbols-outlined text-primary transition-transform duration-300 faq-arrow">expand_more</span>
               </button>
               <div className="faq-answer px-6 pb-6 text-xs text-on-surface-variant leading-relaxed">
-                Yes! Your account supports multiple active target roles. You can switch between SDE, PM, Finance, and Consulting tracks at any time from your profile settings without losing your existing history or mock records. Each domain has its own question bank and mentor pool.
+                Yes! Your account supports multiple active target roles. You can switch between SDE, PM, Finance, and Consulting tracks at any time from your profile settings without losing your existing history or mock records. Each domain has its own question bank and matching job openings.
               </div>
             </div>
 
@@ -737,18 +735,18 @@ export default function LandingPage() {
                 <span className="material-symbols-outlined text-primary transition-transform duration-300 faq-arrow">expand_more</span>
               </button>
               <div className="faq-answer px-6 pb-6 text-xs text-on-surface-variant leading-relaxed">
-                IntervFlow is built for both. Freshers can start with the Free plan — get 3 mock interviews, 3 resume scans, and community access to build confidence. Experienced candidates use the Pro and Pro Plus tiers to sharpen advanced system design, case study thinking, and communication skills with live mentors from top-tier firms.
+                IntervFlow is built for both. Freshers can start with the Free plan — get 3 mock interviews, 3 resume scans, and community access to build confidence. Experienced candidates use the Pro and Pro Plus tiers to sharpen advanced system design, case study thinking, and apply to premium matching roles from top-tier firms.
               </div>
             </div>
           </div>
         </section>
 
         {/* Final Lead Capture Section */}
-        <section className="mb-24 relative overflow-hidden glass-panel rounded-3xl p-10 md:p-14 border border-white/10 glow-border text-center max-w-5xl mx-auto">
+        <section className="mb-24 relative overflow-hidden glass-panel rounded-3xl p-8 md:p-14 border border-white/10 glow-border text-center max-w-5xl mx-auto mx-4 sm:mx-auto">
           <div className="relative z-10">
             <span className="text-xs text-primary font-mono font-bold uppercase tracking-widest bg-primary/10 border border-primary/20 px-3 py-1 rounded-full mb-6 inline-block">Day 15/30 Challenge</span>
-            <h2 className="font-headline-lg text-display-lg text-glow text-white leading-tight mb-4 font-bold">Master Your Prep.<br />Secure the Offer.</h2>
-            <p className="font-body-lg text-body-lg text-on-surface-variant max-w-xl mx-auto mb-10">Join 10k+ candidates practicing coding mocks, product cases, financial modeling, and consulting frameworks today.</p>
+            <h2 className="font-headline-lg text-2xl sm:text-4xl lg:text-display-lg text-glow text-white leading-tight mb-4 font-bold">Master Your Prep.<br />Secure the Offer.</h2>
+            <p className="font-body-lg text-sm sm:text-base lg:text-body-lg text-on-surface-variant max-w-xl mx-auto mb-10">Join 10k+ candidates practicing coding mocks, product cases, financial modeling, and consulting frameworks today.</p>
             
             <div className="flex justify-center">
               <button onClick={() => navigate('/signup')} className="btn-primary px-12 py-4 rounded-full text-sm text-white font-semibold">

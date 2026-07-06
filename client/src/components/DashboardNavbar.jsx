@@ -483,27 +483,27 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
             </span>
           </button>
 
-          {/* Avatar — isolated wrapper for dropdown */}
-          <div className="relative hidden md:block" ref={avatarWrapperRef}>
-            <button
-              onClick={() => setIsDropdownOpen((o) => !o)}
-              className="relative flex items-center justify-center rounded-full border-none bg-transparent cursor-pointer p-0"
-              style={{ lineHeight: 0 }}
-            >
-              <div className="h-9 w-9 rounded-full overflow-hidden border-2 border-primary/50 hover:border-primary transition-all shadow-[0_0_10px_rgba(37,99,235,0.2)]">
-                <img
-                  alt="User"
-                  className="w-full h-full object-cover"
-                  src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23374151'/%3E%3Cstop offset='100%25' style='stop-color:%231f2937'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3Ccircle cx='50' cy='36' r='16' fill='%239ca3af'/%3E%3Cellipse cx='50' cy='80' rx='28' ry='20' fill='%239ca3af'/%3E%3C/svg%3E"
-                />
-              </div>
-              {notifications.length > 0 && (
-                <>
-                  <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-500 rounded-full border-2 border-[#09090b] animate-ping pointer-events-none" />
-                  <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-500 rounded-full border-2 border-[#09090b] pointer-events-none" />
-                </>
-              )}
-            </button>
+            {/* Avatar — isolated wrapper for dropdown */}
+            <div className="relative hidden md:block" ref={avatarWrapperRef}>
+              <button
+                onClick={() => setIsDropdownOpen((o) => !o)}
+                className="relative flex items-center justify-center rounded-full border-none bg-transparent cursor-pointer p-0 overflow-visible"
+                style={{ lineHeight: 0 }}
+              >
+                <div className="h-9 w-9 rounded-full overflow-hidden border-2 border-primary/50 hover:border-primary transition-all shadow-[0_0_10px_rgba(37,99,235,0.2)]">
+                  <img
+                    alt="User"
+                    className="w-full h-full object-cover"
+                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23374151'/%3E%3Cstop offset='100%25' style='stop-color:%231f2937'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3Ccircle cx='50' cy='36' r='16' fill='%239ca3af'/%3E%3Cellipse cx='50' cy='80' rx='28' ry='20' fill='%239ca3af'/%3E%3C/svg%3E"
+                  />
+                </div>
+                {notifications.length > 0 && (
+                  <>
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-[#09090b] animate-ping pointer-events-none" />
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-[#09090b] pointer-events-none" />
+                  </>
+                )}
+              </button>
 
             {isDropdownOpen && (
               <div

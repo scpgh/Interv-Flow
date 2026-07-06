@@ -442,7 +442,7 @@ export default function Billing() {
       {/* Nav */}
       <DashboardNavbar activeTab="booking" />
 
-      <div className="flex flex-1 w-full max-w-[1400px] mx-auto px-margin-mobile md:px-margin-desktop py-10 z-10 gap-8">
+      <div className="flex flex-1 w-full max-w-full md:max-w-[1400px] mx-auto px-margin-mobile md:px-margin-desktop py-10 z-10 gap-8">
         
         {/* Sidebar settings tab */}
         <aside className="w-64 hidden md:flex flex-col py-6 border-r border-white/5 pr-4 select-none shrink-0 text-left">
@@ -583,10 +583,10 @@ export default function Billing() {
               {/* Available Plans */}
               <section>
                 <h2 className="text-lg md:text-xl font-bold mb-6 text-on-surface">Available Plans</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="flex flex-col space-y-4 md:grid md:grid-cols-3 md:gap-6">
                   
                   {/* Basic */}
-                  <div className={`glass-card p-6 rounded-xl flex flex-col border transition-all ${
+                  <div className={`glass-card p-6 rounded-xl flex flex-col border transition-all w-full ${
                     currentPlan === 'Basic' ? 'border-primary bg-primary/5' : 'border-white/5 bg-white/[0.02]'
                   }`}>
                     <div className="mb-6">
