@@ -123,38 +123,56 @@ export default function PracticeFeedback() {
 
   if (loading) {
     return (
-      <div className="bg-[#09090b] text-[#e5e1e4] min-h-screen flex flex-col relative overflow-x-hidden pt-16 font-body-md text-left">
+      <div className="bg-[#09090b] text-[#e5e1e4] min-h-screen flex flex-col relative overflow-x-hidden pt-16 font-body-md">
         <div className="fixed inset-0 pointer-events-none z-0 bg-radial-gradient"></div>
         <DashboardNavbar activeTab={activeNavTab} setActiveTab={setActiveNavTab} />
         
-        <div className="flex-grow flex flex-col items-center justify-center gap-6 p-8 z-10 relative max-w-md w-full text-center">
-          {/* Glowing Scanning Animation */}
-          <div className="relative w-24 h-24 flex items-center justify-center mb-2">
-            {/* Outer Pulsing Glow */}
-            <div className="absolute inset-0 rounded-full bg-[#818cf8]/10 animate-ping duration-1000"></div>
-            {/* Mid Pulsing Circle */}
-            <div className="absolute inset-2 rounded-full bg-[#818cf8]/10 animate-pulse"></div>
-            {/* Core Scanner Ring */}
-            <div className="absolute inset-4 rounded-full border border-dashed border-[#818cf8]/40 animate-spin duration-3000"></div>
-            {/* Scanner Core Icon */}
-            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#818cf8] to-[#a78bfa] flex items-center justify-center shadow-[0_0_30px_rgba(129,140,248,0.5)]">
-              <span className="material-symbols-outlined text-black font-bold text-xl animate-bounce">insights</span>
+        <div className="flex-grow w-full flex items-center justify-center p-6 z-10 relative">
+          <div className="glass-card max-w-md w-full rounded-3xl p-10 bg-[#151518]/60 backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center gap-8 text-center relative overflow-hidden">
+            {/* Glowing Backdrop Aura */}
+            <div className="absolute -top-24 -left-24 w-48 h-48 rounded-full bg-[#818cf8]/10 blur-[60px] pointer-events-none"></div>
+            <div className="absolute -bottom-24 -right-24 w-48 h-48 rounded-full bg-[#a78bfa]/10 blur-[60px] pointer-events-none"></div>
+
+            {/* Glowing Scanning Animation */}
+            <div className="relative w-28 h-28 flex items-center justify-center">
+              {/* Outer Pulsing Glow */}
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#818cf8]/10 to-[#a78bfa]/10 animate-ping" style={{ animationDuration: '1.5s' }}></div>
+              {/* Mid Pulsing Circle */}
+              <div className="absolute inset-3 rounded-full bg-gradient-to-r from-[#818cf8]/5 to-[#a78bfa]/5 animate-pulse" style={{ animationDuration: '2s' }}></div>
+              {/* Core Scanner Ring */}
+              <div className="absolute inset-6 rounded-full border border-dashed border-[#818cf8]/30 animate-spin" style={{ animationDuration: '6s' }}></div>
+              {/* Spinning Accent Dots */}
+              <div className="absolute inset-4 rounded-full border border-double border-transparent border-t-[#a78bfa]/40 border-b-[#818cf8]/40 animate-spin" style={{ animationDuration: '3s' }}></div>
+              {/* Scanner Core Icon */}
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#818cf8] to-[#a78bfa] flex items-center justify-center shadow-[0_0_40px_rgba(129,140,248,0.4)] transform rotate-45">
+                <span className="material-symbols-outlined text-black font-bold text-2xl -rotate-45 animate-pulse">insights</span>
+              </div>
             </div>
-          </div>
-          
-          <div className="space-y-3">
-            <h3 className="text-white text-lg font-bold tracking-tight flex items-center justify-center gap-2">
-              AI Diagnostic Analysis
-              <span className="flex gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#818cf8] animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#818cf8] animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#818cf8] animate-bounce" style={{ animationDelay: '300ms' }}></span>
-              </span>
-            </h3>
-            <div className="h-6 overflow-hidden">
-              <p className="text-xs text-on-surface-variant leading-relaxed font-mono text-[#818cf8]">
-                {LOADING_MESSAGES[loadingMsgIdx]}
-              </p>
+            
+            <div className="space-y-4 w-full">
+              <div className="space-y-1">
+                <p className="text-[10px] font-mono text-[#818cf8] uppercase tracking-widest font-bold">Diagnostics Active</p>
+                <h3 className="text-white text-xl font-bold tracking-tight flex items-center justify-center gap-2">
+                  Analyzing Interview
+                  <span className="flex gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#818cf8] animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#818cf8] animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#818cf8] animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                  </span>
+                </h3>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden relative">
+                <div className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-[#818cf8] to-[#a78bfa] rounded-full animate-pulse animate-duration-1000" style={{ width: `${((loadingMsgIdx + 1) / LOADING_MESSAGES.length) * 100}%`, transition: 'width 0.5s ease-in-out' }}></div>
+              </div>
+
+              {/* Loading Message Container */}
+              <div className="bg-white/[0.02] border border-white/5 rounded-xl py-3 px-4 min-h-[50px] flex items-center justify-center">
+                <p className="text-xs text-on-surface-variant leading-relaxed font-mono text-center max-w-[280px]">
+                  {LOADING_MESSAGES[loadingMsgIdx]}
+                </p>
+              </div>
             </div>
           </div>
         </div>
