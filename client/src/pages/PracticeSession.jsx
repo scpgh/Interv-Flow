@@ -903,6 +903,7 @@ export default function PracticeSession() {
         const formData = new FormData();
         formData.append('audio', audioBlob, `recording.${mimeType.split('/')[1].split(';')[0]}`);
 
+        try {
           const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
           const response = await fetch(`${API_URL}/api/interview/transcribe`, {
             method: 'POST',
