@@ -55,8 +55,6 @@ export default function PracticeFeedback() {
         }
 
         // 3. Otherwise, trigger report generation POST request to backend
-        console.log("No report cached. Generating new feedback report...");
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
         const reportResponse = await fetch(`${API_URL}/api/interview/report`, {
           method: 'POST',
           headers: {
