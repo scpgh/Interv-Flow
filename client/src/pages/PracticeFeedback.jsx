@@ -35,13 +35,30 @@ export default function PracticeFeedback() {
       setErrorMsg('');
 
       try {
-        // 1. Check if the session is saved and has a report generated on the backend
+        // 1. Check if the session is saved and has a report generated on the backend (with retry logic for database write delay)
         const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-        const response = await fetch(`${API_URL}/api/interview/session/${sessionId}`);
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data.error || "Failed to load session details.");
+        let response;
+        let data;
+        let attempts = 0;
+        const maxAttempts = 4;
+
+        while (attempts < maxAttempts) {
+          try {
+            response = await fetch(`${API_URL}/api/interview/session/${sessionId}`);
+            data = await response.json();
+            if (response.ok) break;
+          } catch (fetchErr) {
+            console.warn("Fetch attempt failed:", fetchErr);
+          }
+          attempts++;
+          if (attempts < maxAttempts) {
+            console.log(`Session not written yet. Retrying fetch in 1.2 seconds (attempt ${attempts + 1}/${maxAttempts})...`);
+            await new Promise(resolve => setTimeout(resolve, 1200));
+          }
+        }
+
+        if (!response || !response.ok) {
+          throw new Error(data?.error || "Failed to load session details. The server database has not completed saving this session yet.");
         }
 
         const loadedSession = data.session;
