@@ -625,22 +625,19 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
           {/* Hamburger / Profile Toggle (mobile) */}
           <button
             onClick={() => setIsMobileMenuOpen((o) => !o)}
-            className="md:hidden flex items-center justify-center rounded-full hover:bg-white/5 border-none bg-transparent cursor-pointer text-white relative"
-            style={{ padding: '2px' }}
+            className="md:hidden flex items-center justify-center w-9 h-9 rounded-full border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all cursor-pointer text-primary relative shrink-0 p-0"
           >
             {isMobileMenuOpen ? (
-              <span className="material-symbols-outlined text-[24px] w-9.5 h-9.5 flex items-center justify-center">close</span>
+              <span className="material-symbols-outlined text-[20px] leading-none">close</span>
             ) : (
-              <div className="relative">
-                <div className="h-8.5 w-8.5 rounded-full overflow-hidden border-2 border-primary/50 hover:border-primary transition-all shadow-[0_0_10px_rgba(37,99,235,0.2)]">
-                  <img
-                    alt="User Menu"
-                    className="w-full h-full object-cover"
-                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23374151'/%3E%3Cstop offset='100%25' style='stop-color:%231f2937'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3Ccircle cx='50' cy='36' r='16' fill='%239ca3af'/%3E%3Cellipse cx='50' cy='80' rx='28' ry='20' fill='%239ca3af'/%3E%3C/svg%3E"
-                  />
-                </div>
+              <div className="relative w-8 h-8 rounded-full overflow-hidden border border-primary/30 flex items-center justify-center">
+                <img
+                  alt="User Menu"
+                  className="w-full h-full object-cover"
+                  src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23374151'/%3E%3Cstop offset='100%25' style='stop-color:%231f2937'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3Ccircle cx='50' cy='36' r='16' fill='%239ca3af'/%3E%3Cellipse cx='50' cy='80' rx='28' ry='20' fill='%239ca3af'/%3E%3C/svg%3E"
+                />
                 {notifications.length > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border border-[#09090b]" />
+                  <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-[#09090b]" />
                 )}
               </div>
             )}

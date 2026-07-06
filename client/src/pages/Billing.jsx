@@ -486,7 +486,7 @@ export default function Billing() {
               <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-2">
                 <div 
                   className="h-full bg-primary transition-all duration-500" 
-                  style={{ width: `${Math.min(100, ((userRecord?.credits?.jobApplicationsUsed || 0) / (userRecord?.credits?.jobApplicationsLimit || 3)) * 100)}%` }}
+                  style={{ width: `${userRecord?.credits?.jobApplicationsLimit >= 9999 ? 100 : Math.min(100, ((userRecord?.credits?.jobApplicationsUsed || 0) / (userRecord?.credits?.jobApplicationsLimit || 3)) * 100)}%` }}
                 />
               </div>
               <p className="text-[10px] font-mono text-on-surface">
@@ -499,7 +499,7 @@ export default function Billing() {
               <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-2">
                 <div 
                   className="h-full bg-secondary transition-all duration-500" 
-                  style={{ width: `${Math.min(100, ((userRecord?.credits?.atsAnalysesUsed || 0) / (userRecord?.credits?.atsAnalysesLimit || 3)) * 100)}%` }}
+                  style={{ width: `${userRecord?.credits?.atsAnalysesLimit >= 9999 ? 100 : Math.min(100, ((userRecord?.credits?.atsAnalysesUsed || 0) / (userRecord?.credits?.atsAnalysesLimit || 3)) * 100)}%` }}
                 />
               </div>
               <p className="text-[10px] font-mono text-on-surface">
@@ -559,7 +559,7 @@ export default function Billing() {
                   <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-primary transition-all duration-1000"
-                      style={{ width: `${Math.min(100, ((userRecord?.credits?.aiMocksUsed || 0) / (userRecord?.credits?.aiMocksLimit || 3)) * 100)}%` }}
+                      style={{ width: `${userRecord?.credits?.aiMocksLimit >= 9999 ? 100 : Math.min(100, ((userRecord?.credits?.aiMocksUsed || 0) / (userRecord?.credits?.aiMocksLimit || 3)) * 100)}%` }}
                     ></div>
                   </div>
                 </div>
@@ -574,7 +574,7 @@ export default function Billing() {
                   <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-secondary transition-all duration-1000"
-                      style={{ width: `${Math.min(100, ((userRecord?.credits?.atsAnalysesUsed || 0) / (userRecord?.credits?.atsAnalysesLimit || 3)) * 100)}%` }}
+                      style={{ width: `${userRecord?.credits?.atsAnalysesLimit >= 9999 ? 100 : Math.min(100, ((userRecord?.credits?.atsAnalysesUsed || 0) / (userRecord?.credits?.atsAnalysesLimit || 3)) * 100)}%` }}
                     ></div>
                   </div>
                 </div>
@@ -583,7 +583,7 @@ export default function Billing() {
               {/* Available Plans */}
               <section>
                 <h2 className="text-lg md:text-xl font-bold mb-6 text-on-surface">Available Plans</h2>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   
                   {/* Basic */}
                   <div className={`glass-card p-6 rounded-xl flex flex-col border transition-all ${

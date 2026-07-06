@@ -136,6 +136,7 @@ export default function Dashboard() {
   const [generalQuestions, setGeneralQuestions] = useState([]);
   const [technicalQuestions, setTechnicalQuestions] = useState([]);
   const [hasScanQuestions, setHasScanQuestions] = useState(false);
+  const [questionsExpanded, setQuestionsExpanded] = useState(false);
 
   // Mock interview sessions & analytics
   const [sessions, setSessions] = useState([]);
@@ -733,8 +734,8 @@ export default function Dashboard() {
                       General &amp; Behavioral Questions
                     </h3>
                     <ul className="space-y-3">
-                      {generalQuestions.map((q, idx) => (
-                        <li key={idx} className="flex gap-3 text-xs leading-relaxed text-on-surface-variant hover:text-white transition-colors duration-200 text-left">
+                      {(questionsExpanded ? generalQuestions : generalQuestions.slice(0, 3)).map((q, idx) => (
+                        <li key={idx} className="flex gap-3 text-xs leading-relaxed text-on-surface-variant hover:text-white transition-colors duration-200 text-left animate-fade-in">
                           <span className="font-mono text-primary font-bold shrink-0">{idx + 1}.</span>
                           <span>{q}</span>
                         </li>
@@ -749,8 +750,8 @@ export default function Dashboard() {
                       Technical &amp; Role-Specific Questions
                     </h3>
                     <ul className="space-y-3">
-                      {technicalQuestions.map((q, idx) => (
-                        <li key={idx} className="flex gap-3 text-xs leading-relaxed text-on-surface-variant hover:text-white transition-colors duration-200 text-left">
+                      {(questionsExpanded ? technicalQuestions : technicalQuestions.slice(0, 3)).map((q, idx) => (
+                        <li key={idx} className="flex gap-3 text-xs leading-relaxed text-on-surface-variant hover:text-white transition-colors duration-200 text-left animate-fade-in">
                           <span className="font-mono text-primary font-bold shrink-0">{idx + 1}.</span>
                           <span>{q}</span>
                         </li>
@@ -758,6 +759,20 @@ export default function Dashboard() {
                     </ul>
                   </div>
                 </div>
+
+                {(generalQuestions.length > 3 || technicalQuestions.length > 3) && (
+                  <div className="flex justify-center mt-5">
+                    <button
+                      onClick={() => setQuestionsExpanded(!questionsExpanded)}
+                      className="px-4 py-2 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary text-[10px] font-mono font-bold tracking-wider uppercase cursor-pointer transition-all flex items-center gap-1.5 border-none select-none"
+                    >
+                      <span className="material-symbols-outlined text-sm leading-none">
+                        {questionsExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down'}
+                      </span>
+                      {questionsExpanded ? 'Show Less' : `Show More (${Math.max(0, generalQuestions.length - 3) + Math.max(0, technicalQuestions.length - 3)} Hidden)`}
+                    </button>
+                  </div>
+                )}
 
                 {!hasScanQuestions && (
                   <div className="mt-5 p-4 rounded-xl bg-primary/5 border border-primary/10 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -792,7 +807,7 @@ export default function Dashboard() {
                     ) : (
                       sessions.slice(0, 3).map((session) => {
                         const hasReport = !!session.report;
-                        const scoreText = hasReport ? `Score: ${session.report.score}` : 'Pending Report';
+                        const scoreText = hasReport ? `${session.report.score}` : 'Pending';
                         const dateText = new Date(session.completedAt || session.startTime).toLocaleString([], {
                           month: 'short',
                           day: 'numeric',
@@ -803,9 +818,9 @@ export default function Dashboard() {
                           <div 
                             key={session.id}
                             onClick={() => navigate(`/practice/feedback/${session.id}`)}
-                            className="group flex items-center justify-between p-4 rounded-xl border border-white/5 bg-[#18181b]/30 hover:bg-[#18181b]/60 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] hover:border-white/20 transition-all duration-300 ease-out cursor-pointer"
+                            className="group flex items-center justify-between p-4 rounded-xl border border-white/5 bg-[#18181b]/30 hover:bg-[#18181b]/60 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] hover:border-white/20 transition-all duration-300 ease-out cursor-pointer gap-4"
                           >
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-4 min-w-0">
                               <div className={`w-12 h-12 rounded-lg flex items-center justify-center border shrink-0 ${
                                 session.mode === 'jd' 
                                   ? 'bg-primary/10 text-primary border-primary/20' 
@@ -815,22 +830,22 @@ export default function Dashboard() {
                                   {session.mode === 'jd' ? 'dns' : 'groups'}
                                 </span>
                               </div>
-                              <div>
-                                <h3 className="font-body-md text-body-md font-semibold text-white/90 group-hover:text-white transition-colors text-left">
+                              <div className="min-w-0">
+                                <h3 className="font-body-md text-body-md font-semibold text-white/90 group-hover:text-white transition-colors text-left truncate">
                                   {session.mode === 'jd' ? `${session.title} at ${session.company}` : "Resume Cross-Examination"}
                                 </h3>
-                                <p className="font-label-sm text-label-sm text-on-surface-variant font-mono text-left">
+                                <p className="font-label-sm text-label-sm text-on-surface-variant font-mono text-left truncate">
                                   {session.mode === 'jd' ? 'Job Focus' : 'Resume Focus'} • {dateText}
                                 </p>
                               </div>
                             </div>
-                            <div className="flex items-center gap-6">
-                              <span className={`font-label-sm text-label-sm px-2.5 py-1 rounded-md font-mono font-bold border ${
+                            <div className="flex items-center gap-2 sm:gap-6 shrink-0">
+                              <span className={`font-label-sm text-label-sm px-2.5 py-1 rounded-md font-mono font-bold border shrink-0 whitespace-nowrap ${
                                 hasReport 
                                   ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
                                   : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                               }`}>
-                                {scoreText}
+                                <span className="hidden sm:inline">{hasReport ? 'Score: ' : ''}</span>{scoreText}
                               </span>
                               <span className="material-symbols-outlined text-on-surface-variant group-hover:text-white group-hover:translate-x-1 transition-all duration-300">
                                 chevron_right
@@ -936,7 +951,7 @@ export default function Dashboard() {
                           onClick={() => navigate(`/practice/feedback/${session.id}`)}
                           className="group flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-xl border border-white/5 bg-black/20 hover:bg-[#18181b]/60 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] hover:border-white/20 transition-all duration-300 ease-out cursor-pointer gap-4"
                         >
-                          <div className="flex items-start gap-4">
+                          <div className="flex items-start gap-4 min-w-0">
                             <div className={`w-12 h-12 rounded-lg flex items-center justify-center border shrink-0 ${
                               session.mode === 'jd' 
                                 ? 'bg-primary/10 text-primary border-primary/20' 
@@ -946,33 +961,33 @@ export default function Dashboard() {
                                 {session.mode === 'jd' ? 'dns' : 'groups'}
                               </span>
                             </div>
-                            <div className="space-y-1">
-                              <h3 className="font-body-md text-body-md font-bold text-white/90 group-hover:text-white transition-colors text-left">
+                            <div className="space-y-1 min-w-0">
+                              <h3 className="font-body-md text-body-md font-bold text-white/90 group-hover:text-white transition-colors text-left truncate">
                                 {session.mode === 'jd' ? `${session.title} at ${session.company}` : "Resume Cross-Examination"}
                               </h3>
                               <p className="font-label-sm text-label-sm text-on-surface-variant font-mono text-left flex items-center gap-1.5 flex-wrap">
-                                <span className="px-2 py-0.5 rounded bg-white/5 text-white/70 border border-white/5">{session.mode === 'jd' ? 'Job Focus' : 'Resume Focus'}</span>
+                                <span className="px-2 py-0.5 rounded bg-white/5 text-white/70 border border-white/5 shrink-0">{session.mode === 'jd' ? 'Job Focus' : 'Resume Focus'}</span>
                                 <span>•</span>
-                                <span>Limit: {session.durationMinutes} min</span>
+                                <span className="shrink-0">Limit: {session.durationMinutes} min</span>
                                 <span>•</span>
-                                <span>{dateText}</span>
+                                <span className="truncate">{dateText}</span>
                               </p>
                             </div>
                           </div>
                           
-                          <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-none border-white/5 pt-3 sm:pt-0">
-                            <div className="flex flex-col items-start sm:items-end gap-1">
+                          <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-none border-white/5 pt-3 sm:pt-0 shrink-0">
+                            <div className="flex flex-col items-start sm:items-end gap-1 shrink-0">
                               {hasReport ? (
                                 <>
-                                  <span className="font-label-sm text-label-sm px-2.5 py-1 bg-emerald-500/10 text-emerald-400 rounded-md font-mono font-bold border border-emerald-500/20">
-                                    Score: {session.report.score}/100
+                                  <span className="font-label-sm text-label-sm px-2.5 py-1 bg-emerald-500/10 text-emerald-400 rounded-md font-mono font-bold border border-emerald-500/20 shrink-0 whitespace-nowrap">
+                                    <span className="hidden sm:inline">Score: </span>{session.report.score}/100
                                   </span>
-                                  <span className="text-[10px] text-on-surface-variant font-mono">
+                                  <span className="text-[10px] text-on-surface-variant font-mono shrink-0 whitespace-nowrap">
                                     {session.report.wpm} WPM • {session.report.fillerWords} fillers
                                   </span>
                                 </>
                               ) : (
-                                <span className="font-label-sm text-label-sm px-2.5 py-1 bg-amber-500/10 text-amber-400 rounded-md font-mono font-bold border border-amber-500/20 animate-pulse">
+                                <span className="font-label-sm text-label-sm px-2.5 py-1 bg-amber-500/10 text-amber-400 rounded-md font-mono font-bold border border-amber-500/20 animate-pulse shrink-0 whitespace-nowrap">
                                   Generating Report...
                                 </span>
                               )}

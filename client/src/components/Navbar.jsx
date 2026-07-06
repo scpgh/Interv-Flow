@@ -251,9 +251,9 @@ export default function Navbar({ activeTab }) {
         {/* Hamburger Menu Toggle (Mobile only) */}
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="md:hidden flex items-center justify-center p-2 rounded-full hover:bg-white/5 border-none bg-transparent cursor-pointer text-white ml-1"
+          className="md:hidden flex items-center justify-center w-9 h-9 rounded-full border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all cursor-pointer text-primary ml-1 shrink-0 p-0"
         >
-          <span className="material-symbols-outlined text-[24px]">
+          <span className="material-symbols-outlined text-[20px] leading-none">
             {isMobileMenuOpen ? 'close' : 'menu'}
           </span>
         </button>
