@@ -8,17 +8,17 @@ import AudioWaveform from '../components/AudioWaveform';
 const formatVoiceName = (voice) => {
   if (!voice) return 'Default Voice';
   let rawName = voice.name || 'Web Voice';
-  
+
   // Strip Microsoft prefix and common extra qualifiers
   let cleanName = rawName.replace(/^Microsoft\s+/i, '');
   cleanName = cleanName.split('-')[0].trim();
   cleanName = cleanName.replace(/\s+online\s+\(natural\)/i, '');
   cleanName = cleanName.replace(/\s+online/i, '');
   cleanName = cleanName.replace(/\(natural\)/i, '');
-  
+
   // Clean up "Google US English" -> "Google US", etc.
   cleanName = cleanName.replace(/\s+us\s+english/i, ' US').replace(/\s+uk\s+english/i, ' UK').trim();
-  
+
   // Determine locale tag
   let loc = 'English';
   const langLower = (voice.lang || 'en-US').toLowerCase();
@@ -65,7 +65,7 @@ export default function PracticeSession() {
   const [speechWarning, setSpeechWarning] = useState('');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeModalMsg, setUpgradeModalMsg] = useState('');
-  
+
   // Custom Voice & Focus states
   const [voices, setVoices] = useState([]);
   const [selectedVoiceName, setSelectedVoiceName] = useState('');
@@ -167,7 +167,7 @@ export default function PracticeSession() {
         // Keep all high-quality online natural voices (e.g. Google or Edge Online Natural)
         const highQualityVoices = englishVoices.filter(v => {
           const nameLower = v.name.toLowerCase();
-          
+
           // Exclude known local robotic voices
           if (nameLower.includes('desktop') || nameLower.includes('david') || nameLower.includes('zira') || nameLower.includes('hazel')) {
             return false;
@@ -186,10 +186,10 @@ export default function PracticeSession() {
 
         if (finalVoices.length > 0) {
           const bestDefault = finalVoices.find(v => v.name.toLowerCase().includes('natural') && v.name.toLowerCase().includes('online')) ||
-                              finalVoices.find(v => v.name.toLowerCase().includes('natural')) ||
-                              finalVoices.find(v => v.name.toLowerCase().includes('google') && v.name.toLowerCase().includes('us')) ||
-                              finalVoices.find(v => v.name.toLowerCase().includes('google')) ||
-                              finalVoices[0];
+            finalVoices.find(v => v.name.toLowerCase().includes('natural')) ||
+            finalVoices.find(v => v.name.toLowerCase().includes('google') && v.name.toLowerCase().includes('us')) ||
+            finalVoices.find(v => v.name.toLowerCase().includes('google')) ||
+            finalVoices[0];
           setSelectedVoiceName(localStorage.getItem('selectedVoiceName') || bestDefault.name);
         }
       };
@@ -233,7 +233,7 @@ export default function PracticeSession() {
   // ── Start Interview Logic ──
   const handleStartInterview = async () => {
     setErrorMsg('');
-    
+
     if (mode === 'jd') {
       if (!jobTitle.trim()) {
         setErrorMsg('Please specify a Job Title for your custom session.');
@@ -311,7 +311,7 @@ export default function PracticeSession() {
 
       socket.onopen = () => {
         console.log("WebSocket client connection opened to server gateway");
-        
+
         // Send initial session setup parameters to server
         const setupPayload = {
           type: 'setup',
@@ -332,11 +332,11 @@ export default function PracticeSession() {
       socket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          
+
           if (data.type === 'session_created') {
             setSessionId(data.sessionId);
-          } 
-          
+          }
+
           else if (data.type === 'session_ready') {
             const fallback = !!data.isFallback;
             setIsFallbackMode(fallback);
@@ -344,7 +344,7 @@ export default function PracticeSession() {
             setTimeLeft(duration * 60);
             activeSessionRef.current = true;
             console.log(`Interview session initialized and active. Fallback Mode: ${fallback}`);
-          } 
+          }
 
           else if (data.type === 'interviewer_thinking') {
             setInterviewerState('thinking');
@@ -352,7 +352,7 @@ export default function PracticeSession() {
 
           else if (data.type === 'fallback_speech') {
             console.log("Received fallback interviewer speech text:", data.text);
-            
+
             // Sync local transcript with server-side transcript
             if (data.transcript) {
               setTranscript(data.transcript);
@@ -362,11 +362,11 @@ export default function PracticeSession() {
 
             speakFallbackText(data.text);
           }
-          
+
           else if (data.type === 'timer_expired') {
             handleCompleteSession();
-          } 
-          
+          }
+
           else if (data.type === 'error') {
             console.error("Received server error during interview session:", data.message);
             const isLimit = data.message.toLowerCase().includes("limit reached") || data.message.toLowerCase().includes("upgrade");
@@ -393,7 +393,7 @@ export default function PracticeSession() {
                   for (let i = 0; i < len; i++) {
                     bytes[i] = binaryString.charCodeAt(i);
                   }
-                  
+
                   // Push the array buffer into the speaker queue
                   audioQueueRef.current.push(bytes.buffer);
                   playSpeakerQueue();
@@ -413,11 +413,11 @@ export default function PracticeSession() {
                 if (part.text) {
                   setInterviewerState('listening');
                   updateTranscript('candidate', part.text);
-                  
+
                   // Increment words and check for filler words
                   const words = part.text.split(/\s+/).filter(Boolean);
                   userWordsCountRef.current += words.length;
-                  
+
                   // Scanner for filler words
                   const fillerMatches = part.text.toLowerCase().match(/\b(um|uh|like|you\s+know|so|actually)\b/g) || [];
                   setFillerCount(prev => prev + fillerMatches.length);
@@ -455,7 +455,7 @@ export default function PracticeSession() {
           if (ws.readyState === WebSocket.OPEN && activeSessionRef.current && !isMuted && !isPaused && interviewerState === 'listening') {
             const pcmBuffer = event.data.pcm;
             const base64Audio = arrayBufferToBase64(pcmBuffer);
-            
+
             const clientAudioPayload = {
               realtimeInput: {
                 mediaChunks: [
@@ -504,7 +504,7 @@ export default function PracticeSession() {
 
     isPlayingRef.current = true;
     const audioContext = audioContextRef.current;
-    
+
     // Get the next chunk from the queue
     const pcmData = audioQueueRef.current.shift();
     const floatData = pcmToFloat32(pcmData);
@@ -532,7 +532,7 @@ export default function PracticeSession() {
     setTranscript(prev => {
       const updated = [...prev];
       const len = updated.length;
-      
+
       // If the last message was from the same sender, append to it
       if (len > 0 && updated[len - 1].sender === sender) {
         updated[len - 1].text += ' ' + text;
@@ -636,7 +636,7 @@ export default function PracticeSession() {
           speechRecognitionRef.current.onend = null;
           speechRecognitionRef.current.onerror = null;
           speechRecognitionRef.current.abort();
-        } catch (e) {}
+        } catch (e) { }
         speechRecognitionRef.current = null;
       }
       return;
@@ -660,7 +660,7 @@ export default function PracticeSession() {
     let sessionFinalTranscript = '';
 
     console.log(`Starting Speech Recognition. Base words: ${baseWords}, Base fillers: ${baseFillers}, Accumulated Turn Text: "${currentTurnTextAccumulated.current}"`);
-    
+
     const recognition = new SpeechRecognitionClass();
     speechRecognitionRef.current = recognition;
     recognition.continuous = true;
@@ -751,10 +751,10 @@ export default function PracticeSession() {
         lastError = event.error;
         return;
       }
-      
+
       console.error("Speech recognition error event:", event.error);
       lastError = event.error;
-      
+
       if (event.error === 'not-allowed') {
         setSpeechWarning("Microphone access blocked for Speech Recognition. Enabling local recording backup below.");
         setUseManualRecorder(true);
@@ -834,7 +834,7 @@ export default function PracticeSession() {
               try {
                 lastError = null;
                 recognition.start();
-              } catch (err) {}
+              } catch (err) { }
             }
           }, 500);
           return;
@@ -867,7 +867,7 @@ export default function PracticeSession() {
         recognition.onend = null;
         recognition.onerror = null;
         recognition.abort();
-      } catch (e) {}
+      } catch (e) { }
     };
   }, [step, isPaused, isMuted, interviewerState, isFallbackMode, isInputFocused, useManualRecorder]);
 
@@ -875,7 +875,7 @@ export default function PracticeSession() {
   const startAudioRecording = () => {
     if (!microphoneStreamRef.current) return;
     audioChunksRef.current = [];
-    
+
     // Choose appropriate mime type supported by the browser
     let mimeType = 'audio/webm';
     if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
@@ -1074,13 +1074,13 @@ export default function PracticeSession() {
         speechRecognitionRef.current.onend = null;
         speechRecognitionRef.current.onerror = null;
         speechRecognitionRef.current.stop();
-      } catch (e) {}
+      } catch (e) { }
     }
     if (recognitionTimeoutRef.current) {
       clearTimeout(recognitionTimeoutRef.current);
     }
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      try { mediaRecorderRef.current.stop(); } catch (e) {}
+      try { mediaRecorderRef.current.stop(); } catch (e) { }
     }
 
     // 1. Stop all microphone stream tracks
@@ -1090,7 +1090,7 @@ export default function PracticeSession() {
 
     // 2. Shut down Web Audio pipeline
     if (sourceNodeRef.current) {
-      try { sourceNodeRef.current.stop(); } catch (e) {}
+      try { sourceNodeRef.current.stop(); } catch (e) { }
     }
     if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
       try {
@@ -1108,7 +1108,7 @@ export default function PracticeSession() {
       try {
         socketRef.current.onclose = null; // Prevent recursive trigger
         socketRef.current.close();
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Redirect to the feedback panel with sessionId
@@ -1156,7 +1156,7 @@ export default function PracticeSession() {
       } catch (e) {
         console.error("Failed to send end_session packet:", e);
       }
-      
+
       // Fallback timer: wait max 1.5 seconds for confirmation, then force redirect
       const fallbackTimer = setTimeout(() => {
         console.log("Fallback force redirect triggered (handshake timed out)");
@@ -1174,7 +1174,7 @@ export default function PracticeSession() {
             triggerRedirect();
             return;
           }
-        } catch (e) {}
+        } catch (e) { }
         if (originalOnMessage) originalOnMessage(event);
       };
 
@@ -1225,7 +1225,7 @@ export default function PracticeSession() {
 
       {/* Main Container */}
       <div className="flex-grow flex items-center justify-center p-margin-mobile md:p-margin-desktop relative z-10 my-4">
-        
+
         {/* STEP 1: CONFIGURATION SETUPS */}
         {step === 'setup' && (
           <div className="glass-card w-full max-w-2xl rounded-2xl p-8 md:p-10 flex flex-col gap-6 bg-[#18181b]/35 border border-white/10 shadow-2xl relative">
@@ -1250,13 +1250,13 @@ export default function PracticeSession() {
             <div className="space-y-6">
               {/* Select Focus Mode */}
               <div className="flex bg-[#131315]/80 p-1 rounded-full border border-white/5 relative z-10 w-fit mx-auto">
-                <button 
+                <button
                   onClick={() => setMode('jd')}
                   className={`px-6 py-2.5 rounded-full font-label-md text-xs font-bold transition-all duration-200 cursor-pointer ${mode === 'jd' ? 'bg-[#1E1B4B] text-[#818CF8] shadow-[0_0_15px_rgba(129,140,248,0.25)] border border-[#818cf8]/20' : 'text-on-surface-variant hover:text-white border border-transparent'}`}
                 >
                   💼 Job Description (JD) Mode
                 </button>
-                <button 
+                <button
                   onClick={() => setMode('resume')}
                   className={`px-6 py-2.5 rounded-full font-label-md text-xs font-bold transition-all duration-200 cursor-pointer ${mode === 'resume' ? 'bg-[#1E1B4B] text-[#818CF8] shadow-[0_0_15px_rgba(129,140,248,0.25)] border border-[#818cf8]/20' : 'text-on-surface-variant hover:text-white border border-transparent'}`}
                 >
@@ -1269,8 +1269,8 @@ export default function PracticeSession() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-1.5">
                     <label className="font-label-md text-label-md text-on-surface-variant block">Job Title</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       className="w-full bg-black/20 border border-outline-variant rounded-lg px-4 py-3 text-xs text-white focus:outline-none focus:border-primary"
                       value={jobTitle}
                       onChange={(e) => setJobTitle(e.target.value)}
@@ -1279,8 +1279,8 @@ export default function PracticeSession() {
                   </div>
                   <div className="space-y-1.5">
                     <label className="font-label-md text-label-md text-on-surface-variant block">Target Company</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       className="w-full bg-black/20 border border-outline-variant rounded-lg px-4 py-3 text-xs text-white focus:outline-none focus:border-primary"
                       value={company}
                       onChange={(e) => setCompany(e.target.value)}
@@ -1289,7 +1289,7 @@ export default function PracticeSession() {
                   </div>
                   <div className="space-y-1.5 md:col-span-2">
                     <label className="font-label-md text-label-md text-on-surface-variant block">Paste Job Description details</label>
-                    <textarea 
+                    <textarea
                       className="w-full h-32 bg-black/20 border border-outline-variant rounded-lg p-4 text-xs text-white focus:outline-none focus:border-primary resize-none"
                       value={jdText}
                       onChange={(e) => setJdText(e.target.value)}
@@ -1311,10 +1311,10 @@ export default function PracticeSession() {
                       We will pull the text contents of your last uploaded resume. The AI interviewer will perform a deep behavioral and architectural audit of the stack, projects, and scopes in your document.
                     </p>
                   </div>
-                  
+
                   <div className="space-y-1.5">
                     <label className="font-label-md text-label-md text-on-surface-variant block">Review / Edit Resume Transcript</label>
-                    <textarea 
+                    <textarea
                       className="w-full h-36 bg-black/20 border border-outline-variant rounded-lg p-4 text-xs text-white focus:outline-none focus:border-primary resize-none font-mono"
                       value={resumeText}
                       onChange={(e) => setResumeText(e.target.value)}
@@ -1328,7 +1328,7 @@ export default function PracticeSession() {
               <div className="space-y-2 text-left border-t border-white/5 pt-4">
                 <label className="font-label-md text-label-md text-on-surface-variant block">🎙️ Select AI Interviewer Voice (Fallback Assistant)</label>
                 <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-                  <select 
+                  <select
                     className="flex-grow bg-black/20 border border-outline-variant rounded-lg px-4 py-3 text-xs text-white focus:outline-none focus:border-primary cursor-pointer w-full"
                     value={selectedVoiceName}
                     onChange={(e) => {
@@ -1346,27 +1346,27 @@ export default function PracticeSession() {
                       ))
                     )}
                   </select>
-                  
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!window.speechSynthesis) return;
-                        window.speechSynthesis.cancel();
-                        const utterance = new SpeechSynthesisUtterance("Hi there! I am your AI interviewer. How does my voice sound to you?");
-                        const voice = voices.find(v => v.name === selectedVoiceName);
-                        if (voice) {
-                          utterance.voice = voice;
-                          utterance.rate = voice.localService ? 0.90 : 0.95;
-                        } else {
-                          utterance.rate = 0.90;
-                        }
-                        window.speechSynthesis.speak(utterance);
-                      }}
-                      className="inline-flex items-center justify-center gap-1 px-4 py-3 rounded-lg text-xs font-bold text-[#818CF8] bg-[#1E1B4B]/50 hover:bg-[#1E1B4B] border border-[#818CF8]/30 transition-all cursor-pointer shrink-0 w-full sm:w-auto"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">play_arrow</span>
-                      Preview
-                    </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!window.speechSynthesis) return;
+                      window.speechSynthesis.cancel();
+                      const utterance = new SpeechSynthesisUtterance("Hi there! I am your AI interviewer. How does my voice sound to you?");
+                      const voice = voices.find(v => v.name === selectedVoiceName);
+                      if (voice) {
+                        utterance.voice = voice;
+                        utterance.rate = voice.localService ? 0.90 : 0.95;
+                      } else {
+                        utterance.rate = 0.90;
+                      }
+                      window.speechSynthesis.speak(utterance);
+                    }}
+                    className="inline-flex items-center justify-center gap-1 px-4 py-3 rounded-lg text-xs font-bold text-[#818CF8] bg-[#1E1B4B]/50 hover:bg-[#1E1B4B] border border-[#818CF8]/30 transition-all cursor-pointer shrink-0 w-full sm:w-auto"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">play_arrow</span>
+                    Preview
+                  </button>
                 </div>
               </div>
 
@@ -1376,7 +1376,7 @@ export default function PracticeSession() {
                   <span className="material-symbols-outlined text-primary text-xl">timer</span>
                   <div className="space-y-0.5">
                     <label className="text-[10px] text-on-surface-variant block uppercase tracking-wider font-mono">Session Limit</label>
-                    <select 
+                    <select
                       className="bg-transparent border-none text-xs text-white focus:outline-none font-bold cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                       value={duration}
                       onChange={(e) => setDuration(Number(e.target.value))}
@@ -1396,7 +1396,7 @@ export default function PracticeSession() {
                   </div>
                 </div>
 
-                <button 
+                <button
                   onClick={handleStartInterview}
                   className="w-full sm:w-auto btn-primary px-8 py-4 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 border-none cursor-pointer"
                 >
@@ -1424,10 +1424,10 @@ export default function PracticeSession() {
         {/* STEP 3: ACTIVE MOCK INTERVIEW CONSOLE */}
         {step === 'active' && (
           <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-3 gap-6 relative items-stretch">
-            
+
             {/* Visual Control and Waves Left Area */}
             <div className="lg:col-span-2 flex flex-col gap-6">
-              
+
               {/* Voice Interactive Console HUD */}
               <div className="glass-card rounded-2xl p-6 flex flex-col justify-between gap-6 bg-[#18181b]/40 border border-white/10 flex-grow">
                 <div className="flex justify-between items-center border-b border-white/5 pb-4">
@@ -1450,7 +1450,7 @@ export default function PracticeSession() {
                       </p>
                     </div>
                   </div>
-                  
+
                   {/* Timer Display */}
                   <div className="flex items-center gap-1.5 px-3 py-1 bg-white/5 rounded-lg border border-white/10 font-mono text-xs font-bold text-white">
                     <span className="material-symbols-outlined text-sm">schedule</span>
@@ -1460,21 +1460,18 @@ export default function PracticeSession() {
 
                 {/* Pulsating AI Avatar Core Visualizer */}
                 <div className="flex flex-col items-center justify-center py-6 gap-6 flex-grow">
-                  <div className={`w-28 h-28 rounded-full flex items-center justify-center border transition-all duration-300 relative ${
-                    interviewerState === 'speaking' 
-                      ? 'bg-rose-500/10 border-rose-500/40 shadow-[0_0_40px_rgba(244,63,94,0.2)] scale-105' 
-                      : interviewerState === 'thinking' 
-                      ? 'bg-amber-500/10 border-amber-500/40 shadow-[0_0_30px_rgba(245,158,11,0.2)] animate-pulse'
-                      : 'bg-primary/10 border-primary/40 shadow-[0_0_30px_rgba(37,99,235,0.2)]'
-                  }`}>
-                    {/* Pulsing ring */}
-                    <div className={`absolute inset-0 rounded-full border animate-[ping_2s_infinite] opacity-30 ${
-                      interviewerState === 'speaking' ? 'border-rose-500' : 'border-primary'
-                    }`}></div>
-                    
-                    <span className={`material-symbols-outlined text-5xl ${
-                      interviewerState === 'speaking' ? 'text-rose-400' : interviewerState === 'thinking' ? 'text-amber-400' : 'text-primary'
+                  <div className={`w-28 h-28 rounded-full flex items-center justify-center border transition-all duration-300 relative ${interviewerState === 'speaking'
+                      ? 'bg-rose-500/10 border-rose-500/40 shadow-[0_0_40px_rgba(244,63,94,0.2)] scale-105'
+                      : interviewerState === 'thinking'
+                        ? 'bg-amber-500/10 border-amber-500/40 shadow-[0_0_30px_rgba(245,158,11,0.2)] animate-pulse'
+                        : 'bg-primary/10 border-primary/40 shadow-[0_0_30px_rgba(37,99,235,0.2)]'
                     }`}>
+                    {/* Pulsing ring */}
+                    <div className={`absolute inset-0 rounded-full border animate-[ping_2s_infinite] opacity-30 ${interviewerState === 'speaking' ? 'border-rose-500' : 'border-primary'
+                      }`}></div>
+
+                    <span className={`material-symbols-outlined text-5xl ${interviewerState === 'speaking' ? 'text-rose-400' : interviewerState === 'thinking' ? 'text-amber-400' : 'text-primary'
+                      }`}>
                       {interviewerState === 'speaking' ? 'record_voice_over' : interviewerState === 'thinking' ? 'hourglass_empty' : 'graphic_eq'}
                     </span>
                   </div>
@@ -1484,15 +1481,15 @@ export default function PracticeSession() {
                       Interviewer Status: {interviewerState}
                     </h4>
                     <p className="text-[10px] text-on-surface-variant">
-                      {isFallbackMode 
-                        ? (interviewerState === 'speaking' 
-                            ? "Interviewer is speaking..." 
-                            : interviewerState === 'thinking' 
-                            ? "AI is formulating the next question..." 
+                      {isFallbackMode
+                        ? (interviewerState === 'speaking'
+                          ? "Interviewer is speaking..."
+                          : interviewerState === 'thinking'
+                            ? "AI is formulating the next question..."
                             : "Listening... Speak clearly. Tap 'Finish Answer' when done.")
-                        : (interviewerState === 'speaking' 
-                            ? "Gemini is replying... (Speak anytime to interrupt)"
-                            : interviewerState === 'thinking'
+                        : (interviewerState === 'speaking'
+                          ? "Gemini is replying... (Speak anytime to interrupt)"
+                          : interviewerState === 'thinking'
                             ? "Calibrating answer models..."
                             : "Listening... Speak clearly into your microphone.")}
                     </p>
@@ -1500,7 +1497,7 @@ export default function PracticeSession() {
                 </div>
 
                 {/* Overlapping Waves Canvas visualizer */}
-                <AudioWaveform 
+                <AudioWaveform
                   analyser={interviewerState === 'speaking' ? speakerAnalyserRef.current : micAnalyserRef.current}
                   isActive={step === 'active' && !isPaused}
                   mode={interviewerState === 'speaking' ? 'speaking' : 'listening'}
@@ -1516,7 +1513,7 @@ export default function PracticeSession() {
 
                 {/* Typed Answer Input Box */}
                 <div className="flex gap-3 w-full mt-4 items-center flex-wrap sm:flex-nowrap">
-                  <input 
+                  <input
                     type="text"
                     placeholder={interviewerState === 'listening' ? "Review transcribed answer or type here..." : "Wait for the interviewer to finish..."}
                     disabled={interviewerState !== 'listening'}
@@ -1534,14 +1531,13 @@ export default function PracticeSession() {
                     className="flex-grow bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-primary disabled:opacity-40"
                   />
 
-                  {useManualRecorder && interviewerState === 'listening' && (
+                  {isFallbackMode && interviewerState === 'listening' && (
                     <button
                       onClick={isRecordingAudio ? stopAudioRecording : startAudioRecording}
-                      className={`px-5 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border ${
-                        isRecordingAudio 
-                          ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 animate-pulse' 
+                      className={`px-5 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border ${isRecordingAudio
+                          ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 animate-pulse'
                           : 'bg-[#1E1B4B]/60 text-[#818CF8] border-[#818CF8]/30 hover:bg-[#1E1B4B]'
-                      }`}
+                        }`}
                       title={isRecordingAudio ? "Stop recording & submit" : "Record audio response"}
                     >
                       <span className="material-symbols-outlined text-[16px]">
@@ -1564,13 +1560,12 @@ export default function PracticeSession() {
                 {/* Console Control Buttons */}
                 <div className="flex justify-center items-center gap-4 border-t border-white/5 pt-4 flex-wrap">
                   {/* Mute Button */}
-                  <button 
+                  <button
                     onClick={handleToggleMute}
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center border transition-all cursor-pointer ${
-                      isMuted 
-                        ? 'bg-red-500/15 border-red-500/40 text-red-400' 
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center border transition-all cursor-pointer ${isMuted
+                        ? 'bg-red-500/15 border-red-500/40 text-red-400'
                         : 'bg-white/5 border-white/10 text-on-surface-variant hover:text-white'
-                    }`}
+                      }`}
                     title={isMuted ? "Unmute Mic" : "Mute Mic"}
                   >
                     <span className="material-symbols-outlined text-xl">
@@ -1579,13 +1574,12 @@ export default function PracticeSession() {
                   </button>
 
                   {/* Pause Button */}
-                  <button 
+                  <button
                     onClick={handleTogglePause}
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center border transition-all cursor-pointer ${
-                      isPaused 
-                        ? 'bg-amber-500/15 border-amber-500/40 text-amber-400' 
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center border transition-all cursor-pointer ${isPaused
+                        ? 'bg-amber-500/15 border-amber-500/40 text-amber-400'
                         : 'bg-white/5 border-white/10 text-on-surface-variant hover:text-white'
-                    }`}
+                      }`}
                     title={isPaused ? "Resume Session" : "Pause Session"}
                   >
                     <span className="material-symbols-outlined text-xl">
@@ -1595,10 +1589,10 @@ export default function PracticeSession() {
 
                   {/* Manual Finish Answer Button in Fallback Mode */}
                   {isFallbackMode && interviewerState === 'listening' && (
-                    <button 
+                    <button
                       onClick={() => {
-                        const currentSpokenText = transcript.length > 0 && transcript[transcript.length - 1].sender === 'candidate' 
-                          ? transcript[transcript.length - 1].text 
+                        const currentSpokenText = transcript.length > 0 && transcript[transcript.length - 1].sender === 'candidate'
+                          ? transcript[transcript.length - 1].text
                           : '';
                         if (currentSpokenText && currentSpokenText.trim().length > 0) {
                           sendUserResponse(currentSpokenText);
@@ -1613,7 +1607,7 @@ export default function PracticeSession() {
                   )}
 
                   {/* Complete Session Button */}
-                  <button 
+                  <button
                     onClick={handleCompleteSession}
                     className="btn-primary px-8 py-3 rounded-xl text-xs font-bold text-white flex items-center gap-2 border-none cursor-pointer"
                   >
@@ -1626,11 +1620,11 @@ export default function PracticeSession() {
 
             {/* Sidebar Metrics and Realtime Transcript Panel */}
             <div className="lg:col-span-1 flex flex-col gap-6">
-              
+
               {/* Telemetry Dashboard Stats */}
               <div className="glass-card rounded-2xl p-5 flex flex-col gap-4 bg-[#18181b]/35 border border-white/10">
                 <h4 className="text-xs font-bold text-on-surface uppercase tracking-wider font-mono">Live Speech Telemetry</h4>
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-4">
                   {/* WPM */}
                   <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-center gap-3">
@@ -1664,7 +1658,7 @@ export default function PracticeSession() {
               {/* Running Transcript Logger Box */}
               <div className="glass-card rounded-2xl p-5 flex flex-col bg-[#18181b]/35 border border-white/10 flex-grow h-[260px] lg:h-[350px]">
                 <h4 className="text-xs font-bold text-on-surface uppercase tracking-wider font-mono mb-3">Live Transcript</h4>
-                
+
                 <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar text-xs">
                   {transcript.length === 0 ? (
                     <div className="h-full flex items-center justify-center text-center text-[10px] text-slate-500 dark:text-on-surface-variant p-4">
@@ -1672,17 +1666,15 @@ export default function PracticeSession() {
                     </div>
                   ) : (
                     transcript.map((item, idx) => (
-                      <div 
-                        key={idx} 
-                        className={`p-3 rounded-xl leading-relaxed text-left border ${
-                          item.sender === 'candidate' 
-                            ? 'bg-[#1E1B4B]/30 border-[#818CF8]/25 ml-4' 
+                      <div
+                        key={idx}
+                        className={`p-3 rounded-xl leading-relaxed text-left border ${item.sender === 'candidate'
+                            ? 'bg-[#1E1B4B]/30 border-[#818CF8]/25 ml-4'
                             : 'bg-white/[0.02] border-white/5 mr-4'
-                        }`}
+                          }`}
                       >
-                        <span className={`block text-[9px] font-mono font-bold uppercase mb-1 ${
-                          item.sender === 'candidate' ? 'text-indigo-600 dark:text-[#818CF8]' : 'text-indigo-900 dark:text-primary'
-                        }`}>
+                        <span className={`block text-[9px] font-mono font-bold uppercase mb-1 ${item.sender === 'candidate' ? 'text-indigo-600 dark:text-[#818CF8]' : 'text-indigo-900 dark:text-primary'
+                          }`}>
                           {item.sender === 'candidate' ? 'You (Candidate)' : 'Interviewer (Gemini)'}
                         </span>
                         <p className="text-on-surface">{item.text}</p>
@@ -1721,13 +1713,13 @@ export default function PracticeSession() {
               {upgradeModalMsg}
             </p>
             <div className="flex gap-3 w-full">
-              <button 
+              <button
                 onClick={() => setShowUpgradeModal(false)}
                 className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-xs cursor-pointer transition-all"
               >
                 Close
               </button>
-              <button 
+              <button
                 onClick={() => window.location.href = '/billing'}
                 className="flex-1 py-2.5 rounded-xl bg-[#818cf8] hover:bg-[#707be4] text-[#09090b] font-bold text-xs cursor-pointer border-none transition-colors"
               >

@@ -209,14 +209,15 @@ Do not provide feedback or score them during the interview itself. Wrap up clean
           // Initialize Google Gemini WebSocket connection
           const geminiUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${process.env.GEMINI_API_KEY}`;
           
-          let useFallback = false;
-          let setupCompleted = false;
           let connectionTimeout = setTimeout(() => {
             if (!setupCompleted) {
               console.log(`[TIMEOUT] Gemini Live connection timed out for session ${sessionId}. Activating fallback.`);
               activateFallback();
             }
-          }, 3500);
+          }, 8000); // 8 seconds timeout to prevent premature fallback on slower mobile networks
+
+          let useFallback = false;
+          let setupCompleted = false;
 
           function activateFallback() {
             if (useFallback) return;
@@ -327,7 +328,7 @@ Do not provide feedback or score them during the interview itself. Wrap up clean
                 clearTimeout(connectionTimeout);
                 ws.send(JSON.stringify({ type: 'session_ready', isFallback: false }));
               }
-            }, 1000);
+            }, 50); // Reduced delay to 50ms to declare direct session ready instantly
           });
 
           geminiWs.on('message', (geminiMsg) => {
