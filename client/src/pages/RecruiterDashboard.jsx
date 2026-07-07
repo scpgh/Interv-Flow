@@ -393,7 +393,7 @@ export default function RecruiterDashboard() {
                       <p className="text-xs text-on-surface-variant font-mono">Syncing applicant scores...</p>
                     </div>
                   ) : applicants.length > 0 ? (
-                    <table className="w-full text-left text-xs border-collapse">
+                    <table className="w-full min-w-[700px] text-left text-xs border-collapse">
                       <thead>
                         <tr className="bg-white/5 border-b border-white/10 font-bold text-white">
                           <th className="py-3 px-4">Applicant</th>

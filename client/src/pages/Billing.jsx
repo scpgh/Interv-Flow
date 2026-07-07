@@ -489,7 +489,7 @@ export default function Billing() {
       {/* Nav */}
       <DashboardNavbar activeTab="booking" />
 
-      <div className="flex flex-1 w-full max-w-full md:max-w-[1400px] mx-auto px-margin-mobile md:px-margin-desktop py-10 z-10 gap-8">
+      <div className="flex flex-col md:flex-row flex-1 w-full max-w-full md:max-w-[1400px] mx-auto px-margin-mobile md:px-margin-desktop py-10 z-10 gap-8">
         
         {/* Sidebar settings tab */}
         <aside className="w-64 hidden md:flex flex-col py-6 border-r border-white/5 pr-4 select-none shrink-0 text-left">
@@ -564,7 +564,7 @@ export default function Billing() {
             <div className="space-y-10 animate-fade-in">
               {/* Hero header */}
               <section>
-                <div className="glass-card p-8 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-6 border border-white/8">
+                <div className="glass-card p-6 md:p-8 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-6 border border-white/8">
                   <div className="flex items-center gap-6 text-left">
                     <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
                       <span className="material-symbols-outlined text-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
@@ -792,7 +792,7 @@ export default function Billing() {
                 <h2 className="text-lg font-bold mb-4 text-on-surface">Billing History</h2>
                 <div className="glass-card rounded-xl overflow-hidden border border-white/5">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-xs">
+                    <table className="w-full min-w-[700px] text-left border-collapse text-xs">
                       <thead>
                         <tr className="border-b border-white/5 font-mono uppercase text-[10px] text-slate-600 dark:text-white bg-slate-100 dark:bg-white/5">
                           <th className="px-6 py-4">DATE</th>

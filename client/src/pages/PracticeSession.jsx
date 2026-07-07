@@ -874,6 +874,8 @@ export default function PracticeSession() {
     let mimeType = 'audio/webm';
     if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
       mimeType = 'audio/webm;codecs=opus';
+    } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+      mimeType = 'audio/mp4';
     } else if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) {
       mimeType = 'audio/ogg;codecs=opus';
     } else if (MediaRecorder.isTypeSupported('audio/wav')) {
@@ -1319,9 +1321,9 @@ export default function PracticeSession() {
               {/* Select Interviewer Voice */}
               <div className="space-y-2 text-left border-t border-white/5 pt-4">
                 <label className="font-label-md text-label-md text-on-surface-variant block">🎙️ Select AI Interviewer Voice (Fallback Assistant)</label>
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
                   <select 
-                    className="flex-grow bg-black/20 border border-outline-variant rounded-lg px-4 py-3 text-xs text-white focus:outline-none focus:border-primary cursor-pointer"
+                    className="flex-grow bg-black/20 border border-outline-variant rounded-lg px-4 py-3 text-xs text-white focus:outline-none focus:border-primary cursor-pointer w-full"
                     value={selectedVoiceName}
                     onChange={(e) => {
                       setSelectedVoiceName(e.target.value);
@@ -1354,7 +1356,7 @@ export default function PracticeSession() {
                         }
                         window.speechSynthesis.speak(utterance);
                       }}
-                      className="inline-flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-bold text-[#818CF8] bg-[#1E1B4B]/50 hover:bg-[#1E1B4B] border border-[#818CF8]/30 transition-all cursor-pointer"
+                      className="inline-flex items-center justify-center gap-1 px-4 py-3 rounded-lg text-xs font-bold text-[#818CF8] bg-[#1E1B4B]/50 hover:bg-[#1E1B4B] border border-[#818CF8]/30 transition-all cursor-pointer shrink-0 w-full sm:w-auto"
                     >
                       <span className="material-symbols-outlined text-[16px]">play_arrow</span>
                       Preview

@@ -749,7 +749,7 @@ export default function AdminDashboard() {
 
                 {/* Users Table */}
                 <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.01]">
-                  <table className="w-full text-left text-xs border-collapse">
+                  <table className="w-full min-w-[850px] text-left text-xs border-collapse">
                     <thead>
                       <tr className="border-b border-white/5 font-mono uppercase text-[10px] text-slate-600 dark:text-white bg-slate-100 dark:bg-white/5">
                         <th className="py-3 px-4">Candidate</th>
@@ -913,7 +913,7 @@ export default function AdminDashboard() {
 
                 {/* Sessions Table */}
                 <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.01]">
-                  <table className="w-full text-left text-xs border-collapse">
+                  <table className="w-full min-w-[750px] text-left text-xs border-collapse">
                     <thead>
                       <tr className="border-b border-white/5 font-mono uppercase text-[10px] text-slate-600 dark:text-white bg-slate-100 dark:bg-white/5">
                         <th className="py-3 px-4">Candidate Email</th>
@@ -1031,7 +1031,7 @@ export default function AdminDashboard() {
 
                 {/* Posts Table */}
                 <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.01]">
-                  <table className="w-full text-left text-xs border-collapse">
+                  <table className="w-full min-w-[800px] text-left text-xs border-collapse">
                     <thead>
                       <tr className="border-b border-white/5 font-mono uppercase text-[10px] text-slate-600 dark:text-white bg-slate-100 dark:bg-white/5">
                         <th className="py-3 px-4">Author</th>
@@ -1310,7 +1310,7 @@ export default function AdminDashboard() {
 
                 {/* Audit Logs Table */}
                 <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.01]">
-                  <table className="w-full text-left text-xs border-collapse">
+                  <table className="w-full min-w-[900px] text-left text-xs border-collapse">
                     <thead>
                       <tr className="border-b border-white/5 font-mono uppercase text-[10px] text-slate-600 dark:text-white bg-slate-100 dark:bg-white/5">
                         <th className="py-3 px-4">Admin Email</th>
@@ -1388,7 +1388,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.01]">
-                  <table className="w-full text-left text-xs border-collapse">
+                  <table className="w-full min-w-[650px] text-left text-xs border-collapse">
                     <thead>
                       <tr className="bg-white/5 border-b border-white/10 font-bold text-white">
                         <th className="py-3 px-4">Name</th>

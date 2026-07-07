@@ -1150,7 +1150,7 @@ export default function Dashboard() {
                 </h3>
                 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-xs text-left text-on-surface-variant border-collapse">
+                  <table className="w-full min-w-[700px] text-xs text-left text-on-surface-variant border-collapse">
                     <thead>
                       <tr className="border-b border-white/5 font-mono uppercase text-[10px] text-white">
                         <th className="py-3 px-4">Role Title</th>

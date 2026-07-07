@@ -627,7 +627,7 @@ export default function Analytics() {
           <div className="glass-card rounded-xl border border-white/5 bg-[#18181b]/35 overflow-hidden">
             {/* Sticky header wrapper */}
             <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left text-on-surface-variant border-collapse">
+              <table className="w-full min-w-[700px] text-xs text-left text-on-surface-variant border-collapse">
                 <thead>
                   <tr className="border-b border-white/5 font-mono uppercase text-[10px] text-slate-600 dark:text-white bg-slate-100 dark:bg-[#18181b]/60">
                     <th className="py-3 px-4">Role Title</th>
@@ -642,7 +642,7 @@ export default function Analytics() {
             </div>
             {/* Scrollable body — shows 7 rows at a time (~44px per row) */}
             <div className="overflow-x-auto overflow-y-auto custom-scrollbar" style={{ maxHeight: '308px' }}>
-              <table className="w-full text-xs text-left text-on-surface-variant border-collapse">
+              <table className="w-full min-w-[700px] text-xs text-left text-on-surface-variant border-collapse">
                 <tbody>
                   {sessions.filter(s => s.report).length === 0 ? (
                     <tr>
