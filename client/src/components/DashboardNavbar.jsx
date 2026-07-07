@@ -258,6 +258,8 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
       } catch (err) {
         console.error("Failed to fetch streak:", err);
       }
+    };
+
     const fetchUserXp = async () => {
       const email = sessionStorage.getItem('userEmail');
       if (!email) return;
