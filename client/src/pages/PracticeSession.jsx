@@ -629,8 +629,8 @@ export default function PracticeSession() {
 
   // ── Declarative Speech Recognition Controller ──
   useEffect(() => {
-    // If using manual recording fallback (e.g. Brave) or permanent fail, do not launch browser STT
-    if (step !== 'active' || isPaused || isMuted || interviewerState !== 'listening' || isInputFocused || speechRecognitionFailedRef.current || useManualRecorder) {
+    // If using manual recording fallback (e.g. Brave) or permanent fail, do not launch browser STT. Also skip if not in fallback mode since live mode handles speech in the WebSocket context.
+    if (step !== 'active' || isPaused || isMuted || interviewerState !== 'listening' || isInputFocused || speechRecognitionFailedRef.current || useManualRecorder || !isFallbackMode) {
       if (speechRecognitionRef.current) {
         try {
           speechRecognitionRef.current.onend = null;
@@ -756,9 +756,13 @@ export default function PracticeSession() {
       lastError = event.error;
       
       if (event.error === 'not-allowed') {
-        setSpeechWarning("Microphone access blocked for Speech Recognition. Check site settings.");
+        setSpeechWarning("Microphone access blocked for Speech Recognition. Enabling local recording backup below.");
+        setUseManualRecorder(true);
+        speechRecognitionFailedRef.current = true;
       } else if (event.error === 'audio-capture') {
-        setSpeechWarning("Microphone is busy or not found.");
+        setSpeechWarning("Microphone is busy or not found. Enabling local recording backup below.");
+        setUseManualRecorder(true);
+        speechRecognitionFailedRef.current = true;
       } else if (event.error === 'aborted') {
         setSpeechWarning("Speech recognition was aborted by the browser. Enabling local recording backup below.");
         setUseManualRecorder(true);
@@ -786,6 +790,8 @@ export default function PracticeSession() {
       if (activeSessionRef.current && interviewerState === 'listening' && !isMuted && !isPaused && !isInputFocused) {
         if (lastError === 'not-allowed' || lastError === 'audio-capture' || lastError === 'service-not-allowed') {
           console.log("Stopping speech recognition auto-restart due to fatal error:", lastError);
+          speechRecognitionFailedRef.current = true;
+          setUseManualRecorder(true);
           return;
         }
 
