@@ -1,6 +1,6 @@
 import express from 'express';
 import fs from 'fs';
-import { db } from '../config/db.js';
+import { db, admin } from '../config/db.js';
 import { findUserByEmail, saveUser, saveUpgradeRequest } from '../helpers/dbHelpers.js';
 
 const router = express.Router();
@@ -126,6 +126,46 @@ router.post('/profile/update', async (req, res) => {
   } catch (err) {
     console.error("Profile update error:", err);
     res.status(500).json({ error: "Server error during profile update." });
+  }
+});
+
+// POST: Candidate changes password
+router.post('/profile/change-password', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and new password are required." });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters." });
+    }
+
+    const sanitizedEmail = email.toLowerCase().trim();
+    const user = await findUserByEmail(sanitizedEmail);
+    if (!user) {
+      return res.status(404).json({ error: "User account not found." });
+    }
+
+    // Update Firebase Auth password if active
+    if (admin.apps.length > 0) {
+      try {
+        const firebaseUser = await admin.auth().getUserByEmail(sanitizedEmail);
+        await admin.auth().updateUser(firebaseUser.uid, { password });
+      } catch (fbErr) {
+        console.error("Firebase update user password failed:", fbErr.message);
+        return res.status(500).json({ error: `Failed to update Firebase account: ${fbErr.message}` });
+      }
+    }
+
+    // Save password in database (helpful for mock/fallback flow)
+    user.password = password;
+    user.updatedAt = new Date().toISOString();
+    await saveUser(user);
+
+    res.json({ success: true, message: "Password updated successfully." });
+  } catch (err) {
+    console.error("Change password route error:", err);
+    res.status(500).json({ error: "Server error updating password." });
   }
 });
 

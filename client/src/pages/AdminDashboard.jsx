@@ -1697,6 +1697,42 @@ export default function AdminDashboard() {
                 />
               </div>
 
+              {/* Billing Plan & Password Reset */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Billing Plan Select Option */}
+                <div className="flex flex-col gap-1.5 text-left">
+                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Billing Subscription Plan</label>
+                  <div className="relative flex items-center">
+                    <select
+                      value={(editingUser.subscription && editingUser.subscription.plan) || 'Basic'}
+                      onChange={(e) => setEditingUser(prev => ({ 
+                        ...prev, 
+                        plan: e.target.value,
+                        subscription: { ...(prev.subscription || { status: 'active' }), plan: e.target.value } 
+                      }))}
+                      className="w-full bg-[#131315]/80 border border-outline-variant rounded-xl pl-4 pr-10 py-3 text-xs text-white focus:outline-none focus:border-[#818cf8] cursor-pointer appearance-none"
+                    >
+                      <option className="bg-[#131315] text-white" value="Basic">Basic (Free)</option>
+                      <option className="bg-[#131315] text-white" value="Pro">Pro (Premium)</option>
+                      <option className="bg-[#131315] text-white" value="Pro Plus">Pro Plus (Enterprise)</option>
+                    </select>
+                    <span className="material-symbols-outlined absolute right-3 pointer-events-none text-on-surface-variant text-lg">expand_more</span>
+                  </div>
+                </div>
+
+                {/* Reset User Password */}
+                <div className="flex flex-col gap-1.5 text-left">
+                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Reset User Password</label>
+                  <input
+                    type="password"
+                    placeholder="New password (optional)"
+                    value={editingUser.password || ''}
+                    onChange={(e) => setEditingUser(prev => ({ ...prev, password: e.target.value }))}
+                    className="w-full bg-[#131315]/80 border border-outline-variant rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#818cf8]"
+                  />
+                </div>
+              </div>
+
               {/* Submit Buttons */}
               <div className="flex justify-end gap-3 mt-4">
                 <button

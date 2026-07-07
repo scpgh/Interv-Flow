@@ -135,8 +135,8 @@ function initializeWebSocketServer(server) {
           sessionState.jdId = jdId || null;
           sessionState.customSystemPrompt = customSystemPrompt || null;
           sessionState.customQuestions = customQuestions || null;
-
-          console.log(`Setting up ${mode} interview for ${jobTitle} at ${company} (Duration: ${duration}m)`);
+          const situationalCount = (duration || 15) > 30 ? 2 : 1;
+          const situationalInstruction = `You MUST integrate exactly ${situationalCount} realistic situational-based (scenario-based/behavioral-scenario) question(s) during the interview (e.g., "Describe a time when you faced X", or technical production emergency scenarios like "Suppose production goes down under load Y, what would you do?").`;
 
           // Start server side timer to prevent lingering sessions
           const durationMs = sessionState.durationMinutes * 60 * 1000;
@@ -182,6 +182,8 @@ Structure the interview into three distinct progressive difficulty phases, dynam
 2. **Medium Phase (Middle 33% of the session)**: Transition to medium-difficulty questions testing practical implementation, common system design patterns, troubleshooting scenarios, or structural resume claims.
 3. **Hard Phase (Final 33% of the session)**: Conclude with high-difficulty questions exploring complex architectural trade-offs, edge cases, deep debugging, scale optimization, and advanced engineering principles.
 
+${situationalInstruction}
+
 Conduct a realistic, rigorous technical interview. Ask challenging, relevant questions one by one. Listen carefully to the candidate's answers, ask follow-up questions, probe their reasoning, and check for depth. 
 Be conversational, realistic, and do not repeat questions. Keep your responses short (1-3 sentences) so the conversation flows naturally.
 Do not provide feedback or score them during the interview itself. Wrap up cleanly when the interview concludes.`;
@@ -196,6 +198,8 @@ Structure the interview into three distinct progressive difficulty phases, dynam
 1. **Easy Phase (First 33% of the session)**: Start with introductory questions, basic conceptual checks, and fundamentals of the role or simple projects on their resume. Ask follow-up questions to probe understanding before moving on.
 2. **Medium Phase (Middle 33% of the session)**: Transition to medium-difficulty questions testing practical implementation, common system design patterns, troubleshooting scenarios, or structural resume claims.
 3. **Hard Phase (Final 33% of the session)**: Conclude with high-difficulty questions exploring complex architectural trade-offs, edge cases, deep debugging, scale optimization, and advanced engineering principles.
+
+${situationalInstruction}
 
 Conduct a realistic, rigorous interview cross-examining their specific bullet points, projects, and technologies. Question their claims, check their actual depth of knowledge, and ask relevant behavioral or technical questions one by one.
 Keep your responses short (1-3 sentences) so the conversation flows naturally.
@@ -522,6 +526,10 @@ Do not provide feedback or score them during the interview itself. Wrap up clean
       }
     }
 
+    const duration = session.durationMinutes || 15;
+    const situationalCount = duration > 30 ? 2 : 1;
+    const situationalInstruction = `You MUST integrate exactly ${situationalCount} realistic situational-based (scenario-based/behavioral-scenario) question(s) during the interview (e.g., "Describe a time when you faced X", or technical production emergency scenarios like "Suppose production goes down under load Y, what would you do?").`;
+
     let systemPrompt = "";
     if (session.customSystemPrompt) {
       systemPrompt = `You are a strict, highly professional technical hiring manager interviewing a candidate for the position of "${session.title}" at "${session.company}".
@@ -538,6 +546,9 @@ Current Interview Stage: We are currently in the ${difficultyPhase} phase of the
 Instructions:
 Conduct a realistic, rigorous technical interview. Ask challenging, relevant questions one by one based on candidate answers or standard expectations for this role.
 Ensure the difficulty of the next question or follow-up matches the current interview stage difficulty specified above.
+
+${situationalInstruction}
+
 Be conversational, realistic, and do not repeat questions. Keep your responses short (1-2 sentences) so the conversation flows naturally.
 Do not provide feedback or score them during the interview itself.
 Ask exactly ONE question and nothing else. Do not output any markdown formatting, headers, or pleasantries other than your dialog.`;
@@ -552,6 +563,9 @@ Current Interview Stage: We are currently in the ${difficultyPhase} phase of the
 Instructions:
 Conduct a realistic, rigorous interview cross-examining their specific bullet points, projects, and technologies. Question their claims, check their actual depth of knowledge, and ask relevant behavioral or technical questions one by one.
 Ensure the difficulty of the next question or follow-up matches the current interview stage difficulty specified above.
+
+${situationalInstruction}
+
 Keep your responses short (1-2 sentences) so the conversation flows naturally.
 Do not provide feedback or score them during the interview itself.
 Ask exactly ONE question and nothing else. Do not output any markdown formatting, headers, or pleasantries other than your dialog.`;

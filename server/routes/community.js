@@ -190,11 +190,12 @@ router.get('/leaderboard', async (req, res) => {
         }
       }
 
-      const hasMarathon = completedSessionsCount >= 3;
-      const hasHighScorer = highestScore >= 80;
-      const hasResumeCalibrator = highestResumeScore >= 75;
+      const hasMarathon = completedSessionsCount >= 2;
+      const hasHighScorer = highestScore >= 75;
+      const hasResumeCalibrator = highestResumeScore >= 80;
+      const has15DayChallenge = completedSessionsCount >= 15;
 
-      const challengeBonuses = (hasMarathon ? 150 : 0) + (hasHighScorer ? 150 : 0) + (hasResumeCalibrator ? 150 : 0);
+      const challengeBonuses = (hasMarathon ? 200 : 0) + (hasHighScorer ? 300 : 0) + (hasResumeCalibrator ? 150 : 0) + (has15DayChallenge ? 500 : 0);
       
       // Apply the global XP multiplier — bonusXp is admin-assigned and NOT multiplied
       const bonusXp = user.bonusXp || 0;

@@ -412,4 +412,54 @@ router.get('/status', async (req, res) => {
   }
 });
 
+// POST: Submit Contact Us message
+router.post('/contact', async (req, res) => {
+  try {
+    const { name, email, subject, message } = req.body;
+    if (!name || !email || !subject || !message) {
+      return res.status(400).json({ error: "All fields are required." });
+    }
+
+    console.log(`[Contact Submission] Received contact request from ${name} (${email}): Subject: "${subject}", Message: "${message.substring(0, 50)}..."`);
+
+    // Write to Firestore if connected
+    if (db) {
+      try {
+        await db.collection('contacts').add({
+          name,
+          email,
+          subject,
+          message,
+          submittedAt: Date.now()
+        });
+      } catch (dbErr) {
+        console.error("Failed to save contact message to Firestore:", dbErr);
+      }
+    }
+
+    // Write to local fallback database
+    const dbPath = './db_contacts_fallback.json';
+    let contacts = [];
+    if (fs.existsSync(dbPath)) {
+      try {
+        contacts = JSON.parse(fs.readFileSync(dbPath, 'utf8') || '[]');
+      } catch (e) {}
+    }
+    contacts.push({
+      id: Math.random().toString(36).substring(2, 11),
+      name,
+      email,
+      subject,
+      message,
+      submittedAt: Date.now()
+    });
+    fs.writeFileSync(dbPath, JSON.stringify(contacts, null, 2), 'utf8');
+
+    res.json({ success: true, message: "Thank you! Your message has been saved and will be processed." });
+  } catch (error) {
+    console.error("Contact form submission error:", error);
+    res.status(500).json({ error: error.message || "Failed to process contact submission." });
+  }
+});
+
 export default router;

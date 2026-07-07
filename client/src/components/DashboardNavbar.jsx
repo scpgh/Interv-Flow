@@ -258,10 +258,28 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
       } catch (err) {
         console.error("Failed to fetch streak:", err);
       }
+    const fetchUserXp = async () => {
+      const email = sessionStorage.getItem('userEmail');
+      if (!email) return;
+      try {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const res = await fetch(`${API_URL}/api/community/leaderboard`);
+        const data = await res.json();
+        if (data.success && Array.isArray(data.leaderboard)) {
+          const selfEntry = data.leaderboard.find(item => item.email && item.email.toLowerCase().trim() === email.toLowerCase().trim());
+          if (selfEntry) {
+            setUserXP(selfEntry.xpNumber);
+            localStorage.setItem('intervflow_user_xp', String(selfEntry.xpNumber));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to sync XP from leaderboard:", err);
+      }
     };
 
     if (sessionStorage.getItem('isAuthenticated') === 'true') {
       fetchStreak();
+      fetchUserXp();
     }
   }, []);
 
@@ -382,33 +400,7 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
         {/* ── Right: Streak + Avatar + Hamburger ── */}
         <div className="flex items-center gap-3 flex-shrink-0">
 
-          {/* Direct Navbar Admin Dashboard Button */}
-          {userRole === 'ADMIN' && (
-            <button
-              onClick={() => navigate('/admin')}
-              className="hidden lg:flex bg-amber-50 dark:bg-amber-400/10 hover:bg-amber-100 dark:hover:bg-amber-400/20 text-amber-800 dark:text-amber-300 font-bold py-1.5 px-3.5 rounded-full text-[10px] transition-colors cursor-pointer items-center gap-1.5 border border-amber-200 dark:border-amber-400/20 shadow-md flex-shrink-0"
-            >
-              <span className="material-symbols-outlined text-[14px]">admin_panel_settings</span>
-              Admin Dashboard
-            </button>
-          )}
 
-          {/* Recruiter / Candidate Mode Switcher Toggle */}
-          {(userRole === 'RECRUITER' || userRole === 'ADMIN') && (
-            <button
-              onClick={viewMode === 'recruiter' ? switchToCandidate : switchToRecruiter}
-              className={`hidden lg:flex font-bold py-1.5 px-3.5 rounded-full text-[10px] transition-all cursor-pointer items-center gap-1.5 border shadow-md flex-shrink-0 ${
-                viewMode === 'recruiter'
-                  ? 'bg-primary/10 border-primary/20 text-primary hover:bg-primary/20'
-                  : 'bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/20'
-              }`}
-            >
-              <span className="material-symbols-outlined text-[14px]">
-                {viewMode === 'recruiter' ? 'person' : 'work'}
-              </span>
-              {viewMode === 'recruiter' ? 'Switch to Candidate' : 'Switch to Recruiter'}
-            </button>
-          )}
 
           {/* Direct Navbar Exit Impersonation Button */}
           {sessionStorage.getItem('impersonatedUser') && (
@@ -665,37 +657,7 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
             </div>
           )}
 
-          {/* Admin Dashboard */}
-          {userRole === 'ADMIN' && (
-            <button
-              onClick={() => { navigate('/admin'); setIsMobileMenuOpen(false); }}
-              className="w-full py-3 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer border bg-amber-400/10 border-amber-400/30 text-amber-300 hover:bg-amber-400/20"
-            >
-              <span className="material-symbols-outlined text-sm">admin_panel_settings</span>
-              Admin Dashboard
-            </button>
-          )}
 
-          {/* Switch View */}
-          {(userRole === 'RECRUITER' || userRole === 'ADMIN') && (
-            <button
-              onClick={() => {
-                if (viewMode === 'recruiter') switchToCandidate();
-                else switchToRecruiter();
-                setIsMobileMenuOpen(false);
-              }}
-              className={`w-full py-3 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer border ${
-                viewMode === 'recruiter'
-                  ? 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/20'
-                  : 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20'
-              }`}
-            >
-              <span className="material-symbols-outlined text-sm">
-                {viewMode === 'recruiter' ? 'person' : 'work'}
-              </span>
-              Switch to {viewMode === 'recruiter' ? 'Candidate View' : 'Recruiter View'}
-            </button>
-          )}
 
           {/* Tab Links */}
           <div className="border-t border-white/5 my-1" />
@@ -712,6 +674,26 @@ export default function DashboardNavbar({ activeTab, setActiveTab }) {
           <div className="border-t border-white/5 my-1" />
           <p className="text-[9px] font-mono text-outline uppercase tracking-widest font-bold px-2">Account ({userName})</p>
           <div className="flex flex-col gap-1">
+            {userRole === 'ADMIN' && (
+              <button onClick={() => { navigate('/admin'); setIsMobileMenuOpen(false); }} className="w-full text-left text-xs py-3 px-4 rounded-xl text-amber-500 hover:bg-amber-55 dark:hover:bg-amber-400/10 border-none bg-transparent cursor-pointer flex items-center gap-2 font-bold">
+                <span className="material-symbols-outlined text-sm">admin_panel_settings</span>Admin Dashboard
+              </button>
+            )}
+            {(userRole === 'RECRUITER' || userRole === 'ADMIN') && (
+              <button 
+                onClick={() => {
+                  if (viewMode === 'recruiter') switchToCandidate();
+                  else switchToRecruiter();
+                  setIsMobileMenuOpen(false);
+                }} 
+                className="w-full text-left text-xs py-3 px-4 rounded-xl text-primary hover:bg-primary/10 border-none bg-transparent cursor-pointer flex items-center gap-2 font-bold"
+              >
+                <span className="material-symbols-outlined text-sm">
+                  {viewMode === 'recruiter' ? 'person' : 'work'}
+                </span>
+                Switch to {viewMode === 'recruiter' ? 'Candidate Portal' : 'Recruiter Portal'}
+              </button>
+            )}
             <button onClick={() => { navigate('/billing#profile'); setIsMobileMenuOpen(false); }} className="w-full text-left text-xs py-3 px-4 rounded-xl text-on-surface-variant hover:text-white hover:bg-white/5 border-none bg-transparent cursor-pointer flex items-center gap-2">
               <span className="material-symbols-outlined text-sm">person</span>Profile Settings
             </button>

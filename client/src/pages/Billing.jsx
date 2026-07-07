@@ -25,6 +25,12 @@ export default function Billing() {
   const [profileLinkedIn, setProfileLinkedIn] = useState(sessionStorage.getItem('userLinkedIn') || '');
   const [profileGitHub, setProfileGitHub] = useState(sessionStorage.getItem('userGitHub') || '');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  
+  // Password Change States
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChangingPass, setIsChangingPass] = useState(false);
+  const [passError, setPassError] = useState('');
 
   // Preference Form States
   const [prefDifficulty, setPrefDifficulty] = useState(localStorage.getItem('intervflow_pref_difficulty') || 'adaptive');
@@ -161,6 +167,47 @@ export default function Billing() {
       alert("Error occurred while saving profile settings.");
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setPassError('');
+    if (newPassword.length < 6) {
+      setPassError('Password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPassError('Passwords do not match.');
+      return;
+    }
+    
+    setIsChangingPass(true);
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${API_URL}/api/user/profile/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: profileEmail,
+          password: newPassword
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast("Password updated successfully!");
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        setPassError(data.error || "Failed to update password.");
+      }
+    } catch (err) {
+      console.error(err);
+      setPassError("Error occurred while changing password.");
+    } finally {
+      setIsChangingPass(false);
     }
   };
 
@@ -911,6 +958,65 @@ export default function Billing() {
                         <>
                           <span className="material-symbols-outlined text-base">save</span>
                           Save Changes
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </section>
+
+              {/* Change Password Card */}
+              <section className="glass-panel p-6 md:p-8 rounded-2xl border border-white/5 bg-white/[0.01]">
+                <div className="border-b border-white/10 pb-4 mb-6">
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-xl">lock_open</span>
+                    Change Password
+                  </h3>
+                  <p className="text-xs text-on-surface-variant mt-1 font-body-md">
+                    Update your account password to keep your mock prep details and telemetry safe.
+                  </p>
+                </div>
+
+                <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] font-mono text-outline uppercase tracking-wider">New Password</label>
+                    <input 
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter new password (min. 6 chars)"
+                      className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-primary font-body-md"
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] font-mono text-outline uppercase tracking-wider">Confirm New Password</label>
+                    <input 
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm new password"
+                      className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-primary font-body-md"
+                      required
+                    />
+                  </div>
+                  {passError && <p className="text-xs text-red-400 font-bold">{passError}</p>}
+                  
+                  <div className="pt-2">
+                    <button 
+                      type="submit"
+                      disabled={isChangingPass}
+                      className="px-6 py-2.5 glow-button text-white font-bold text-xs border-none cursor-pointer flex items-center gap-2"
+                    >
+                      {isChangingPass ? (
+                        <>
+                          <span className="material-symbols-outlined text-base animate-spin">sync</span>
+                          Updating Password...
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined text-base">key</span>
+                          Change Password
                         </>
                       )}
                     </button>

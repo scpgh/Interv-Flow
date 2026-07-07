@@ -205,15 +205,7 @@ export default function Navbar({ activeTab }) {
       </div>
       
       <div className="flex items-center gap-3">
-        {userRole === 'ADMIN' && (
-          <button
-            onClick={() => navigate('/admin')}
-            className="hidden lg:flex bg-amber-50 dark:bg-amber-400/10 hover:bg-amber-100 dark:hover:bg-amber-400/20 text-amber-800 dark:text-amber-300 font-bold py-1.5 px-3.5 rounded-full text-[10px] transition-colors cursor-pointer items-center gap-1.5 border border-amber-200 dark:border-amber-400/20 shadow-md flex-shrink-0"
-          >
-            <span className="material-symbols-outlined text-[14px]">admin_panel_settings</span>
-            Admin Dashboard
-          </button>
-        )}
+
 
         {sessionStorage.getItem('impersonatedUser') && (
           <button
@@ -280,16 +272,7 @@ export default function Navbar({ activeTab }) {
               </div>
             )}
 
-            {/* Admin Dashboard */}
-            {userRole === 'ADMIN' && (
-              <button
-                onClick={() => { navigate('/admin'); setIsMobileMenuOpen(false); }}
-                className="w-full py-3 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer border bg-amber-400/10 border-amber-400/30 text-amber-300 hover:bg-amber-400/20 mb-2"
-              >
-                <span className="material-symbols-outlined text-sm">admin_panel_settings</span>
-                Admin Dashboard
-              </button>
-            )}
+
 
             <a 
               href="/dashboard"

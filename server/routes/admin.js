@@ -388,11 +388,11 @@ router.get('/users/:email', async (req, res) => {
   }
 });
 
-// PUT: Modify a user's details or role
+// PUT: Modify a user's details, role, password, or billing plan
 router.put('/users/:email', async (req, res) => {
   try {
     const { email } = req.params;
-    const { name, domain, experienceYears, highestEducation, dreamCompany, role, isActive, bonusXp } = req.body;
+    const { name, domain, experienceYears, highestEducation, dreamCompany, role, isActive, bonusXp, password, plan } = req.body;
 
     if (!email) {
       return res.status(400).json({ error: "User email param is required." });
@@ -418,6 +418,19 @@ router.put('/users/:email', async (req, res) => {
       }
     }
 
+    // Validate plan
+    const validPlans = ['Basic', 'Pro', 'Pro Plus'];
+    let updatedSubscription = user.subscription || { plan: 'Basic', status: 'active' };
+    if (plan !== undefined) {
+      if (!validPlans.includes(plan)) {
+        return res.status(400).json({ error: "Invalid billing plan. Must be Basic, Pro, or Pro Plus." });
+      }
+      updatedSubscription = {
+        ...updatedSubscription,
+        plan
+      };
+    }
+
     const updatedUser = {
       ...user,
       name: name ? sanitizeString(name) : user.name,
@@ -428,8 +441,27 @@ router.put('/users/:email', async (req, res) => {
       role: role || user.role || 'USER',
       isActive: isActive !== undefined ? !!isActive : (user.isActive !== undefined ? user.isActive : true),
       bonusXp: parsedBonusXp,
+      subscription: updatedSubscription,
       updatedAt: new Date().toISOString()
     };
+
+    // Update password if provided
+    if (password && password.trim() !== "") {
+      if (password.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters." });
+      }
+      
+      // Update in Firebase Auth
+      if (admin.apps.length > 0) {
+        try {
+          const firebaseUser = await admin.auth().getUserByEmail(targetEmail);
+          await admin.auth().updateUser(firebaseUser.uid, { password });
+        } catch (e) {
+          console.warn(`[ADMIN CLI] Could not update Firebase password for ${targetEmail}:`, e.message);
+        }
+      }
+      updatedUser.password = password;
+    }
 
     // Save updated record
     await saveUser(updatedUser);

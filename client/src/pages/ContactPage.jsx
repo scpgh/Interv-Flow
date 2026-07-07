@@ -20,16 +20,40 @@ export default function ContactPage() {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitState('sending');
-    setTimeout(() => {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${API_URL}/api/general/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(form)
+      });
+
+      // Also trigger the mailto link to open the user's local email client prefilled
+      const mailtoUrl = `mailto:darkphantom399@gmail.com?subject=${encodeURIComponent(form.subject)}&body=${encodeURIComponent(`Hi IntervFlow Team,\n\nName: ${form.name}\nEmail: ${form.email}\n\nMessage:\n${form.message}`)}`;
+      window.location.href = mailtoUrl;
+
       setSubmitState('success');
       setTimeout(() => {
         setSubmitState('idle');
         setForm({ name: '', email: '', subject: '', message: '' });
       }, 3000);
-    }, 1500);
+    } catch (err) {
+      console.error("Failed to submit contact request:", err);
+      // Fallback: Still trigger the mailto redirect if backend connection fails
+      const mailtoUrl = `mailto:darkphantom399@gmail.com?subject=${encodeURIComponent(form.subject)}&body=${encodeURIComponent(`Hi IntervFlow Team,\n\nName: ${form.name}\nEmail: ${form.email}\n\nMessage:\n${form.message}`)}`;
+      window.location.href = mailtoUrl;
+
+      setSubmitState('success');
+      setTimeout(() => {
+        setSubmitState('idle');
+        setForm({ name: '', email: '', subject: '', message: '' });
+      }, 3000);
+    }
   };
 
   return (

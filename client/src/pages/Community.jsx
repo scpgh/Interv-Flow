@@ -226,6 +226,15 @@ export default function Community() {
       const data = await res.json();
       if (data.success && Array.isArray(data.leaderboard)) {
         setStandings(data.leaderboard);
+        const email = sessionStorage.getItem('userEmail');
+        if (email) {
+          const selfEntry = data.leaderboard.find(item => item.email && item.email.toLowerCase().trim() === email.toLowerCase().trim());
+          if (selfEntry) {
+            setUserXP(selfEntry.xpNumber);
+            localStorage.setItem('intervflow_user_xp', String(selfEntry.xpNumber));
+            window.dispatchEvent(new Event('intervflow-xp-update'));
+          }
+        }
       }
     } catch (err) {
       console.error("Failed to fetch leaderboard standings:", err);
