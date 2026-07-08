@@ -1,0 +1,66 @@
+[
+  {
+    "id": "post_1783305858000",
+    "title": "Google L5 SWE Onsite Interview Experience",
+    "category": "Interview Experience",
+    "description": "Faced 2 coding rounds (heavily on DP and Graphs), 1 System Design (Design a scalable notifications dispatcher), and 1 Googleyness behavioral round. Key takeaway: explain trade-offs of every approach you mention rather than just rushing to coding.",
+    "author": "Rahul Sharma",
+    "authorMeta": "1 day ago • Senior Backend Eng",
+    "codeSnippet": "def solve(n, edges):\n    # Core topological sorting with cycle detection\n    visited = [0] * n\n    for u in range(n):\n        if not dfs(u, visited):\n            return False\n    return True",
+    "gridData": null,
+    "upvotes": 18,
+    "comments": 2,
+    "createdAt": "2026-07-06T10:30:00.000Z",
+    "votedEmails": [],
+    "commentsList": [
+      {
+        "id": "c1",
+        "author": "Arjun Patel",
+        "text": "Congrats on the offer! What system design resources did you use?",
+        "createdAt": "2026-07-06T11:45:00.000Z"
+      },
+      {
+        "id": "c2",
+        "author": "Rahul Sharma",
+        "text": "Mainly DDIA book, ByteByteGo, and standard system design primer resources on GitHub.",
+        "createdAt": "2026-07-06T12:00:00.000Z"
+      }
+    ],
+    "anonymous": false,
+    "userEmail": "rahul@example.com"
+  },
+  {
+    "id": "post_1783295858000",
+    "title": "Handling production emergency scenarios in behavioral interviews",
+    "category": "Tips & Tricks",
+    "description": "Always structure situational answers using the STAR method. For production emergency questions, clarify how you stabilized the system first (monitoring, rolling back commits, routing around failures) before doing root cause post-mortems.",
+    "author": "Sarah Jenkins",
+    "authorMeta": "2 days ago • Staff Engineer",
+    "codeSnippet": null,
+    "gridData": null,
+    "upvotes": 24,
+    "comments": 0,
+    "createdAt": "2026-07-05T14:15:00.000Z",
+    "votedEmails": [],
+    "commentsList": [],
+    "anonymous": false,
+    "userEmail": "sarah@example.com"
+  },
+  {
+    "id": "post_1783285858000",
+    "title": "Stripe Machine Learning Engineer Onsite Questions",
+    "category": "Interview Experience",
+    "description": "Focused extensively on practical ML system architectures: designing a transaction fraud detection system. Make sure you discuss latency limits, real-time vs batch feature stores, and how you evaluate model drift over time.",
+    "author": "Devore Vance",
+    "authorMeta": "3 days ago • ML Architect",
+    "codeSnippet": null,
+    "gridData": null,
+    "upvotes": 15,
+    "comments": 0,
+    "createdAt": "2026-07-04T09:00:00.000Z",
+    "votedEmails": [],
+    "commentsList": [],
+    "anonymous": false,
+    "userEmail": "devore@example.com"
+  }
+]
