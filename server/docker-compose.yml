@@ -1,0 +1,20 @@
+services:
+  intervflow-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: intervflow-backend-service
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    volumes:
+      # Mount the local JSON databases to keep data persisted on the host machine
+      - ./db_fallback.json:/app/db_fallback.json
+      - ./db_sessions_fallback.json:/app/db_sessions_fallback.json
+      - ./db_users_fallback.json:/app/db_users_fallback.json
+      - ./db_community_posts_fallback.json:/app/db_community_posts_fallback.json
+      - ./db_system_settings.json:/app/db_system_settings.json
+      # Optional: mount upload log if exists
+      - ./pdf_debug.log:/app/pdf_debug.log
