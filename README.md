@@ -85,56 +85,7 @@ IntervFlow is a full-stack AI interview preparation platform that helps candidat
 
 ---
 
-## 📁 Project Structure
-
-```
-IntervFlow/
-├── client/                     # React frontend (Vite)
-│   ├── src/
-│   │   ├── components/         # Shared components (Navbar, DashboardNavbar, Chatbot, etc.)
-│   │   ├── pages/              # Route-level page components
-│   │   │   ├── LandingPage.jsx
-│   │   │   ├── SignIn.jsx / SignUp.jsx
-│   │   │   ├── Dashboard.jsx
-│   │   │   ├── PracticeSession.jsx
-│   │   │   ├── PracticeFeedback.jsx
-│   │   │   ├── ResumeAnalyzer.jsx
-│   │   │   ├── Analytics.jsx
-│   │   │   ├── Community.jsx
-│   │   │   ├── Billing.jsx
-│   │   │   ├── AdminDashboard.jsx
-│   │   │   ├── AdminUserInspect.jsx
-│   │   │   └── MaintenancePage.jsx
-│   │   ├── App.jsx             # Router + maintenance gate
-│   │   ├── firebase.js         # Firebase client config
-│   │   └── index.css           # Global design tokens & utilities
-│   └── package.json
-│
-└── server/                     # Express backend
-    ├── config/
-    │   └── db.js               # Firebase Admin SDK init
-    ├── helpers/
-    │   ├── dbHelpers.js        # Firestore CRUD + startup migration
-    │   └── critiqueHelpers.js  # Groq/Gemini AI integration
-    ├── middleware/
-    │   └── auth.js             # JWT verification, maintenance mode, rate limiter
-    ├── routes/
-    │   ├── auth.js             # Login, Google OAuth, register
-    │   ├── user.js             # User profile CRUD
-    │   ├── interview.js        # Practice session endpoints
-    │   ├── community.js        # Forum posts and upvotes
-    │   ├── admin.js            # Admin-only management endpoints
-    │   └── general.js          # Resume analysis, AI chatbot, status
-    ├── websocket/
-    │   └── wsHandler.js        # WebSocket server (real-time updates)
-    ├── index.js                # Express app entry point
-    ├── nodemon.json
-    └── .env.example            # Environment variable template
-```
-
----
-
-##  Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 
@@ -152,54 +103,30 @@ git clone https://github.com/your-username/intervflow.git
 cd intervflow
 ```
 
-### 2. Configure the server side code
+### 2. Configure the server
+
+Navigate to the `server/` directory, copy the environmental template, and fill in your details based on the instructions inside `.env.example`:
 
 ```bash
 cd server
 cp .env.example .env
 ```
 
-Open `server/.env` and fill in your credentials:
-
-```env
-PORT=5000
-
-# Firebase Admin SDK
-FIREBASE_SERVICE_ACCOUNT_PATH=./serviceAccountKey.json
-FIREBASE_PROJECT_ID=your_project_id
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-
-# Groq AI (required)
-GROQ_API_KEY=gsk_your_key_here
-
-# Optional: up to 4 fallback keys for automatic rotation on rate-limit
-# GROQ_API_KEY_2=gsk_...
-```
-
-Place your Firebase service account JSON file at `server/serviceAccountKey.json`.
-
-> **Tip:** Download it from Firebase Console → Project Settings → Service Accounts → Generate new private keys.
-
 ### 3. Configure the client
+
+Navigate to the `client/` directory, create a `.env` file, and populate it with your Firebase Web configuration and target API endpoint:
 
 ```bash
 cd ../client
 ```
 
-Create `client/.env`:
-
-```env
-VITE_API_URL=http://localhost:5000
-VITE_FIREBASE_API_KEY=your_firebase_web_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
-```
+Create a `.env` file in the `client/` directory containing:
+- `VITE_API_URL` (typically `http://localhost:5000` for local runs)
+- Your Firebase web app project credentials (such as `API_KEY`, `PROJECT_ID`, `APP_ID`, etc.)
 
 ### 4. Install dependencies
+
+Install the standard node dependencies in both directories:
 
 ```bash
 # From root
@@ -209,16 +136,16 @@ cd ../client && npm install
 
 ### 5. Run the development servers
 
-Open two terminals:
+Open two terminal sessions:
 
 ```bash
 # Terminal 1 — Backend
 cd server
-npm run dev          # starts on http://localhost:5000
+npm run dev          # Starts on http://localhost:5000
 
 # Terminal 2 — Frontend
 cd client
-npm run dev          # starts on http://localhost:5173
+npm run dev          # Starts on http://localhost:5173
 ```
 
 ---
