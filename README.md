@@ -136,6 +136,9 @@ cd ../client && npm install
 
 ### 5. Run the development servers
 
+You can run the backend either locally via Node or containerized via Docker:
+
+#### Option A: Running locally with npm
 Open two terminal sessions:
 
 ```bash
@@ -147,6 +150,15 @@ npm run dev          # Starts on http://localhost:5000
 cd client
 npm run dev          # Starts on http://localhost:5173
 ```
+
+#### Option B: Running the backend with Docker
+To build and run the backend inside a Docker container:
+
+```bash
+cd server
+docker compose up -d --build
+```
+This runs the containerized backend on `http://localhost:5000` and configures automatic data persistence on your local host system.
 
 ---
 
