@@ -220,12 +220,6 @@ Please ensure you **never commit** API keys, `.env` files, or `serviceAccountKey
 
 ---
 
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE).
-
----
-
 <div align="center">
 
 Built with ❤️ by the IntervFlow team
