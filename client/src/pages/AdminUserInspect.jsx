@@ -77,104 +77,69 @@ export default function AdminUserInspect() {
     }
   }, [email, navigate, authReady]);
 
-  // Sync bonusXp input when user loads
+  // Sync selected plan when user loads
+  const [selectedPlan, setSelectedPlan] = useState('Basic');
+  const [savingPlan, setSavingPlan] = useState(false);
+
+  const [showPermanentDeleteModal, setShowPermanentDeleteModal] = useState(false);
+  const [deleteInputText, setDeleteInputText] = useState('');
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
+
   useEffect(() => {
-    if (user) setBonusXpInput(String(user.bonusXp || 0));
+    if (user) {
+      setBonusXpInput(String(user.bonusXp || 0));
+      setSelectedPlan(user.subscription?.plan || 'Basic');
+    }
   }, [user]);
 
-  const handleSaveBonusXp = async () => {
-    const val = parseInt(bonusXpInput, 10);
-    if (isNaN(val) || val < 0) {
-      setErrorMsg('XP must be a non-negative number.');
-      setTimeout(() => setErrorMsg(''), 3000);
-      return;
-    }
-    setSavingXp(true);
+  const handleSavePlan = async () => {
+    setSavingPlan(true);
     try {
       const res = await fetch(`${API_URL}/api/admin/users/${encodeURIComponent(user.email)}`, {
         method: 'PUT',
         headers: await getAuthHeaders(),
-        body: JSON.stringify({ bonusXp: val })
+        body: JSON.stringify({ plan: selectedPlan })
       });
       const data = await res.json();
       if (data.success) {
-        setUser(prev => ({ ...prev, bonusXp: val }));
-        setSuccessMsg(`Bonus XP updated to ${val} XP.`);
+        setUser(data.user);
+        setSuccessMsg(`Subscription plan updated to ${selectedPlan}.`);
         setTimeout(() => setSuccessMsg(''), 4000);
       } else {
-        setErrorMsg(data.error || 'Failed to update XP.');
+        setErrorMsg(data.error || 'Failed to update plan.');
         setTimeout(() => setErrorMsg(''), 4000);
       }
     } catch (err) {
       console.error(err);
-      setErrorMsg('Network error saving XP.');
+      setErrorMsg('Network error saving plan.');
       setTimeout(() => setErrorMsg(''), 4000);
     } finally {
-      setSavingXp(false);
+      setSavingPlan(false);
     }
   };
 
-  const handleToggleUserArchive = async () => {
-    if (!user) return;
-    const nextActiveState = !user.isActive;
-    if (!window.confirm(`Are you sure you want to ${nextActiveState ? 'restore' : 'soft-delete (archive)'} this candidate?`)) return;
-    
+  const handleConfirmPermanentDelete = async () => {
+    if (deleteInputText !== 'DELETE') return;
+    setIsDeletingUser(true);
     try {
-      const res = await fetch(`${API_URL}/api/admin/users/${encodeURIComponent(user.email)}`, {
-        method: 'PUT',
-        headers: await getAuthHeaders(),
-        body: JSON.stringify({ isActive: nextActiveState })
+      const res = await fetch(`${API_URL}/api/admin/users/${encodeURIComponent(user.email)}?permanent=true`, {
+        method: 'DELETE',
+        headers: await getAuthHeaders()
       });
       const data = await res.json();
       if (data.success) {
-        setSuccessMsg(`Candidate status toggled to ${nextActiveState ? 'Active' : 'Archived'}.`);
-        setUser(prev => ({ ...prev, isActive: nextActiveState }));
-        setTimeout(() => setSuccessMsg(''), 4000);
+        alert(`User account ${user.email} has been permanently deleted.`);
+        navigate('/admin?tab=users');
       } else {
-        setErrorMsg(data.error || 'Failed to toggle archive state.');
+        setErrorMsg(data.error || 'Failed to delete user.');
         setTimeout(() => setErrorMsg(''), 4000);
       }
     } catch (err) {
       console.error(err);
-      setErrorMsg('Network error archiving user.');
+      setErrorMsg('Network error deleting user.');
       setTimeout(() => setErrorMsg(''), 4000);
-    }
-  };
-
-  const handleStartImpersonate = async () => {
-    if (!user) return;
-    if (!window.confirm(`Start troubleshooting? You will browse the platform as ${user.name} (${user.email}).`)) return;
-    try {
-      const res = await fetch(`${API_URL}/api/admin/impersonate`, {
-        method: 'POST',
-        headers: await getAuthHeaders(),
-        body: JSON.stringify({ email: user.email })
-      });
-      const data = await res.json();
-      if (data.success) {
-        // Store admin original details for restoration later
-        sessionStorage.setItem('adminEmail', sessionStorage.getItem('userEmail') || '');
-        sessionStorage.setItem('adminName', sessionStorage.getItem('userName') || 'Admin');
-        sessionStorage.setItem('adminRole', sessionStorage.getItem('userRole') || 'ADMIN');
-
-        // Set impersonated details
-        sessionStorage.setItem('impersonatedUser', data.impersonatedUser.email);
-        sessionStorage.setItem('userEmail', data.impersonatedUser.email);
-        sessionStorage.setItem('userName', data.impersonatedUser.name);
-        sessionStorage.setItem('userDomain', data.impersonatedUser.domain);
-        sessionStorage.setItem('userRole', 'USER'); // set to user to check flows
-        sessionStorage.setItem('onboardingCompleted', String(data.impersonatedUser.onboardingCompleted));
-
-        // Redirect to user's dashboard view
-        window.location.href = '/dashboard';
-      } else {
-        setErrorMsg(data.error || 'Failed to launch impersonation session.');
-        setTimeout(() => setErrorMsg(''), 4000);
-      }
-    } catch (err) {
-      console.error(err);
-      setErrorMsg('Network error initiating View As User.');
-      setTimeout(() => setErrorMsg(''), 4000);
+    } finally {
+      setIsDeletingUser(false);
     }
   };
 
@@ -240,6 +205,14 @@ export default function AdminUserInspect() {
                   {user.isActive !== false ? 'Archive Candidate' : 'Restore Candidate'}
                 </button>
                 <button
+                  onClick={() => setShowPermanentDeleteModal(true)}
+                  className="py-1.5 px-4 text-xs font-bold flex items-center gap-1.5 border rounded-full transition-all cursor-pointer bg-red-600/20 border-red-500/40 text-red-300 hover:bg-red-600/30"
+                  title="Permanently Delete Account"
+                >
+                  <span className="material-symbols-outlined text-[16px]">delete_forever</span>
+                  Delete Permanently
+                </button>
+                <button
                   onClick={() => navigate('/admin?tab=users')}
                   className="btn-secondary py-1.5 px-4 text-xs font-bold flex items-center gap-1.5"
                 >
@@ -298,6 +271,43 @@ export default function AdminUserInspect() {
                 <span className="text-xs text-purple-400 font-bold font-mono">{user.roleMatch ? `${user.roleMatch}%` : 'Not evaluated'}</span>
               </div>
 
+            </div>
+
+            {/* ── Admin Subscription Plan Override ── */}
+            <div className="bg-[#1e1b4b]/20 border border-[#818cf8]/20 rounded-xl p-4 flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#818cf8] text-lg">card_membership</span>
+                <span className="text-xs font-bold text-white uppercase tracking-wider">Admin Plan Allocation</span>
+                <span className="ml-auto text-[10px] text-on-surface-variant font-mono bg-white/5 px-2.5 py-0.5 rounded-full border border-white/10">
+                  Current: <strong className="text-[#818cf8]">{user.subscription?.plan || 'Basic'}</strong>
+                </span>
+              </div>
+              <p className="text-[10px] text-on-surface-variant leading-relaxed">
+                Assign or upgrade the candidate's subscription tier. Upgrading a user to Pro or Pro Plus expands their ATS review quota and practice limits.
+              </p>
+              <div className="flex items-center gap-3 flex-wrap">
+                <select
+                  value={selectedPlan}
+                  onChange={(e) => setSelectedPlan(e.target.value)}
+                  className="bg-[#131315]/80 border border-outline-variant rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#818cf8] font-mono cursor-pointer"
+                >
+                  <option value="Basic">Basic (Free Tier — 3 Mocks)</option>
+                  <option value="Pro">Pro (₹299/mo — 15 Mocks)</option>
+                  <option value="Pro Plus">Pro Plus (₹999/mo — Unlimited Mocks)</option>
+                </select>
+
+                <button
+                  onClick={handleSavePlan}
+                  disabled={savingPlan}
+                  className="btn-primary py-2.5 px-5 text-xs font-bold flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  {savingPlan ? (
+                    <><div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />Updating Plan...</>
+                  ) : (
+                    <><span className="material-symbols-outlined text-[15px]">verified</span>Save Plan Allocation</>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* ── Bonus XP Editor ── */}
@@ -380,6 +390,70 @@ export default function AdminUserInspect() {
         )}
 
       </main>
+
+      {/* Permanent Delete Modal for AdminUserInspect */}
+      {showPermanentDeleteModal && user && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-card max-w-md w-full p-6 rounded-2xl border border-red-500/30 bg-[#09090b] text-left shadow-2xl flex flex-col gap-4">
+            <div className="flex justify-between items-center border-b border-white/5 pb-3">
+              <div className="flex items-center gap-2 text-red-400">
+                <span className="material-symbols-outlined text-xl">warning</span>
+                <h3 className="font-bold text-sm">Permanently Delete User Account</h3>
+              </div>
+              <button 
+                onClick={() => { setShowPermanentDeleteModal(false); setDeleteInputText(''); }}
+                className="text-on-surface-variant hover:text-white cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+
+            <p className="text-xs text-on-surface-variant leading-relaxed">
+              Are you sure you want to permanently delete candidate <strong className="text-white">{user.name}</strong> (<span className="font-mono text-red-300">{user.email}</span>)?
+              This will completely remove their account from Firebase Auth, Firestore, and fallback databases. <strong className="text-red-400">This action cannot be undone.</strong>
+            </p>
+
+            <div className="flex flex-col gap-1.5 mt-2">
+              <label className="text-[10px] font-mono uppercase text-slate-400">Type <span className="text-red-400 font-bold">DELETE</span> to confirm</label>
+              <input
+                type="text"
+                placeholder="DELETE"
+                value={deleteInputText}
+                onChange={(e) => setDeleteInputText(e.target.value)}
+                className="bg-black/40 border border-red-500/30 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-red-500 font-mono"
+              />
+            </div>
+
+            <div className="flex gap-3 mt-4">
+              <button
+                type="button"
+                onClick={() => { setShowPermanentDeleteModal(false); setDeleteInputText(''); }}
+                className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs cursor-pointer transition-all border border-white/10"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleteInputText !== 'DELETE' || isDeletingUser}
+                onClick={handleConfirmPermanentDelete}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1 border border-red-500"
+              >
+                {isDeletingUser ? (
+                  <>
+                    <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-sm">delete_forever</span>
+                    Delete Permanently
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

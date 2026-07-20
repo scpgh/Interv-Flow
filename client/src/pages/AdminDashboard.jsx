@@ -37,6 +37,9 @@ export default function AdminDashboard() {
   const [usersSortOrder, setUsersSortOrder] = useState('desc');
   const [editingUser, setEditingUser] = useState(null); // hold user object for edit modal
   const [createAccount, setCreateAccount] = useState(null); // null = closed, {} = open
+  const [deleteModalUser, setDeleteModalUser] = useState(null);
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
   
   // Tab 3: Completed Mock Sessions state
   const [sessions, setSessions] = useState([]);
@@ -387,6 +390,31 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error(err);
       triggerMessage('error', 'Network error archiving user.');
+    }
+  };
+
+  const handleConfirmPermanentDelete = async () => {
+    if (!deleteModalUser || deleteConfirmInput !== 'DELETE') return;
+    setIsDeletingUser(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/users/${encodeURIComponent(deleteModalUser.email)}?permanent=true`, {
+        method: 'DELETE',
+        headers: await getAuthHeaders()
+      });
+      const data = await res.json();
+      if (data.success) {
+        triggerMessage('success', `User account ${deleteModalUser.email} permanently deleted.`);
+        setDeleteModalUser(null);
+        setDeleteConfirmInput('');
+        fetchUsersList();
+      } else {
+        triggerMessage('error', data.error || 'Failed to delete user.');
+      }
+    } catch (err) {
+      console.error(err);
+      triggerMessage('error', 'Network error deleting user.');
+    } finally {
+      setIsDeletingUser(false);
     }
   };
 
@@ -839,6 +867,13 @@ export default function AdminDashboard() {
                                 title={user.isActive !== false ? 'Soft-Delete (Archive)' : 'Restore User'}
                               >
                                 <span className="material-symbols-outlined text-[16px]">{user.isActive !== false ? 'archive' : 'unarchive'}</span>
+                              </button>
+                              <button
+                                onClick={() => { setDeleteModalUser(user); setDeleteConfirmInput(''); }}
+                                className="bg-transparent border-none text-red-500 hover:text-red-400 p-1 cursor-pointer flex items-center"
+                                title="Permanently Delete Candidate Account"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">delete_forever</span>
                               </button>
                               <button
                                 onClick={() => handleStartImpersonate(user)}
@@ -1843,7 +1878,69 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* Permanent Delete User Modal */}
+      {deleteModalUser && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-card max-w-md w-full p-6 rounded-2xl border border-red-500/30 bg-[#09090b] text-left shadow-2xl flex flex-col gap-4">
+            <div className="flex justify-between items-center border-b border-white/5 pb-3">
+              <div className="flex items-center gap-2 text-red-400">
+                <span className="material-symbols-outlined text-xl">warning</span>
+                <h3 className="font-bold text-sm">Permanently Delete User</h3>
+              </div>
+              <button 
+                onClick={() => { setDeleteModalUser(null); setDeleteConfirmInput(''); }}
+                className="text-on-surface-variant hover:text-white cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
 
+            <p className="text-xs text-on-surface-variant leading-relaxed">
+              Are you sure you want to permanently delete candidate <strong className="text-white">{deleteModalUser.name}</strong> (<span className="font-mono text-red-300">{deleteModalUser.email}</span>)?
+              This will completely remove their account from Firebase Auth, Firestore, and fallback databases. <strong className="text-red-400">This action cannot be undone.</strong>
+            </p>
+
+            <div className="flex flex-col gap-1.5 mt-2">
+              <label className="text-[10px] font-mono uppercase text-slate-400">Type <span className="text-red-400 font-bold">DELETE</span> to confirm</label>
+              <input
+                type="text"
+                placeholder="DELETE"
+                value={deleteConfirmInput}
+                onChange={(e) => setDeleteConfirmInput(e.target.value)}
+                className="bg-black/40 border border-red-500/30 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-red-500 font-mono"
+              />
+            </div>
+
+            <div className="flex gap-3 mt-4">
+              <button
+                type="button"
+                onClick={() => { setDeleteModalUser(null); setDeleteConfirmInput(''); }}
+                className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs cursor-pointer transition-all border border-white/10"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleteConfirmInput !== 'DELETE' || isDeletingUser}
+                onClick={handleConfirmPermanentDelete}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1 border border-red-500"
+              >
+                {isDeletingUser ? (
+                  <>
+                    <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-sm">delete_forever</span>
+                    Delete Permanently
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -497,10 +497,12 @@ router.put('/users/:email', async (req, res) => {
   }
 });
 
-// DELETE: Soft delete / toggle active state on a user
+// DELETE: Soft delete or Permanently delete a user account
 router.delete('/users/:email', async (req, res) => {
   try {
     const { email } = req.params;
+    const isPermanent = req.query.permanent === 'true';
+
     if (!email) {
       return res.status(400).json({ error: "User email param is required." });
     }
@@ -511,6 +513,61 @@ router.delete('/users/:email', async (req, res) => {
       return res.status(404).json({ error: "Candidate profile not found." });
     }
 
+    const clientIp = req.ip || req.socket.remoteAddress || '';
+
+    if (isPermanent) {
+      // 1. Delete from Firebase Auth if initialized
+      if (admin.apps.length > 0) {
+        try {
+          const fbUser = await admin.auth().getUserByEmail(targetEmail);
+          if (fbUser) {
+            await admin.auth().deleteUser(fbUser.uid);
+            console.log(`[ADMIN PERMANENT DELETE] Deleted Firebase Auth user ${targetEmail}`);
+          }
+        } catch (fbErr) {
+          console.warn(`[ADMIN PERMANENT DELETE] Firebase Auth deletion warning for ${targetEmail}:`, fbErr.message);
+        }
+      }
+
+      // 2. Delete document from Firestore
+      if (db) {
+        try {
+          await db.collection('users').doc(targetEmail).delete();
+          console.log(`[ADMIN PERMANENT DELETE] Deleted Firestore document for ${targetEmail}`);
+        } catch (fsErr) {
+          console.warn(`[ADMIN PERMANENT DELETE] Firestore deletion warning for ${targetEmail}:`, fsErr.message);
+        }
+      }
+
+      // 3. Delete from local JSON fallback file
+      const fallbackUsersPath = './db_users_fallback.json';
+      if (fs.existsSync(fallbackUsersPath)) {
+        try {
+          let localUsers = JSON.parse(fs.readFileSync(fallbackUsersPath, 'utf8') || '[]');
+          if (Array.isArray(localUsers)) {
+            localUsers = localUsers.filter(u => u.email.toLowerCase().trim() !== targetEmail);
+            fs.writeFileSync(fallbackUsersPath, JSON.stringify(localUsers, null, 2), 'utf8');
+          }
+        } catch (err) {
+          console.error("[ADMIN PERMANENT DELETE] Fallback user list update failed:", err);
+        }
+      }
+
+      // Log permanent deletion audit log
+      await logAdminAction(
+        req.adminEmail,
+        "PERMANENT_DELETE_USER",
+        targetEmail,
+        { deletedAt: new Date().toISOString() },
+        clientIp
+      );
+
+      return res.json({
+        success: true,
+        message: `User account ${targetEmail} has been permanently deleted.`
+      });
+    }
+
     // Soft delete: flip isActive status
     const previousStatus = user.isActive !== false;
     user.isActive = false; // Soft delete sets active status to false
@@ -519,7 +576,6 @@ router.delete('/users/:email', async (req, res) => {
     await saveUser(user);
 
     // Log audit log
-    const clientIp = req.ip || req.socket.remoteAddress || '';
     await logAdminAction(
       req.adminEmail,
       "SOFT_DELETE_USER",
@@ -533,8 +589,8 @@ router.delete('/users/:email', async (req, res) => {
       message: `User ${targetEmail} soft-deleted successfully.`
     });
   } catch (err) {
-    console.error("DELETE admin user soft delete failed:", err);
-    res.status(500).json({ error: "Server error during soft deletion." });
+    console.error("DELETE admin user deletion failed:", err);
+    res.status(500).json({ error: "Server error during candidate deletion." });
   }
 });
 
