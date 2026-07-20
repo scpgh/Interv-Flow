@@ -100,7 +100,13 @@ export default function SignUp() {
         navigate('/onboarding');
       }
     } catch (err) {
-      setErrorMsg(err.message || "Failed Google login.");
+      let friendlyMessage = err.message || "Failed Google login.";
+      if (err.code === 'auth/popup-blocked') {
+        friendlyMessage = "Popup was blocked by your browser. Please allow popups for this site and try again.";
+      } else if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+        friendlyMessage = "Google sign-up popup request was cancelled or closed. Please try again.";
+      }
+      setErrorMsg(friendlyMessage);
       console.error("Google authentication failed:", err);
     }
   };

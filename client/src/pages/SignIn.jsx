@@ -133,8 +133,8 @@ export default function SignIn() {
       let friendlyMessage = err.message || "Failed Google login.";
       if (err.code === 'auth/popup-blocked') {
         friendlyMessage = "Popup was blocked by your browser. Please allow popups for this site and try again.";
-      } else if (err.code === 'auth/popup-closed-by-user') {
-        friendlyMessage = "Sign-in was cancelled. Please try again.";
+      } else if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+        friendlyMessage = "Google sign-in popup request was cancelled or closed. Please try again.";
       }
       setErrorMsg(friendlyMessage);
       console.error("Google authentication failed:", err);

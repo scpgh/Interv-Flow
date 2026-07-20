@@ -47,9 +47,14 @@ router.post('/google', async (req, res) => {
 
     let email, name;
     if (admin.apps.length > 0) {
-      const decodedToken = await admin.auth().verifyIdToken(idToken);
-      email = decodedToken.email;
-      name = decodedToken.name || decodedToken.email.split('@')[0];
+      try {
+        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        email = decodedToken.email;
+        name = decodedToken.name || decodedToken.email.split('@')[0];
+      } catch (verifyErr) {
+        console.error("[GOOGLE AUTH ERROR] Firebase Admin verifyIdToken failed:", verifyErr.message);
+        return res.status(401).json({ error: `Invalid ID token: ${verifyErr.message}` });
+      }
     } else {
       email = idToken && idToken.includes('@') ? idToken : "google.user@example.com";
       name = "Alex Rivera";
