@@ -41,7 +41,7 @@ async function callWithRetry(fn, maxRetries = 5, baseDelay = 1000) {
   }
 }
 
-// Helper for calling Groq completions API with multi-key fallback
+// Helper for calling Groq completions API with multi-key and multi-model fallback
 async function callGroqChat(systemPrompt, userPrompt, modelName = "llama-3.3-70b-versatile", jsonMode = false) {
   const apiKeys = [
     process.env.GROQ_API_KEY,
@@ -51,94 +51,146 @@ async function callGroqChat(systemPrompt, userPrompt, modelName = "llama-3.3-70b
     process.env.GROQ_API_KEY_5,
   ].filter(k => k && k.trim() !== "");
 
-  if (apiKeys.length === 0) {
-    throw new Error("No Groq API keys are configured. Please add GROQ_API_KEY to server/.env");
-  }
-
-  const requestBody = {
-    model: modelName,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt }
-    ],
-    temperature: 0.1
-  };
-
-  if (jsonMode) {
-    requestBody.response_format = { type: "json_object" };
-  }
+  // List of candidate models to try in case requested model is deprecated, unaccessible, or returns 404
+  const candidateModels = [
+    process.env.GROQ_MODEL,
+    modelName,
+    "llama-3.3-70b-versatile",
+    "llama-3.1-70b-versatile",
+    "llama-3.1-8b-instant",
+    "llama3-70b-8192",
+    "llama3-8b-8192",
+    "mixtral-8x7b-32768"
+  ].filter((m, i, arr) => m && typeof m === 'string' && m.trim() !== "" && arr.indexOf(m) === i);
 
   let lastError = null;
-  for (let keyIdx = 0; keyIdx < apiKeys.length; keyIdx++) {
-    const apiKey = apiKeys[keyIdx];
-    const keyLabel = keyIdx === 0 ? "GROQ_API_KEY" : `GROQ_API_KEY_${keyIdx + 1}`;
-    console.log(`Calling Groq API with ${keyLabel} (model: ${modelName}, jsonMode: ${jsonMode})...`);
 
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
+  if (apiKeys.length > 0) {
+    for (const currentModel of candidateModels) {
+      let isModelNotFoundError = false;
 
-      try {
-        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey.trim()}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(requestBody),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
+      const requestBody = {
+        model: currentModel,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        temperature: 0.1
+      };
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          const isRateLimit = response.status === 429 ||
-            errorText.includes("Rate limit") ||
-            errorText.includes("quota") ||
-            errorText.includes("exhausted");
+      if (jsonMode) {
+        requestBody.response_format = { type: "json_object" };
+      }
 
-          if (isRateLimit) {
-            console.warn(`${keyLabel} hit rate limit (attempt ${attempt + 1}/2). ${keyIdx + 1 < apiKeys.length ? 'Rotating to next key...' : 'No more keys.'}`);
-            lastError = new Error(`Groq rate limit on ${keyLabel}: ${errorText}`);
-            break;
+      for (let keyIdx = 0; keyIdx < apiKeys.length; keyIdx++) {
+        const apiKey = apiKeys[keyIdx];
+        const keyLabel = keyIdx === 0 ? "GROQ_API_KEY" : `GROQ_API_KEY_${keyIdx + 1}`;
+        console.log(`Calling Groq API with ${keyLabel} (model: ${currentModel}, jsonMode: ${jsonMode})...`);
+
+        for (let attempt = 0; attempt < 2; attempt++) {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+          try {
+            const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${apiKey.trim()}`,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(requestBody),
+              signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              const isNotFound = response.status === 404 || 
+                errorText.includes("model_not_found") || 
+                errorText.includes("does not exist") || 
+                errorText.includes("you do not have access");
+
+              if (isNotFound) {
+                console.warn(`Groq model '${currentModel}' not found/accessible on ${keyLabel}. Will try next candidate model...`);
+                lastError = new Error(`Groq model not found: ${errorText}`);
+                isModelNotFoundError = true;
+                break;
+              }
+
+              const isRateLimit = response.status === 429 ||
+                errorText.includes("Rate limit") ||
+                errorText.includes("quota") ||
+                errorText.includes("exhausted");
+
+              if (isRateLimit) {
+                console.warn(`${keyLabel} hit rate limit (attempt ${attempt + 1}/2). ${keyIdx + 1 < apiKeys.length ? 'Rotating to next key...' : 'No more keys.'}`);
+                lastError = new Error(`Groq rate limit on ${keyLabel}: ${errorText}`);
+                break;
+              }
+              throw new Error(`Groq API error with ${keyLabel} (status ${response.status}): ${errorText}`);
+            }
+
+            const data = await response.json();
+            if (!data.choices || data.choices.length === 0) {
+              throw new Error(`Groq API returned an empty completion response with ${keyLabel}.`);
+            }
+
+            if (currentModel !== modelName) {
+              console.log(`Successfully completed Groq API call using fallback model '${currentModel}'.`);
+            }
+            return data.choices[0].message.content;
+
+          } catch (err) {
+            clearTimeout(timeoutId);
+            const isTimeout = err.name === 'AbortError' || (err.message && err.message.includes('aborted'));
+            const isRateLimit = isTimeout || (err.message && (
+              err.message.includes("429") ||
+              err.message.includes("Rate limit") ||
+              err.message.includes("quota") ||
+              err.message.includes("exhausted")
+            ));
+            if (isRateLimit) {
+              lastError = isTimeout ? new Error(`Groq API request timed out on ${keyLabel}`) : err;
+              break;
+            }
+            if (attempt === 0 && !isModelNotFoundError) {
+              console.warn(`${keyLabel} transient error, retrying... (${err.message})`);
+              await new Promise(r => setTimeout(r, 500));
+            } else {
+              throw err;
+            }
           }
-          throw new Error(`Groq API error with ${keyLabel} (status ${response.status}): ${errorText}`);
         }
 
-        const data = await response.json();
-        if (!data.choices || data.choices.length === 0) {
-          throw new Error(`Groq API returned an empty completion response with ${keyLabel}.`);
-        }
-
-        if (keyIdx > 0) {
-          console.log(`Succeeded using fallback ${keyLabel}.`);
-        }
-        return data.choices[0].message.content;
-
-      } catch (err) {
-        clearTimeout(timeoutId);
-        const isTimeout = err.name === 'AbortError' || (err.message && err.message.includes('aborted'));
-        const isRateLimit = isTimeout || (err.message && (
-          err.message.includes("429") ||
-          err.message.includes("Rate limit") ||
-          err.message.includes("quota") ||
-          err.message.includes("exhausted")
-        ));
-        if (isRateLimit) {
-          lastError = isTimeout ? new Error(`Groq API request timed out on ${keyLabel}`) : err;
-          break;
-        }
-        if (attempt === 0) {
-          console.warn(`${keyLabel} transient error, retrying... (${err.message})`);
-          await new Promise(r => setTimeout(r, 500));
-        } else {
-          throw err;
+        if (isModelNotFoundError) {
+          break; // Stop trying keys for this missing model, move to next model in candidateModels
         }
       }
     }
   }
 
-  throw lastError || new Error("All Groq API keys are exhausted or rate-limited. Please add more keys or wait.");
+  // Secondary fallback to Gemini SDK if Groq API keys/models fail or are unconfigured
+  if (ai) {
+    try {
+      console.warn("Groq API unavailable or rate-limited. Falling back to Gemini API (gemini-2.0-flash)...");
+      const model = ai.getGenerativeModel({
+        model: "gemini-2.0-flash",
+        generationConfig: jsonMode ? { responseMimeType: "application/json" } : {}
+      });
+      const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
+      const result = await callWithRetry(async () => {
+        return await Promise.race([
+          model.generateContent(fullPrompt),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Gemini API call timed out after 15 seconds")), 15000))
+        ]);
+      });
+      return result.response.text();
+    } catch (geminiErr) {
+      console.error("Gemini API fallback also failed:", geminiErr.message);
+    }
+  }
+
+  throw lastError || new Error("All Groq API models and keys are exhausted or rate-limited, and Gemini fallback is unavailable.");
 }
 
 // Local fallback resume analysis when Gemini API is unavailable or rate limited

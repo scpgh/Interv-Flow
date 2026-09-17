@@ -323,14 +323,10 @@ Evaluate this interview transcript and respond with the exact JSON formatting st
 
       let reportText = "";
       try {
-        if (!process.env.GROQ_API_KEY || process.env.GROQ_API_KEY.trim() === "") {
-          throw new Error("GROQ_API_KEY is not configured on the server.");
-        }
-
         reportText = await callWithRetry(() => callGroqChat(
           systemPrompt,
           userPrompt,
-          "llama-3.3-70b-versatile",
+          process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
           true
         ));
       } catch (err) {

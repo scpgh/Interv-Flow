@@ -183,12 +183,13 @@ IMPORTANT: Return ONLY the raw valid JSON string. Do not wrap the JSON object in
       return res.status(503).json({ error: "No Groq API keys configured on the server. Please add GROQ_API_KEY (and optionally GROQ_API_KEY_2, GROQ_API_KEY_3) to server/.env and restart." });
     }
 
+    let isFallbackMode = false;
     try {
-      console.log("Calling Groq API for resume analysis...");
+      console.log("Calling Groq/Gemini API for resume analysis...");
       const responseText = await callWithRetry(() => callGroqChat(
         "You are a professional ATS parser and technical recruiter. Output strictly valid JSON objects matching user schema. No preamble, no postamble.",
         systemPrompt,
-        "llama-3.3-70b-versatile",
+        process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
         true
       ));
 
@@ -199,12 +200,13 @@ IMPORTANT: Return ONLY the raw valid JSON string. Do not wrap the JSON object in
       if (!analysisResult.generalQuestions || !Array.isArray(analysisResult.generalQuestions)) analysisResult.generalQuestions = [];
       if (!analysisResult.technicalQuestions || !Array.isArray(analysisResult.technicalQuestions)) analysisResult.technicalQuestions = [];
 
-      console.log("Groq API resume analysis succeeded.");
-      try { fs.appendFileSync('./pdf_debug.log', `[${new Date().toISOString()}] Groq API succeeded.\n`); } catch (e) {}
+      console.log("Groq/Gemini API resume analysis succeeded.");
+      try { fs.appendFileSync('./pdf_debug.log', `[${new Date().toISOString()}] AI API succeeded.\n`); } catch (e) {}
     } catch (err) {
-      console.error("Groq API resume analysis failed:", err.message);
-      try { fs.appendFileSync('./pdf_debug.log', `[${new Date().toISOString()}] Groq API FAILED: ${err.message}\n`); } catch (e) {}
-      return res.status(503).json({ error: `Groq API error: ${err.message}` });
+      console.error("AI resume analysis failed, activating local fallback engine:", err.message);
+      try { fs.appendFileSync('./pdf_debug.log', `[${new Date().toISOString()}] AI FAILED: ${err.message}. Activated local fallback.\n`); } catch (e) {}
+      isFallbackMode = true;
+      analysisResult = fallbackResumeAnalysis(resumeText, domain);
     }
 
     // Save to Database
@@ -214,8 +216,8 @@ IMPORTANT: Return ONLY the raw valid JSON string. Do not wrap the JSON object in
       fileName: file ? file.originalname : "Plain_Text_Paste",
       fileSize: file ? file.size : Buffer.byteLength(resumeText, 'utf8'),
       analysis: analysisResult,
-      isFallback: false,
-      provider: "groq"
+      isFallback: isFallbackMode,
+      provider: isFallbackMode ? "local-fallback" : "groq"
     });
 
     try {
@@ -246,7 +248,8 @@ IMPORTANT: Return ONLY the raw valid JSON string. Do not wrap the JSON object in
       success: true,
       analysisId: savedId,
       extractedText: resumeText,
-      provider: "groq",
+      provider: isFallbackMode ? "local-fallback" : "groq",
+      isFallback: isFallbackMode,
       ...analysisResult
     });
 
@@ -265,6 +268,7 @@ router.post('/query-resume', async (req, res) => {
     }
 
     let answer = "";
+    let isFallback = false;
     let userContextPrompt = "";
     if (userProfile && typeof userProfile === 'object') {
       const { name, domain, experience, education, dreamCompany, atsScore, roleMatch } = userProfile;
@@ -292,28 +296,25 @@ Candidate Question: "${question}"
 
 Provide a highly relevant, encouraging, and actionable answer.`;
 
-    if (!process.env.GROQ_API_KEY || process.env.GROQ_API_KEY.trim() === "") {
-      return res.status(503).json({ error: "GROQ_API_KEY is not configured on the server." });
-    }
-
     try {
-      console.log("Calling Groq API for resume Q&A...");
+      console.log("Calling AI API for resume Q&A...");
       answer = await callWithRetry(() => callGroqChat(
         "You are a professional technical recruiter and career coach. Answer questions constructively based on resume context.",
         systemPrompt,
-        "llama-3.3-70b-versatile",
+        process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
         false
       ));
-      console.log("Groq API Q&A succeeded.");
+      console.log("AI API Q&A succeeded.");
     } catch (err) {
-      console.error("Groq API Q&A failed:", err.message);
-      return res.status(503).json({ error: `Groq API error: ${err.message}` });
+      console.error("AI API Q&A failed, using local fallback responder:", err.message);
+      isFallback = true;
+      answer = fallbackQueryResponse(resumeText, question);
     }
 
     res.json({
       success: true,
-      isFallback: false,
-      provider: "groq",
+      isFallback,
+      provider: isFallback ? "local-fallback" : "groq",
       answer
     });
   } catch (error) {
@@ -335,6 +336,7 @@ router.post('/chat', checkUsageCredits('chat'), async (req, res) => {
     }
 
     let answer = "";
+    let isFallback = false;
     let historyPrompt = "";
     if (history && Array.isArray(history)) {
       historyPrompt = "Conversation history:\n" + history.map(h => `${h.sender === 'user' ? 'User' : 'AI'}: ${h.text}`).join('\n') + "\n";
@@ -370,28 +372,25 @@ ${resumeText ? `Here is the candidate's resume context to personalize your advic
 ${historyPrompt}
 User's Question: "${message}"`;
 
-    if (!process.env.GROQ_API_KEY || process.env.GROQ_API_KEY.trim() === "") {
-      return res.status(503).json({ error: "GROQ_API_KEY is not configured on the server." });
-    }
-
     try {
-      console.log("Calling Groq API for chatbot...");
+      console.log("Calling AI API for chatbot...");
       answer = await callWithRetry(() => callGroqChat(
         "You are Intervflow AI Doubt Tutor, an elite career coach. Answer concisely and constructively.",
         systemPrompt,
-        "llama-3.3-70b-versatile",
+        process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
         false
       ));
-      console.log("Groq API chatbot query succeeded.");
+      console.log("AI API chatbot query succeeded.");
     } catch (err) {
-      console.error("Groq API chatbot failed:", err.message);
-      return res.status(503).json({ error: `Groq API error: ${err.message}` });
+      console.error("AI API chatbot failed, using local fallback responder:", err.message);
+      isFallback = true;
+      answer = fallbackQueryResponse(resumeText || "", message);
     }
 
     res.json({
       success: true,
-      isFallback: false,
-      provider: "groq",
+      isFallback,
+      provider: isFallback ? "local-fallback" : "groq",
       answer
     });
   } catch (error) {

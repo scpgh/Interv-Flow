@@ -58,10 +58,11 @@ export const checkUsageCredits = (creditType) => {
           });
         }
       } else if (creditType === 'chat') {
-        // AI Doubt Tutor is exclusive to Pro Plus (999) plan
-        if (planName !== 'Pro Plus') {
+        const chatLimit = credits.chatLimit || (planName === 'Pro Plus' ? 99999 : (planName === 'Pro' ? 100 : 20));
+        const chatUsed = credits.chatUsed || 0;
+        if (chatUsed >= chatLimit) {
           return res.status(403).json({
-            error: "24/7 AI Doubt Tutor is exclusive to Pro Plus plan. Please upgrade to access this feature."
+            error: "AI Doubt Tutor usage limit reached for your plan. Please upgrade to access unlimited questions."
           });
         }
       }

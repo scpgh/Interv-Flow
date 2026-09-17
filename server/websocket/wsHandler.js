@@ -580,10 +580,10 @@ Ask exactly ONE question and nothing else. Do not output any markdown formatting
     const userPrompt = `Here is the conversation history so far:\n${historyText}\n\nProvide your next interviewer response. Ask a follow-up or a new question. Keep it concise (1-2 sentences).`;
 
     try {
-      const responseText = await callGroqChat(systemPrompt, userPrompt, "llama-3.3-70b-versatile");
+      const responseText = await callGroqChat(systemPrompt, userPrompt, process.env.GROQ_MODEL || "llama-3.3-70b-versatile");
       return responseText.trim().replace(/^Interviewer:\s*/i, '');
     } catch (groqErr) {
-      console.warn("Groq failed in fallback generator, attempting standard Gemini API:", groqErr);
+      console.warn("Groq failed in fallback generator, attempting standard Gemini API:", groqErr.message);
       if (ai) {
         try {
           const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -596,13 +596,36 @@ Ask exactly ONE question and nothing else. Do not output any markdown formatting
           });
           return result.response.text().trim().replace(/^Interviewer:\s*/i, '');
         } catch (geminiErr) {
-          console.error("Gemini fallback also failed:", geminiErr);
-          throw new Error("Both Groq and Gemini API are unavailable for fallback generation.");
+          console.error("Gemini fallback also failed:", geminiErr.message);
         }
-      } else {
-        throw new Error("Groq failed and Gemini API is not initialized.");
       }
+      console.warn("AI generation failed for fallback interviewer question, using local static question fallback.");
+      return getStaticFallbackInterviewQuestion(session, difficultyLabel);
     }
+  }
+
+  function getStaticFallbackInterviewQuestion(session, difficultyLabel) {
+    const defaultQuestions = {
+      Easy: [
+        `To get started, could you give me a high-level overview of your background and the core projects you've built relevant to ${session.title || 'this role'}?`,
+        "What programming languages, frameworks, or tools do you feel most proficient with, and why?",
+        "Can you describe a basic feature or module you developed recently and walk me through its design?"
+      ],
+      Medium: [
+        "How do you approach state management, API data handling, and error handling in your applications?",
+        "Can you explain your strategy for database schema design, indexing, and query performance optimization?",
+        "Tell me about a time when you encountered a complex bug in production and how you isolated and fixed it."
+      ],
+      Hard: [
+        "Suppose your application experiences a sudden 10x traffic spike leading to API latency and database bottlenecks. How would you systematically diagnose and mitigate it?",
+        "How do you evaluate performance trade-offs between caching, message queues, and horizontal scaling in microservices?",
+        "Describe a major architectural decision you made in a past project, including how you handled failure modes and technical debt."
+      ]
+    };
+
+    const questions = defaultQuestions[difficultyLabel] || defaultQuestions.Medium;
+    const turnIndex = Math.floor(session.transcript.length / 2);
+    return questions[turnIndex % questions.length];
   }
 }
 
